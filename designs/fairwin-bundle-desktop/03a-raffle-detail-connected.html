@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Raffle | FairWin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000000;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: white; }
+        .btn-nav { padding: 12px 24px; background: var(--accent); color: black; font-weight: 700; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PAGE HEADER */
+        .page-header { padding: 100px 0 32px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: white; }
+        
+        .raffle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .raffle-title-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .raffle-icon {
+            width: 72px;
+            height: 72px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        .raffle-title { font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; }
+        .raffle-subtitle { font-size: 16px; color: var(--text-muted); }
+        
+        .raffle-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-badge.live {
+            background: rgba(0,255,136,0.15);
+            color: var(--accent);
+        }
+        .status-badge.live::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .time-remaining {
+            font-size: 24px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .time-remaining-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 40px 0;
+        }
+        .main-content .container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 32px;
+        }
+        
+        /* LEFT COLUMN - PRIZE INFO */
+        .prize-column {}
+        
+        .prize-pool-card {
+            background: linear-gradient(135deg, rgba(0,255,136,0.08) 0%, rgba(0,255,136,0.02) 100%);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .prize-pool-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .prize-pool-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        .prize-pool-note {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .prize-pool-value {
+            font-size: 56px;
+            font-weight: 900;
+            color: var(--accent);
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+        }
+        .prize-pool-subtext {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        .prize-breakdown {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .prize-breakdown-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+        }
+        .prize-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .prize-tier:last-child { border-bottom: none; }
+        .prize-tier-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .prize-tier-icon { font-size: 24px; }
+        .prize-tier-name { font-size: 15px; font-weight: 600; }
+        .prize-tier-name.grand { color: var(--gold); }
+        .prize-tier-name.runner { color: var(--silver); }
+        .prize-tier-name.lucky { color: var(--accent); }
+        .prize-tier-desc { font-size: 12px; color: var(--text-muted); }
+        .prize-tier-right { text-align: right; }
+        .prize-tier-percent { font-size: 13px; color: var(--text-muted); margin-bottom: 2px; }
+        .prize-tier-amount { font-size: 18px; font-weight: 700; }
+        .prize-tier-amount.grand { color: var(--gold); }
+        .prize-tier-amount.runner { color: var(--silver); }
+        .prize-tier-amount.lucky { color: var(--accent); }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .stat-card-value {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .stat-card-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-card-note {
+            font-size: 11px;
+            color: var(--accent);
+            margin-top: 4px;
+        }
+        
+        /* RIGHT COLUMN - ENTRY */
+        .entry-column {}
+        
+        .entry-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px;
+            position: sticky;
+            top: 100px;
+        }
+        .entry-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        /* Connected State */
+        .entry-form {}
+        .entry-price-display {
+            text-align: center;
+            padding: 20px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .entry-price-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .entry-price-value {
+            font-size: 28px;
+            font-weight: 800;
+        }
+        
+        .quantity-section {
+            margin-bottom: 20px;
+        }
+        .quantity-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .quantity-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .qty-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .qty-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+        .qty-btn.active {
+            background: rgba(0,255,136,0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .quantity-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .quantity-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+        }
+        .quantity-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .qty-adjust {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .qty-adjust:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .total-section {
+            padding: 20px;
+            background: rgba(0,255,136,0.05);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .total-row:last-child { margin-bottom: 0; }
+        .total-label { font-size: 14px; color: var(--text-muted); }
+        .total-value { font-size: 14px; font-weight: 600; }
+        .total-row.main .total-label { font-size: 16px; color: white; font-weight: 600; }
+        .total-row.main .total-value { font-size: 24px; font-weight: 800; color: var(--accent); }
+        
+        .odds-display {
+            text-align: center;
+            padding: 16px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .odds-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .odds-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .odds-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .enter-btn {
+            width: 100%;
+            padding: 18px;
+            background: var(--accent);
+            color: black;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .enter-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+        
+        .entry-note {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+        }
+        
+        /* Not Connected State */
+        .connect-prompt {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .connect-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+        .connect-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .connect-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .connect-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: black;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        
+        /* Your Entries Section */
+        .your-entries {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+        .your-entries-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .your-entries-label {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+        .your-entries-count {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .your-entries-note {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        
+        /* TABS SECTION */
+        .tabs-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+        .tabs-header {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .tab-btn:hover { color: white; }
+        .tab-btn.active { color: white; }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+        .tab-btn .count {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 6px;
+        }
+        .tab-btn.active .count { color: var(--accent); }
+        
+        /* Participants Tab */
+        .participants-list {}
+        .participant-item {
+            display: grid;
+            grid-template-columns: 32px 1fr auto;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .participant-rank {
+            width: 32px;
+            height: 32px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+        .participant-rank.top { background: rgba(0,255,136,0.1); color: var(--accent); }
+        .participant-address {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+        .participant-you {
+            font-size: 11px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+        }
+        .participant-entries {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .participant-entries span { color: var(--text-muted); font-weight: 400; }
+        
+        .load-more {
+            text-align: center;
+            padding: 20px;
+        }
+        .load-more-btn {
+            padding: 12px 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .load-more-btn:hover {
+            border-color: white;
+            color: white;
+        }
+        
+        /* RAFFLE INFO SECTION */
+        .raffle-info-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 24px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .info-item {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .info-item-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .info-item-value {
+            font-size: 15px;
+            font-weight: 600;
+        }
+        .info-item-value.mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .info-item-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 12px;
+            margin-top: 6px;
+            display: inline-block;
+        }
+        .info-item-link:hover { text-decoration: underline; }
+        
+        /* PAST WINNERS */
+        .past-winners-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+        .past-winners-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        .past-winner-card {
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .past-winner-left {}
+        .past-winner-date {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .past-winner-address {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .past-winner-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .past-winner-tier {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            text-align: right;
+        }
+        
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="index.html" class="logo">FAIR<span>WIN</span></a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="raffle.html" class="active">Raffle</a>
+                <a href="#">Winners</a>
+                <button class="btn-nav">Connect</button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a>
+                <span>→</span>
+                <a href="raffle.html">Raffle</a>
+                <span>→</span>
+                <span>Daily Raffle</span>
+            </div>
+            
+            <div class="raffle-header">
+                <div class="raffle-title-section">
+                    <div class="raffle-icon">🎟️</div>
+                    <div>
+                        <h1 class="raffle-title">Daily Raffle</h1>
+                        <p class="raffle-subtitle">Draws every 24 hours • Entry: $5 USDC</p>
+                    </div>
+                </div>
+                <div class="raffle-status">
+                    <div class="status-badge live">Live</div>
+                    <div class="time-remaining">⏱ 6h 24m 18s</div>
+                    <div class="time-remaining-label">Until Draw</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <!-- Left Column - Prize Info -->
+            <div class="prize-column">
+                <div class="prize-pool-card">
+                    <div class="prize-pool-header">
+                        <div class="prize-pool-label">
+                            <span class="live-dot"></span>
+                            Current Prize Pool
+                        </div>
+                        <div class="prize-pool-note">Updates live</div>
+                    </div>
+                    <div class="prize-pool-value">$2,375</div>
+                    <div class="prize-pool-subtext">95% of all entries • Pool grows with each new entry</div>
+                </div>
+                
+                <div class="prize-breakdown">
+                    <div class="prize-breakdown-title">Prize Distribution</div>
+                    <div class="prize-tier">
+                        <div class="prize-tier-left">
+                            <span class="prize-tier-icon">🥇</span>
+                            <div>
+                                <div class="prize-tier-name grand">Grand Prize</div>
+                                <div class="prize-tier-desc">1 winner</div>
+                            </div>
+                        </div>
+                        <div class="prize-tier-right">
+                            <div class="prize-tier-percent">40% of pool</div>
+                            <div class="prize-tier-amount grand">$950</div>
+                        </div>
+                    </div>
+                    <div class="prize-tier">
+                        <div class="prize-tier-left">
+                            <span class="prize-tier-icon">🥈</span>
+                            <div>
+                                <div class="prize-tier-name runner">Runner-ups</div>
+                                <div class="prize-tier-desc">4 winners</div>
+                            </div>
+                        </div>
+                        <div class="prize-tier-right">
+                            <div class="prize-tier-percent">30% of pool</div>
+                            <div class="prize-tier-amount runner">$178 each</div>
+                        </div>
+                    </div>
+                    <div class="prize-tier">
+                        <div class="prize-tier-left">
+                            <span class="prize-tier-icon">🎉</span>
+                            <div>
+                                <div class="prize-tier-name lucky">Lucky Winners</div>
+                                <div class="prize-tier-desc">45 winners (rest of top 10%)</div>
+                            </div>
+                        </div>
+                        <div class="prize-tier-right">
+                            <div class="prize-tier-percent">30% of pool</div>
+                            <div class="prize-tier-amount lucky">$16 each</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="stats-row">
+                    <div class="stat-card">
+                        <div class="stat-card-value">500</div>
+                        <div class="stat-card-label">Total Entries</div>
+                        <div class="stat-card-note">& counting</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value">234</div>
+                        <div class="stat-card-label">Participants</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-value">50</div>
+                        <div class="stat-card-label">Winners</div>
+                        <div class="stat-card-note">Top 10%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Entry -->
+            <div class="entry-column">
+                <div class="entry-card">
+                    <h3 class="entry-card-title">Enter This Raffle</h3>
+                    
+                    <!-- Connected State (shown) -->
+                    <div class="entry-form">
+                        <div class="entry-price-display">
+                            <div class="entry-price-label">Entry Price</div>
+                            <div class="entry-price-value">$5 USDC</div>
+                        </div>
+                        
+                        <div class="quantity-section">
+                            <div class="quantity-label">Number of Entries</div>
+                            <div class="quantity-buttons">
+                                <button class="qty-btn active">1</button>
+                                <button class="qty-btn">5</button>
+                                <button class="qty-btn">10</button>
+                                <button class="qty-btn">25</button>
+                            </div>
+                            <div class="quantity-custom">
+                                <button class="qty-adjust">−</button>
+                                <input type="number" class="quantity-input" value="1" min="1">
+                                <button class="qty-adjust">+</button>
+                            </div>
+                        </div>
+                        
+                        <div class="total-section">
+                            <div class="total-row">
+                                <span class="total-label">Entry Price</span>
+                                <span class="total-value">$5 × 1</span>
+                            </div>
+                            <div class="total-row main">
+                                <span class="total-label">Total</span>
+                                <span class="total-value">$5 USDC</span>
+                            </div>
+                        </div>
+                        
+                        <div class="odds-display">
+                            <div class="odds-label">Your Chance to Win</div>
+                            <div class="odds-value">~1 in 10</div>
+                            <div class="odds-note">Top 10% of entries win prizes</div>
+                        </div>
+                        
+                        <button class="enter-btn">Enter Raffle</button>
+                        
+                        <p class="entry-note">You'll be prompted to confirm in your wallet</p>
+                    </div>
+                    
+                    <!-- Not Connected State (hidden by default)
+                    <div class="connect-prompt">
+                        <div class="connect-icon">🔗</div>
+                        <h4 class="connect-title">Connect Your Wallet</h4>
+                        <p class="connect-desc">Connect your wallet to enter this raffle and compete for prizes.</p>
+                        <button class="connect-btn">Connect Wallet</button>
+                    </div>
+                    -->
+                    
+                    <!-- Your Entries (shown when user has entries) -->
+                    <div class="your-entries" style="display:none">
+                        <div class="your-entries-header">
+                            <span class="your-entries-label">Your Entries</span>
+                            <span class="your-entries-count">3 entries</span>
+                        </div>
+                        <p class="your-entries-note">You're currently in the top 10%. Good luck! 🍀</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <section class="tabs-section">
+        <div class="container">
+            <div class="tabs-header">
+                <button class="tab-btn active">Participants<span class="count">234</span></button>
+                <button class="tab-btn">Your Entries<span class="count">0</span></button>
+                <button class="tab-btn">Rules</button>
+            </div>
+            
+            <div class="participants-list">
+                <div class="participant-item">
+                    <div class="participant-rank top">1</div>
+                    <div class="participant-address">0x7a3F...9c2E</div>
+                    <div class="participant-entries">42 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank top">2</div>
+                    <div class="participant-address">0x4fA1...2e8C</div>
+                    <div class="participant-entries">38 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank top">3</div>
+                    <div class="participant-address">0x2eB1...4f8A</div>
+                    <div class="participant-entries">25 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank">4</div>
+                    <div class="participant-address">0x9cD4...7b3F</div>
+                    <div class="participant-entries">18 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank">5</div>
+                    <div class="participant-address">0x8bE2...1a9D </div>
+                    <div class="participant-entries">3 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank">6</div>
+                    <div class="participant-address">0x1cA3...5d7B</div>
+                    <div class="participant-entries">2 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank">7</div>
+                    <div class="participant-address">0x6dF2...8e4A</div>
+                    <div class="participant-entries">2 <span>entries</span></div>
+                </div>
+                <div class="participant-item">
+                    <div class="participant-rank">8</div>
+                    <div class="participant-address">0x3bC9...1f6D</div>
+                    <div class="participant-entries">1 <span>entry</span></div>
+                </div>
+            </div>
+            
+            <div class="load-more">
+                <button class="load-more-btn">Load More (226 more)</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="raffle-info-section">
+        <div class="container">
+            <h3 class="section-title">Raffle Details</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-item-label">Draw Time</div>
+                    <div class="info-item-value">Jan 29, 2026 at 10:00 UTC</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Winner Selection</div>
+                    <div class="info-item-value">Chainlink VRF (Verifiable Random Function)</div>
+                    <a href="#" class="info-item-link">Learn about VRF →</a>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Smart Contract</div>
+                    <div class="info-item-value mono">0x1234...5678</div>
+                    <a href="#" class="info-item-link">View on Polygonscan →</a>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Prize Distribution</div>
+                    <div class="info-item-value">95% to winners • 5% platform fee</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Network</div>
+                    <div class="info-item-value">Polygon (MATIC)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-item-label">Payment Token</div>
+                    <div class="info-item-value">USDC</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="past-winners-section">
+        <div class="container">
+            <h3 class="section-title">Past Winners (This Raffle)</h3>
+            <div class="past-winners-grid">
+                <div class="past-winner-card">
+                    <div class="past-winner-left">
+                        <div class="past-winner-date">Jan 28, 2026</div>
+                        <div class="past-winner-address">0x7a3F...9c2E</div>
+                    </div>
+                    <div>
+                        <div class="past-winner-amount">$892</div>
+                        <div class="past-winner-tier">🥇 Grand Prize</div>
+                    </div>
+                </div>
+                <div class="past-winner-card">
+                    <div class="past-winner-left">
+                        <div class="past-winner-date">Jan 27, 2026</div>
+                        <div class="past-winner-address">0x4fA1...2e8C</div>
+                    </div>
+                    <div>
+                        <div class="past-winner-amount">$945</div>
+                        <div class="past-winner-tier">🥇 Grand Prize</div>
+                    </div>
+                </div>
+                <div class="past-winner-card">
+                    <div class="past-winner-left">
+                        <div class="past-winner-date">Jan 26, 2026</div>
+                        <div class="past-winner-address">0x2eB1...4f8A</div>
+                    </div>
+                    <div>
+                        <div class="past-winner-amount">$780</div>
+                        <div class="past-winner-tier">🥇 Grand Prize</div>
+                    </div>
+                </div>
+                <div class="past-winner-card">
+                    <div class="past-winner-left">
+                        <div class="past-winner-date">Jan 25, 2026</div>
+                        <div class="past-winner-address">0x9cD4...7b3F</div>
+                    </div>
+                    <div>
+                        <div class="past-winner-amount">$1,120</div>
+                        <div class="past-winner-tier">🥇 Grand Prize</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">GitHub</a>
+                <a href="#">Docs</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 FairWin</div>
+        </div>
+    </footer>
+</body>
+</html>

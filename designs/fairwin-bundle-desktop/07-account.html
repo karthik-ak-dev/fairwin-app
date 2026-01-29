@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Account | FairWin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000000;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: white; }
+        .wallet-btn { 
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .wallet-btn .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+        .wallet-btn .address {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* PAGE HEADER */
+        .page-header { padding: 100px 0 40px; }
+        .page-header .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .account-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .account-avatar {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--accent) 0%, #00cc6a 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        .account-details {}
+        .account-address {
+            font-size: 24px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 4px;
+        }
+        .account-meta {
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .account-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .account-meta-item .dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+        
+        .account-actions {
+            display: flex;
+            gap: 12px;
+        }
+        .action-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .action-btn:hover {
+            border-color: white;
+            color: white;
+        }
+        .action-btn.disconnect:hover {
+            border-color: #ff4444;
+            color: #ff4444;
+        }
+        
+        /* STATS ROW */
+        .stats-section {
+            padding: 0 0 40px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+        .stat-card.highlight {
+            background: linear-gradient(135deg, rgba(0,255,136,0.08) 0%, rgba(0,255,136,0.02) 100%);
+            border-color: rgba(0,255,136,0.2);
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        .stat-value {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .stat-card.highlight .stat-value {
+            color: var(--accent);
+        }
+        .stat-sub {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .stat-sub.positive {
+            color: var(--accent);
+        }
+        
+        /* TABS */
+        .tabs-section {
+            padding: 0 0 40px;
+        }
+        .tabs-header {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 28px;
+        }
+        .tab-btn {
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .tab-btn:hover { color: white; }
+        .tab-btn.active { color: white; }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+        .tab-btn .count {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-left: 6px;
+            padding: 2px 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+        .tab-btn.active .count { 
+            color: var(--accent); 
+            background: rgba(0,255,136,0.1);
+        }
+        
+        /* ACTIVE ENTRIES TAB */
+        .active-entries {}
+        .entries-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .entry-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+        }
+        .entry-card:hover {
+            border-color: rgba(0,255,136,0.3);
+        }
+        .entry-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        .entry-raffle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .entry-raffle-icon {
+            font-size: 28px;
+        }
+        .entry-raffle-name {
+            font-size: 16px;
+            font-weight: 700;
+        }
+        .entry-raffle-type {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .entry-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .entry-badge.live {
+            background: rgba(0,255,136,0.15);
+            color: var(--accent);
+        }
+        .entry-badge.ending {
+            background: rgba(249,115,22,0.15);
+            color: #f97316;
+        }
+        
+        .entry-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 16px 0;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .entry-stat {
+            text-align: center;
+        }
+        .entry-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .entry-stat-value.accent { color: var(--accent); }
+        .entry-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .entry-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+        .entry-time {
+            font-size: 14px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .entry-time.urgent {
+            color: #f97316;
+        }
+        .entry-view-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: white;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .entry-view-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: black;
+        }
+        
+        /* HISTORY TAB */
+        .history-list {}
+        .history-filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover {
+            border-color: white;
+            color: white;
+        }
+        .filter-btn.active {
+            background: rgba(0,255,136,0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        
+        .history-item {
+            display: grid;
+            grid-template-columns: 40px 1fr auto auto;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .history-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .history-icon.entry {
+            background: rgba(255,255,255,0.05);
+        }
+        .history-icon.win {
+            background: rgba(0,255,136,0.1);
+        }
+        .history-icon.win.grand {
+            background: rgba(255,215,0,0.15);
+        }
+        .history-info {}
+        .history-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .history-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .history-meta .address {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .history-amount {
+            font-size: 16px;
+            font-weight: 700;
+            text-align: right;
+        }
+        .history-amount.negative {
+            color: var(--text-muted);
+        }
+        .history-amount.positive {
+            color: var(--accent);
+        }
+        .history-amount.gold {
+            color: var(--gold);
+        }
+        .history-tier {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+        .history-verify {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12px;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .history-verify:hover {
+            border-color: white;
+            color: white;
+        }
+        
+        .load-more {
+            text-align: center;
+            padding: 24px;
+        }
+        .load-more-btn {
+            padding: 12px 32px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .load-more-btn:hover {
+            border-color: white;
+            color: white;
+        }
+        
+        /* WINS TAB - Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+        }
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .empty-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .empty-text {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .empty-btn {
+            padding: 14px 28px;
+            background: var(--accent);
+            color: black;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); margin-top: 40px; }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="index.html" class="logo">FAIR<span>WIN</span></a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="raffle.html">Raffle</a>
+                <a href="#">Winners</a>
+                <button class="wallet-btn">
+                    <span class="dot"></span>
+                    <span class="address">0x8bE2...1a9D</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="account-info">
+                <div class="account-avatar">👤</div>
+                <div class="account-details">
+                    <div class="account-address">0x8bE2...1a9D</div>
+                    <div class="account-meta">
+                        <span class="account-meta-item">
+                            <span class="dot"></span>
+                            Connected
+                        </span>
+                        <span class="account-meta-item">Polygon Network</span>
+                        <span class="account-meta-item">Member since Jan 2026</span>
+                    </div>
+                </div>
+            </div>
+            <div class="account-actions">
+                <button class="action-btn">
+                    <span>📋</span>
+                    Copy Address
+                </button>
+                <button class="action-btn">
+                    <span>🔗</span>
+                    View on Polygonscan
+                </button>
+                <button class="action-btn disconnect">
+                    <span>⏏️</span>
+                    Disconnect
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <section class="stats-section">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card highlight">
+                    <div class="stat-label">Total Won</div>
+                    <div class="stat-value">$2,628</div>
+                    <div class="stat-sub positive">+$178 this week</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Spent</div>
+                    <div class="stat-value">$485</div>
+                    <div class="stat-sub">97 entries</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Net Profit</div>
+                    <div class="stat-value" style="color: var(--accent);">+$2,143</div>
+                    <div class="stat-sub positive">442% ROI</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Wins</div>
+                    <div class="stat-value">7</div>
+                    <div class="stat-sub">1 Grand, 2 Runner-ups, 4 Lucky</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="tabs-section">
+        <div class="container">
+            <div class="tabs-header">
+                <button class="tab-btn active">Active Entries<span class="count">3</span></button>
+                <button class="tab-btn">History<span class="count">97</span></button>
+                <button class="tab-btn">Wins<span class="count">7</span></button>
+            </div>
+            
+            <!-- Active Entries Tab -->
+            <div class="active-entries">
+                <div class="entries-grid">
+                    <div class="entry-card">
+                        <div class="entry-card-header">
+                            <div class="entry-raffle">
+                                <span class="entry-raffle-icon">🎟️</span>
+                                <div>
+                                    <div class="entry-raffle-name">Daily Raffle</div>
+                                    <div class="entry-raffle-type">Draws every 24 hours</div>
+                                </div>
+                            </div>
+                            <span class="entry-badge live">Live</span>
+                        </div>
+                        <div class="entry-stats">
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">5</div>
+                                <div class="entry-stat-label">Your Entries</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value accent">$2,375</div>
+                                <div class="entry-stat-label">Prize Pool</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">50</div>
+                                <div class="entry-stat-label">Winners</div>
+                            </div>
+                        </div>
+                        <div class="entry-footer">
+                            <div class="entry-time">⏱ 6h 24m left</div>
+                            <a href="raffle-detail.html" class="entry-view-btn">View Raffle</a>
+                        </div>
+                    </div>
+                    
+                    <div class="entry-card">
+                        <div class="entry-card-header">
+                            <div class="entry-raffle">
+                                <span class="entry-raffle-icon">🎟️</span>
+                                <div>
+                                    <div class="entry-raffle-name">Weekly Raffle</div>
+                                    <div class="entry-raffle-type">Draws every Sunday</div>
+                                </div>
+                            </div>
+                            <span class="entry-badge live">Live</span>
+                        </div>
+                        <div class="entry-stats">
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">10</div>
+                                <div class="entry-stat-label">Your Entries</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value accent">$19,000</div>
+                                <div class="entry-stat-label">Prize Pool</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">100</div>
+                                <div class="entry-stat-label">Winners</div>
+                            </div>
+                        </div>
+                        <div class="entry-footer">
+                            <div class="entry-time">⏱ 2d 18h left</div>
+                            <a href="raffle-detail.html" class="entry-view-btn">View Raffle</a>
+                        </div>
+                    </div>
+                    
+                    <div class="entry-card">
+                        <div class="entry-card-header">
+                            <div class="entry-raffle">
+                                <span class="entry-raffle-icon">⚡</span>
+                                <div>
+                                    <div class="entry-raffle-name">Flash Raffle</div>
+                                    <div class="entry-raffle-type">Quick 6-hour draw</div>
+                                </div>
+                            </div>
+                            <span class="entry-badge ending">Ending Soon</span>
+                        </div>
+                        <div class="entry-stats">
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">3</div>
+                                <div class="entry-stat-label">Your Entries</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value accent">$950</div>
+                                <div class="entry-stat-label">Prize Pool</div>
+                            </div>
+                            <div class="entry-stat">
+                                <div class="entry-stat-value">20</div>
+                                <div class="entry-stat-label">Winners</div>
+                            </div>
+                        </div>
+                        <div class="entry-footer">
+                            <div class="entry-time urgent">⏱ 12m left!</div>
+                            <a href="raffle-detail-ending.html" class="entry-view-btn">View Raffle</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- History Tab (hidden by default, shown for reference) -->
+            <!--
+            <div class="history-list">
+                <div class="history-filters">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Entries</button>
+                    <button class="filter-btn">Wins</button>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon win grand">🏆</div>
+                    <div class="history-info">
+                        <div class="history-title">Won Daily Raffle #142</div>
+                        <div class="history-meta">Jan 28, 2026 • 10:00 UTC</div>
+                    </div>
+                    <div>
+                        <div class="history-amount gold">+$892</div>
+                        <div class="history-tier">Grand Prize</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon entry">🎟️</div>
+                    <div class="history-info">
+                        <div class="history-title">Entered Daily Raffle #143</div>
+                        <div class="history-meta">Jan 28, 2026 • 11:23 UTC • 5 entries</div>
+                    </div>
+                    <div>
+                        <div class="history-amount negative">-$25</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+            </div>
+            -->
+        </div>
+    </section>
+
+    <!-- Reference: History & Wins Tabs Content -->
+    <section class="tabs-section" style="display: none;">
+        <div class="container">
+            <!-- History Tab Content -->
+            <div class="history-list">
+                <div class="history-filters">
+                    <button class="filter-btn active">All</button>
+                    <button class="filter-btn">Entries</button>
+                    <button class="filter-btn">Wins</button>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon win grand">🏆</div>
+                    <div class="history-info">
+                        <div class="history-title">Won Daily Raffle #140</div>
+                        <div class="history-meta">Jan 26, 2026 • 10:00 UTC</div>
+                    </div>
+                    <div>
+                        <div class="history-amount gold">+$892</div>
+                        <div class="history-tier">Grand Prize</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon entry">🎟️</div>
+                    <div class="history-info">
+                        <div class="history-title">Entered Daily Raffle #143</div>
+                        <div class="history-meta">Jan 28, 2026 • 11:23 UTC • 5 entries</div>
+                    </div>
+                    <div>
+                        <div class="history-amount negative">-$25</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon win">🎉</div>
+                    <div class="history-info">
+                        <div class="history-title">Won Daily Raffle #141</div>
+                        <div class="history-meta">Jan 27, 2026 • 10:00 UTC</div>
+                    </div>
+                    <div>
+                        <div class="history-amount positive">+$178</div>
+                        <div class="history-tier">Runner-up</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon entry">🎟️</div>
+                    <div class="history-info">
+                        <div class="history-title">Entered Weekly Raffle #21</div>
+                        <div class="history-meta">Jan 27, 2026 • 14:05 UTC • 10 entries</div>
+                    </div>
+                    <div>
+                        <div class="history-amount negative">-$100</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="history-item">
+                    <div class="history-icon win">🎉</div>
+                    <div class="history-info">
+                        <div class="history-title">Won Weekly Raffle #20</div>
+                        <div class="history-meta">Jan 21, 2026 • 10:00 UTC</div>
+                    </div>
+                    <div>
+                        <div class="history-amount positive">+$1,335</div>
+                        <div class="history-tier">Runner-up</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                
+                <div class="load-more">
+                    <button class="load-more-btn">Load More (92 more)</button>
+                </div>
+            </div>
+            
+            <!-- Wins Tab - With wins -->
+            <div class="wins-list">
+                <div class="history-item">
+                    <div class="history-icon win grand">🏆</div>
+                    <div class="history-info">
+                        <div class="history-title">Won Daily Raffle #140</div>
+                        <div class="history-meta">Jan 26, 2026 • 10:00 UTC</div>
+                    </div>
+                    <div>
+                        <div class="history-amount gold">+$892</div>
+                        <div class="history-tier">Grand Prize</div>
+                    </div>
+                    <a href="#" class="history-verify">Verify →</a>
+                </div>
+                <!-- more wins... -->
+            </div>
+            
+            <!-- Wins Tab - Empty State (for new users) -->
+            <div class="empty-state">
+                <div class="empty-icon">🎯</div>
+                <h3 class="empty-title">No Wins Yet</h3>
+                <p class="empty-text">Keep playing! Top 10% of entries win prizes in every raffle.</p>
+                <a href="raffle.html" class="empty-btn">Browse Raffles</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">GitHub</a>
+                <a href="#">Docs</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 FairWin</div>
+        </div>
+    </footer>
+</body>
+</html>

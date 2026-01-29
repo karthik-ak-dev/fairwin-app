@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raffle | FairWin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000000;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: white; }
+        .btn-nav { padding: 12px 24px; background: var(--accent); color: black; font-weight: 700; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PAGE HEADER */
+        .page-header { padding: 120px 0 48px; }
+        .page-header .container { display: flex; justify-content: space-between; align-items: flex-end; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: white; }
+        .page-title { font-size: 48px; font-weight: 900; letter-spacing: -2px; margin-bottom: 12px; display: flex; align-items: center; gap: 16px; }
+        .page-title .icon { font-size: 40px; }
+        .page-desc { font-size: 18px; color: var(--text-muted); max-width: 520px; }
+        .page-desc strong { color: var(--accent); font-weight: 600; }
+        .page-header-stats { display: flex; gap: 40px; }
+        .header-stat-value { font-size: 28px; font-weight: 800; letter-spacing: -1px; color: var(--accent); }
+        .header-stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 4px; }
+        
+        /* RULES BANNER */
+        .rules-banner {
+            background: rgba(0,255,136,0.05);
+            border: 1px solid rgba(0,255,136,0.15);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-bottom: 40px;
+        }
+        .rules-banner-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .rules-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+        }
+        .rule-item {}
+        .rule-value {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .rule-value.accent { color: var(--accent); }
+        .rule-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+        
+        /* PRIZE STRUCTURE */
+        .prize-structure {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-bottom: 40px;
+        }
+        .prize-structure-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .prize-tiers-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        .prize-tier-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+        }
+        .prize-tier-box.grand { border: 1px solid rgba(255,215,0,0.3); }
+        .prize-tier-box.runner { border: 1px solid rgba(192,192,192,0.3); }
+        .prize-tier-box.lucky { border: 1px solid rgba(0,255,136,0.2); }
+        .prize-tier-icon { font-size: 28px; margin-bottom: 8px; }
+        .prize-tier-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .prize-tier-name.grand { color: var(--gold); }
+        .prize-tier-name.runner { color: var(--silver); }
+        .prize-tier-name.lucky { color: var(--accent); }
+        .prize-tier-percent { font-size: 28px; font-weight: 800; margin-bottom: 4px; }
+        .prize-tier-desc { font-size: 12px; color: var(--text-muted); }
+        
+        /* FILTERS */
+        .filters { padding: 0 0 32px; }
+        .filter-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border); }
+        .filter-tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+        .filter-tab:hover { color: white; }
+        .filter-tab.active { color: white; }
+        .filter-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+        }
+        .filter-tab .count { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+        .filter-tab.active .count { color: var(--accent); }
+        
+        /* RAFFLES GRID */
+        .raffles-section { padding: 0 0 64px; }
+        .raffles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        
+        /* RAFFLE CARD - Transparent design */
+        .raffle-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+        .raffle-card:hover {
+            background: rgba(0,255,136,0.04);
+            border-color: rgba(0,255,136,0.25);
+            transform: translateY(-4px);
+        }
+        .raffle-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .raffle-card-title { display: flex; align-items: center; gap: 12px; }
+        .raffle-card-icon { font-size: 28px; }
+        .raffle-card-name { font-size: 18px; font-weight: 700; }
+        .raffle-card-type { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+        .raffle-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .raffle-badge.live { background: rgba(0,255,136,0.15); color: var(--accent); }
+        .raffle-badge.ending { background: rgba(249,115,22,0.15); color: #f97316; }
+        
+        /* LIVE POOL SECTION */
+        .pool-section {
+            background: rgba(0,255,136,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .pool-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+        .pool-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -1px;
+        }
+        .pool-subtext {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+        .pool-subtext strong { color: white; }
+        
+        /* CURRENT STATS */
+        .current-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .current-stat {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+        .current-stat-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+        .current-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .current-stat-value.time { 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            gap: 4px;
+        }
+        .current-stat-value.urgent { color: #f97316; }
+        .current-stat-note {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        
+        /* YOUR ODDS */
+        .odds-section {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .odds-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .odds-value {
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .odds-note {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        /* CARD FOOTER */
+        .raffle-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+        .entry-price {
+            font-size: 14px;
+        }
+        .entry-price-label { color: var(--text-muted); }
+        .entry-price-value { font-weight: 700; color: white; }
+        .raffle-card-btn {
+            padding: 14px 28px;
+            background: var(--accent);
+            color: black;
+            font-weight: 700;
+            font-size: 13px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+        .raffle-card-btn:hover { filter: brightness(1.1); }
+        
+        /* RECENT WINNERS */
+        .winners-section { padding: 64px 0; border-top: 1px solid var(--border); }
+        .section-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 28px; }
+        .section-label { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
+        .section-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+        .section-link { font-size: 14px; color: var(--accent); text-decoration: none; font-weight: 600; }
+        .section-link:hover { text-decoration: underline; }
+        
+        .winners-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 48px; }
+        .winner-item {
+            display: grid;
+            grid-template-columns: 28px 1fr auto;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .winner-medal { font-size: 18px; }
+        .winner-raffle { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .winner-meta { font-size: 12px; color: var(--text-muted); }
+        .winner-meta .address { font-family: 'JetBrains Mono', monospace; }
+        .winner-amount { text-align: right; }
+        .winner-amount-value { font-size: 16px; font-weight: 700; }
+        .winner-amount-value.grand { color: var(--gold); }
+        .winner-amount-value.runner { color: var(--silver); }
+        .winner-amount-value.lucky { color: var(--accent); }
+        .winner-tier { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* HOW IT WORKS */
+        .how-it-works { padding: 64px 0; border-top: 1px solid var(--border); }
+        .hiw-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; margin-top: 28px; }
+        .hiw-item { text-align: center; }
+        .hiw-num {
+            width: 40px;
+            height: 40px;
+            background: rgba(0,255,136,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .hiw-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .hiw-desc { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+        
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="index.html" class="logo">FAIR<span>WIN</span></a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="raffle.html" class="active">Raffle</a>
+                <a href="#">Winners</a>
+                <button class="btn-nav">Connect</button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="page-header-content">
+                <div class="breadcrumb">
+                    <a href="index.html">Home</a>
+                    <span>→</span>
+                    <span>Raffle</span>
+                </div>
+                <h1 class="page-title">
+                    <span class="icon">🎟️</span>
+                    Raffle
+                </h1>
+                <p class="page-desc">Fair, transparent, on-chain raffles. <strong>Top 10% of entries win prizes.</strong> Every draw verified with Chainlink VRF.</p>
+            </div>
+            <div class="page-header-stats">
+                <div class="header-stat">
+                    <div class="header-stat-value">$67.5K</div>
+                    <div class="header-stat-label">Active Pools</div>
+                </div>
+                <div class="header-stat">
+                    <div class="header-stat-value">4</div>
+                    <div class="header-stat-label">Live Raffles</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="rules-section">
+        <div class="container">
+            <div class="rules-banner">
+                <div class="rules-banner-title">
+                    <span>📋</span> How Every Raffle Works
+                </div>
+                <div class="rules-grid">
+                    <div class="rule-item">
+                        <div class="rule-value accent">95%</div>
+                        <div class="rule-label">Of all entries goes to the prize pool. Always.</div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-value">Top 10%</div>
+                        <div class="rule-label">Of participants win prizes. More entries = more winners.</div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-value">5%</div>
+                        <div class="rule-label">Platform fee. That's it. No hidden charges.</div>
+                    </div>
+                    <div class="rule-item">
+                        <div class="rule-value accent">Instant</div>
+                        <div class="rule-label">Payouts via smart contract. Verify on Polygonscan.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="prize-structure">
+                <div class="prize-structure-title">
+                    <span>🏆</span> Prize Distribution (From 95% Pool)
+                </div>
+                <div class="prize-tiers-row">
+                    <div class="prize-tier-box grand">
+                        <div class="prize-tier-icon">🥇</div>
+                        <div class="prize-tier-name grand">Grand Prize</div>
+                        <div class="prize-tier-percent">40%</div>
+                        <div class="prize-tier-desc">1 lucky winner takes the biggest share</div>
+                    </div>
+                    <div class="prize-tier-box runner">
+                        <div class="prize-tier-icon">🥈</div>
+                        <div class="prize-tier-name runner">Runner-ups</div>
+                        <div class="prize-tier-percent">30%</div>
+                        <div class="prize-tier-desc">Split equally among 4 runner-ups</div>
+                    </div>
+                    <div class="prize-tier-box lucky">
+                        <div class="prize-tier-icon">🎉</div>
+                        <div class="prize-tier-name lucky">Lucky Winners</div>
+                        <div class="prize-tier-percent">30%</div>
+                        <div class="prize-tier-desc">Split among remaining top 10%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="filters">
+        <div class="container">
+            <div class="filter-tabs">
+                <button class="filter-tab active">All<span class="count">4</span></button>
+                <button class="filter-tab">Daily<span class="count">1</span></button>
+                <button class="filter-tab">Weekly<span class="count">1</span></button>
+                <button class="filter-tab">Monthly<span class="count">2</span></button>
+                <button class="filter-tab">Ended</button>
+            </div>
+        </div>
+    </section>
+
+    <section class="raffles-section">
+        <div class="container">
+            <div class="raffles-grid">
+                <!-- Daily Raffle -->
+                <div class="raffle-card">
+                    <div class="raffle-card-header">
+                        <div class="raffle-card-title">
+                            <span class="raffle-card-icon">🎟️</span>
+                            <div>
+                                <div class="raffle-card-name">Daily Raffle</div>
+                                <div class="raffle-card-type">Draws every 24 hours</div>
+                            </div>
+                        </div>
+                        <span class="raffle-badge live">Live</span>
+                    </div>
+                    
+                    <div class="pool-section">
+                        <div class="pool-label">
+                            <span class="live-dot"></span>
+                            Current Prize Pool
+                        </div>
+                        <div class="pool-value">$2,375</div>
+                        <div class="pool-subtext">Pool grows with each entry</div>
+                    </div>
+                    
+                    <div class="current-stats">
+                        <div class="current-stat">
+                            <div class="current-stat-label">Entries</div>
+                            <div class="current-stat-value">500</div>
+                            <div class="current-stat-note">& counting</div>
+                        </div>
+                        <div class="current-stat">
+                            <div class="current-stat-label">Time Left</div>
+                            <div class="current-stat-value time">⏱ 6h 24m</div>
+                        </div>
+                    </div>
+                    
+                    <div class="odds-section">
+                        <div class="odds-label">Current Winners</div>
+                        <div class="odds-value">50 winners</div>
+                        <div class="odds-note">Top 10% • Updates as entries grow</div>
+                    </div>
+                    
+                    <div class="raffle-card-footer">
+                        <div class="entry-price">
+                            <span class="entry-price-label">Entry: </span>
+                            <span class="entry-price-value">$5 USDC</span>
+                        </div>
+                        <button class="raffle-card-btn">Enter</button>
+                    </div>
+                </div>
+
+                <!-- Weekly Raffle -->
+                <div class="raffle-card">
+                    <div class="raffle-card-header">
+                        <div class="raffle-card-title">
+                            <span class="raffle-card-icon">🎟️</span>
+                            <div>
+                                <div class="raffle-card-name">Weekly Raffle</div>
+                                <div class="raffle-card-type">Draws every Sunday</div>
+                            </div>
+                        </div>
+                        <span class="raffle-badge live">Live</span>
+                    </div>
+                    
+                    <div class="pool-section">
+                        <div class="pool-label">
+                            <span class="live-dot"></span>
+                            Current Prize Pool
+                        </div>
+                        <div class="pool-value">$19,000</div>
+                        <div class="pool-subtext">Pool grows with each entry</div>
+                    </div>
+                    
+                    <div class="current-stats">
+                        <div class="current-stat">
+                            <div class="current-stat-label">Entries</div>
+                            <div class="current-stat-value">2,000</div>
+                            <div class="current-stat-note">& counting</div>
+                        </div>
+                        <div class="current-stat">
+                            <div class="current-stat-label">Time Left</div>
+                            <div class="current-stat-value time">⏱ 2d 18h</div>
+                        </div>
+                    </div>
+                    
+                    <div class="odds-section">
+                        <div class="odds-label">Current Winners</div>
+                        <div class="odds-value">100 winners</div>
+                        <div class="odds-note">Top 10% • Max 100 winners</div>
+                    </div>
+                    
+                    <div class="raffle-card-footer">
+                        <div class="entry-price">
+                            <span class="entry-price-label">Entry: </span>
+                            <span class="entry-price-value">$10 USDC</span>
+                        </div>
+                        <button class="raffle-card-btn">Enter</button>
+                    </div>
+                </div>
+
+                <!-- Mega Raffle -->
+                <div class="raffle-card">
+                    <div class="raffle-card-header">
+                        <div class="raffle-card-title">
+                            <span class="raffle-card-icon">🎟️</span>
+                            <div>
+                                <div class="raffle-card-name">Mega Raffle</div>
+                                <div class="raffle-card-type">Monthly grand draw</div>
+                            </div>
+                        </div>
+                        <span class="raffle-badge live">Live</span>
+                    </div>
+                    
+                    <div class="pool-section">
+                        <div class="pool-label">
+                            <span class="live-dot"></span>
+                            Current Prize Pool
+                        </div>
+                        <div class="pool-value">$118,750</div>
+                        <div class="pool-subtext">Pool grows with each entry</div>
+                    </div>
+                    
+                    <div class="current-stats">
+                        <div class="current-stat">
+                            <div class="current-stat-label">Entries</div>
+                            <div class="current-stat-value">5,000</div>
+                            <div class="current-stat-note">& counting</div>
+                        </div>
+                        <div class="current-stat">
+                            <div class="current-stat-label">Time Left</div>
+                            <div class="current-stat-value time">⏱ 18d 2h</div>
+                        </div>
+                    </div>
+                    
+                    <div class="odds-section">
+                        <div class="odds-label">Current Winners</div>
+                        <div class="odds-value">100 winners</div>
+                        <div class="odds-note">Top 10% • Max 100 winners</div>
+                    </div>
+                    
+                    <div class="raffle-card-footer">
+                        <div class="entry-price">
+                            <span class="entry-price-label">Entry: </span>
+                            <span class="entry-price-value">$25 USDC</span>
+                        </div>
+                        <button class="raffle-card-btn">Enter</button>
+                    </div>
+                </div>
+
+                <!-- Flash Raffle - Ending Soon -->
+                <div class="raffle-card">
+                    <div class="raffle-card-header">
+                        <div class="raffle-card-title">
+                            <span class="raffle-card-icon">⚡</span>
+                            <div>
+                                <div class="raffle-card-name">Flash Raffle</div>
+                                <div class="raffle-card-type">Quick 6-hour draw</div>
+                            </div>
+                        </div>
+                        <span class="raffle-badge ending">Ending Soon</span>
+                    </div>
+                    
+                    <div class="pool-section">
+                        <div class="pool-label">
+                            <span class="live-dot"></span>
+                            Current Prize Pool
+                        </div>
+                        <div class="pool-value">$950</div>
+                        <div class="pool-subtext">Pool grows with each entry</div>
+                    </div>
+                    
+                    <div class="current-stats">
+                        <div class="current-stat">
+                            <div class="current-stat-label">Entries</div>
+                            <div class="current-stat-value">200</div>
+                            <div class="current-stat-note">& counting</div>
+                        </div>
+                        <div class="current-stat">
+                            <div class="current-stat-label">Time Left</div>
+                            <div class="current-stat-value time urgent">⏱ 47m</div>
+                        </div>
+                    </div>
+                    
+                    <div class="odds-section">
+                        <div class="odds-label">Current Winners</div>
+                        <div class="odds-value">20 winners</div>
+                        <div class="odds-note">Top 10% • Min 10 winners</div>
+                    </div>
+                    
+                    <div class="raffle-card-footer">
+                        <div class="entry-price">
+                            <span class="entry-price-label">Entry: </span>
+                            <span class="entry-price-value">$5 USDC</span>
+                        </div>
+                        <button class="raffle-card-btn">Enter</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="winners-section">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Verified Wins</div>
+                    <h2 class="section-title">Recent Raffle Winners</h2>
+                </div>
+                <a href="#" class="section-link">View All →</a>
+            </div>
+            <div class="winners-grid">
+                <div class="winner-item">
+                    <span class="winner-medal">🥇</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Daily Raffle</div>
+                        <div class="winner-meta"><span class="address">0x7a3F...9c2E</span> • 2h ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value grand">+$892</div>
+                        <div class="winner-tier">Grand Prize</div>
+                    </div>
+                </div>
+                <div class="winner-item">
+                    <span class="winner-medal">🥈</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Daily Raffle</div>
+                        <div class="winner-meta"><span class="address">0x4fA1...2e8C</span> • 2h ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value runner">+$167</div>
+                        <div class="winner-tier">Runner Up</div>
+                    </div>
+                </div>
+                <div class="winner-item">
+                    <span class="winner-medal">🎉</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Daily Raffle</div>
+                        <div class="winner-meta"><span class="address">0x2eB1...4f8A</span> • 2h ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value lucky">+$15</div>
+                        <div class="winner-tier">Lucky Winner</div>
+                    </div>
+                </div>
+                <div class="winner-item">
+                    <span class="winner-medal">🥇</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Weekly Raffle</div>
+                        <div class="winner-meta"><span class="address">0x9cD4...7b3F</span> • 3d ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value grand">+$7,120</div>
+                        <div class="winner-tier">Grand Prize</div>
+                    </div>
+                </div>
+                <div class="winner-item">
+                    <span class="winner-medal">🥈</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Weekly Raffle</div>
+                        <div class="winner-meta"><span class="address">0x8bE2...1a9D</span> • 3d ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value runner">+$1,335</div>
+                        <div class="winner-tier">Runner Up</div>
+                    </div>
+                </div>
+                <div class="winner-item">
+                    <span class="winner-medal">🥇</span>
+                    <div class="winner-info">
+                        <div class="winner-raffle">Mega Raffle</div>
+                        <div class="winner-meta"><span class="address">0x1cA3...5d7B</span> • 12d ago</div>
+                    </div>
+                    <div class="winner-amount">
+                        <div class="winner-amount-value grand">+$42,300</div>
+                        <div class="winner-tier">Grand Prize</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <div>
+                    <div class="section-label">Step by Step</div>
+                    <h2 class="section-title">How to Enter</h2>
+                </div>
+            </div>
+            <div class="hiw-grid">
+                <div class="hiw-item">
+                    <div class="hiw-num">1</div>
+                    <div class="hiw-title">Connect Wallet</div>
+                    <div class="hiw-desc">MetaMask or WalletConnect on Polygon network.</div>
+                </div>
+                <div class="hiw-item">
+                    <div class="hiw-num">2</div>
+                    <div class="hiw-title">Pick a Raffle</div>
+                    <div class="hiw-desc">Choose based on entry price, pool size, or timing.</div>
+                </div>
+                <div class="hiw-item">
+                    <div class="hiw-num">3</div>
+                    <div class="hiw-title">Buy Entries</div>
+                    <div class="hiw-desc">Pay with USDC. More entries = better odds to be in top 10%.</div>
+                </div>
+                <div class="hiw-item">
+                    <div class="hiw-num">4</div>
+                    <div class="hiw-title">Win & Verify</div>
+                    <div class="hiw-desc">Chainlink VRF selects winners. Instant payout. Verify on-chain.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">GitHub</a>
+                <a href="#">Docs</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 FairWin</div>
+        </div>
+    </footer>
+</body>
+</html>

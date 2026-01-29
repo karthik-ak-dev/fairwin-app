@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service | FairWin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg: #000; --bg-card: rgba(255,255,255,0.03); --accent: #00ff88; --text: #fff; --text-muted: #888; --border: rgba(255,255,255,0.08); }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; }
+        .container { max-width: 800px; margin: 0 auto; padding: 0 32px; }
+
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+        .nav .container { max-width: 1200px; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-links a:hover { color: white; }
+        .btn-nav { padding: 12px 24px; background: var(--accent); color: black; font-weight: 700; font-size: 13px; border-radius: 6px; text-decoration: none; text-transform: uppercase; }
+
+        .page-header { padding: 140px 0 40px; }
+        .page-header h1 { font-size: 38px; font-weight: 900; letter-spacing: -2px; margin-bottom: 14px; }
+        .page-header p { font-size: 15px; color: var(--text-muted); }
+
+        .content { padding-bottom: 56px; }
+        .content h2 { font-size: 22px; font-weight: 700; margin-top: 40px; margin-bottom: 14px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .content h2:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+        .content p { font-size: 15px; color: var(--text-muted); margin-bottom: 14px; }
+        .content ul { margin-left: 22px; margin-bottom: 14px; color: var(--text-muted); }
+        .content li { margin-bottom: 6px; font-size: 15px; }
+        .content strong { color: white; }
+
+        .footer { padding: 40px 0; border-top: 1px solid var(--border); }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 24px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="01-home.html" class="logo">FAIR<span>WIN</span></a>
+            <div class="nav-links">
+                <a href="01-home.html">Home</a>
+                <a href="02-raffle-hub.html">Raffle</a>
+                <a href="08-winners.html">Winners</a>
+                <a href="09-how-it-works.html">How It Works</a>
+                <a href="#" class="btn-nav">Connect Wallet</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>Terms of Service</h1>
+            <p>Last updated: January 28, 2026</p>
+        </div>
+
+        <div class="content">
+            <h2>1. Acceptance</h2>
+            <p>By using FairWin, you agree to these Terms. If you don't agree, don't use the Platform.</p>
+
+            <h2>2. Eligibility</h2>
+            <p>You must be 18+. FairWin isn't available where online games of chance are prohibited.</p>
+
+            <h2>3. How It Works</h2>
+            <ul>
+                <li>Connect your crypto wallet to participate</li>
+                <li>Buy entries with USDC on Polygon</li>
+                <li>Winners selected by Chainlink VRF</li>
+                <li>Prizes auto-distributed by smart contract</li>
+            </ul>
+
+            <h2>4. Non-Custodial</h2>
+            <p>FairWin <strong>never holds your funds</strong>. All transactions occur directly between your wallet and smart contracts.</p>
+
+            <h2>5. Fees</h2>
+            <p>10% platform fee deducted from prize pool. Winner receives 90%.</p>
+
+            <h2>6. No Guarantees</h2>
+            <p>No guarantee of winning. Only use funds you can afford to lose.</p>
+
+            <h2>7. Risks</h2>
+            <p>Blockchain carries risks: smart contract vulnerabilities, network issues, oracle failures, regulatory changes.</p>
+
+            <h2>8. Prohibited</h2>
+            <ul>
+                <li>Money laundering</li>
+                <li>Exploiting contracts</li>
+                <li>Using bots unfairly</li>
+                <li>Circumventing geo-restrictions</li>
+            </ul>
+
+            <h2>9. Liability</h2>
+            <p>FairWin provided "as is". We're not liable for losses from using the Platform.</p>
+
+            <h2>10. Contact</h2>
+            <p>legal@fairwin.io</p>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="11-terms.html">Terms</a>
+                <a href="12-privacy.html">Privacy</a>
+                <a href="09-how-it-works.html">Docs</a>
+            </div>
+            <div class="footer-copy">© 2026 FairWin</div>
+        </div>
+    </footer>
+</body>
+</html>

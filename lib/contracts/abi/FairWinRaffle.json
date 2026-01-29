@@ -1,0 +1,163 @@
+[
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_vrfCoordinator", "type": "address" },
+      { "internalType": "address", "name": "_usdc", "type": "address" },
+      { "internalType": "bytes32", "name": "_keyHash", "type": "bytes32" },
+      { "internalType": "uint64", "name": "_subscriptionId", "type": "uint64" }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_entryFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "_duration", "type": "uint256" },
+      { "internalType": "uint256", "name": "_maxEntriesPerUser", "type": "uint256" }
+    ],
+    "name": "createRaffle",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_raffleId", "type": "uint256" },
+      { "internalType": "uint256", "name": "_numEntries", "type": "uint256" }
+    ],
+    "name": "enterRaffle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_raffleId", "type": "uint256" }],
+    "name": "triggerDraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_amount", "type": "uint256" }],
+    "name": "withdrawFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_raffleId", "type": "uint256" }],
+    "name": "cancelRaffle",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "raffles",
+    "outputs": [
+      { "internalType": "uint256", "name": "id", "type": "uint256" },
+      { "internalType": "uint256", "name": "entryFee", "type": "uint256" },
+      { "internalType": "uint256", "name": "totalEntries", "type": "uint256" },
+      { "internalType": "uint256", "name": "prizePool", "type": "uint256" },
+      { "internalType": "uint256", "name": "startTime", "type": "uint256" },
+      { "internalType": "uint256", "name": "endTime", "type": "uint256" },
+      { "internalType": "uint256", "name": "maxEntriesPerUser", "type": "uint256" },
+      { "internalType": "address", "name": "winner", "type": "address" },
+      { "internalType": "bool", "name": "isActive", "type": "bool" },
+      { "internalType": "bool", "name": "isDrawn", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "raffleCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_raffleId", "type": "uint256" },
+      { "internalType": "address", "name": "_user", "type": "address" }
+    ],
+    "name": "getUserEntries",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "accumulatedFees",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "entryFee", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "endTime", "type": "uint256" }
+    ],
+    "name": "RaffleCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "participant", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "numEntries", "type": "uint256" }
+    ],
+    "name": "EntrySubmitted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "requestId", "type": "uint256" }
+    ],
+    "name": "DrawRequested",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+      { "indexed": true, "internalType": "address", "name": "winner", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "prize", "type": "uint256" }
+    ],
+    "name": "WinnerSelected",
+    "type": "event"
+  }
+]

@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Raffle - Results | FairWin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #000000;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(0,0,0,0.9); backdrop-filter: blur(20px); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover, .nav-links a.active { color: white; }
+        .btn-nav { padding: 12px 24px; background: var(--accent); color: black; font-weight: 700; font-size: 13px; border: none; border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PAGE HEADER */
+        .page-header { padding: 100px 0 32px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: white; }
+        
+        .raffle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .raffle-title-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .raffle-icon {
+            width: 72px;
+            height: 72px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        .raffle-title { font-size: 36px; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; }
+        .raffle-subtitle { font-size: 16px; color: var(--text-muted); }
+        
+        .raffle-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 24px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-badge.ended {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-muted);
+        }
+        .draw-date {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        
+        /* MAIN CONTENT */
+        .main-content {
+            padding: 40px 0;
+        }
+        .main-content .container {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 32px;
+        }
+        
+        /* LEFT COLUMN */
+        .results-column {}
+        
+        /* GRAND WINNER CARD */
+        .grand-winner-card {
+            background: linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(255,215,0,0.02) 100%);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .winner-crown {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+        .winner-label {
+            font-size: 14px;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+        }
+        .winner-address {
+            font-size: 24px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 16px;
+        }
+        .winner-amount {
+            font-size: 48px;
+            font-weight: 900;
+            color: var(--gold);
+            letter-spacing: -2px;
+            margin-bottom: 8px;
+        }
+        .winner-amount-label {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .verify-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: rgba(255,215,0,0.15);
+            border: 1px solid rgba(255,215,0,0.3);
+            border-radius: 8px;
+            color: var(--gold);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+        .verify-btn:hover {
+            background: rgba(255,215,0,0.25);
+        }
+        
+        /* FINAL POOL STATS */
+        .final-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .final-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        .final-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .final-stat-value.accent { color: var(--accent); }
+        .final-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        /* ALL WINNERS LIST */
+        .winners-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .winners-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .winners-tier {
+            margin-bottom: 24px;
+        }
+        .winners-tier:last-child { margin-bottom: 0; }
+        .winners-tier-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .tier-icon { font-size: 20px; }
+        .tier-name { font-size: 14px; font-weight: 700; }
+        .tier-name.grand { color: var(--gold); }
+        .tier-name.runner { color: var(--silver); }
+        .tier-name.lucky { color: var(--accent); }
+        .tier-prize {
+            margin-left: auto;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .tier-prize.grand { color: var(--gold); }
+        .tier-prize.runner { color: var(--silver); }
+        .tier-prize.lucky { color: var(--accent); }
+        
+        .winner-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .winner-row:last-child { border-bottom: none; }
+        .winner-row-address {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+        }
+        .winner-row-you {
+            font-size: 10px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+            padding: 2px 6px;
+            background: rgba(0,255,136,0.15);
+            border-radius: 4px;
+        }
+        .winner-row-amount {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .show-all-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.2s;
+        }
+        .show-all-btn:hover {
+            border-color: white;
+            color: white;
+        }
+        
+        /* RIGHT COLUMN - YOUR RESULT */
+        .result-column {}
+        
+        .your-result-card {
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+            position: sticky;
+            top: 100px;
+        }
+        
+        /* Won State */
+        .your-result-card.won {
+            background: linear-gradient(135deg, rgba(0,255,136,0.15) 0%, rgba(0,255,136,0.02) 100%);
+            border: 1px solid rgba(0,255,136,0.3);
+        }
+        .result-icon { font-size: 56px; margin-bottom: 16px; }
+        .result-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .your-result-card.won .result-title { color: var(--accent); }
+        .result-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .result-prize {
+            font-size: 40px;
+            font-weight: 900;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .result-tier {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        .result-entries {
+            padding: 16px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+        .result-entries-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .result-entries-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .result-verify-btn {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: black;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }
+        .result-action-btn {
+            width: 100%;
+            padding: 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .result-action-btn:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        /* Lost State */
+        .your-result-card.lost {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+        }
+        .your-result-card.lost .result-title { color: white; }
+        
+        /* VERIFICATION SECTION */
+        .verification-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+        .section-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 24px;
+        }
+        .verification-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        .verification-item {
+            padding: 24px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+        .verification-item-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .verification-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        .verification-item-link {
+            color: var(--accent);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .verification-item-link:hover { text-decoration: underline; }
+        
+        /* NEXT RAFFLE CTA */
+        .next-raffle-section {
+            padding: 40px 0;
+            border-top: 1px solid var(--border);
+        }
+        .next-raffle-card {
+            background: linear-gradient(135deg, rgba(0,255,136,0.08) 0%, rgba(0,255,136,0.02) 100%);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 16px;
+            padding: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .next-raffle-info {}
+        .next-raffle-label {
+            font-size: 12px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+        }
+        .next-raffle-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .next-raffle-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+        .next-raffle-stats {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        .next-raffle-stat {
+            text-align: center;
+        }
+        .next-raffle-stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+        .next-raffle-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .next-raffle-btn {
+            padding: 16px 32px;
+            background: var(--accent);
+            color: black;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="index.html" class="logo">FAIR<span>WIN</span></a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="raffle.html" class="active">Raffle</a>
+                <a href="#">Winners</a>
+                <button class="btn-nav">Connect</button>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="index.html">Home</a>
+                <span>→</span>
+                <a href="raffle.html">Raffle</a>
+                <span>→</span>
+                <span>Daily Raffle #142</span>
+            </div>
+            
+            <div class="raffle-header">
+                <div class="raffle-title-section">
+                    <div class="raffle-icon">🎟️</div>
+                    <div>
+                        <h1 class="raffle-title">Daily Raffle #142</h1>
+                        <p class="raffle-subtitle">Draw completed • 50 winners selected</p>
+                    </div>
+                </div>
+                <div class="raffle-status">
+                    <div class="status-badge ended">Ended</div>
+                    <div class="draw-date">Drawn Jan 28, 2026 at 10:00 UTC</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <!-- Left Column - Results -->
+            <div class="results-column">
+                <div class="grand-winner-card">
+                    <div class="winner-crown">🏆</div>
+                    <div class="winner-label">Grand Prize Winner</div>
+                    <div class="winner-address">0x7a3F...9c2E</div>
+                    <div class="winner-amount">$950</div>
+                    <div class="winner-amount-label">40% of prize pool</div>
+                    <a href="#" class="verify-btn">
+                        <span>🔗</span>
+                        Verify on Polygonscan
+                    </a>
+                </div>
+                
+                <div class="final-stats">
+                    <div class="final-stat">
+                        <div class="final-stat-value accent">$2,375</div>
+                        <div class="final-stat-label">Total Pool</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-value">500</div>
+                        <div class="final-stat-label">Total Entries</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-value">234</div>
+                        <div class="final-stat-label">Participants</div>
+                    </div>
+                    <div class="final-stat">
+                        <div class="final-stat-value accent">50</div>
+                        <div class="final-stat-label">Winners</div>
+                    </div>
+                </div>
+                
+                <div class="winners-card">
+                    <h3 class="winners-card-title">🏆 All Winners</h3>
+                    
+                    <div class="winners-tier">
+                        <div class="winners-tier-header">
+                            <span class="tier-icon">🥇</span>
+                            <span class="tier-name grand">Grand Prize</span>
+                            <span class="tier-prize grand">$950</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x7a3F...9c2E</span>
+                            <span class="winner-row-amount">$950</span>
+                        </div>
+                    </div>
+                    
+                    <div class="winners-tier">
+                        <div class="winners-tier-header">
+                            <span class="tier-icon">🥈</span>
+                            <span class="tier-name runner">Runner-ups (4)</span>
+                            <span class="tier-prize runner">$178 each</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x4fA1...2e8C</span>
+                            <span class="winner-row-amount">$178</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x2eB1...4f8A</span>
+                            <span class="winner-row-amount">$178</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x9cD4...7b3F</span>
+                            <span class="winner-row-amount">$178</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x8bE2...1a9D <span class="winner-row-you">You</span></span>
+                            <span class="winner-row-amount">$178</span>
+                        </div>
+                    </div>
+                    
+                    <div class="winners-tier">
+                        <div class="winners-tier-header">
+                            <span class="tier-icon">🎉</span>
+                            <span class="tier-name lucky">Lucky Winners (45)</span>
+                            <span class="tier-prize lucky">$16 each</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x1cA3...5d7B</span>
+                            <span class="winner-row-amount">$16</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x6dF2...8e4A</span>
+                            <span class="winner-row-amount">$16</span>
+                        </div>
+                        <div class="winner-row">
+                            <span class="winner-row-address">0x3bC9...1f6D</span>
+                            <span class="winner-row-amount">$16</span>
+                        </div>
+                        <button class="show-all-btn">Show All 45 Winners</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column - Your Result -->
+            <div class="result-column">
+                <!-- WON STATE -->
+                <div class="your-result-card won">
+                    <div class="result-icon">🎉</div>
+                    <h3 class="result-title">You Won!</h3>
+                    <p class="result-subtitle">Congratulations! You're a winner!</p>
+                    
+                    <div class="result-prize">+$178</div>
+                    <div class="result-tier">🥈 Runner-up Prize</div>
+                    
+                    <div class="result-entries">
+                        <div class="result-entries-label">Your Entries</div>
+                        <div class="result-entries-value">5 entries</div>
+                    </div>
+                    
+                    <button class="result-verify-btn">Verify Your Win</button>
+                    <button class="result-action-btn">Enter Next Raffle →</button>
+                </div>
+                
+                <!-- LOST STATE (hidden, for reference)
+                <div class="your-result-card lost">
+                    <div class="result-icon">😔</div>
+                    <h3 class="result-title">Not This Time</h3>
+                    <p class="result-subtitle">Better luck in the next raffle!</p>
+                    
+                    <div class="result-entries">
+                        <div class="result-entries-label">Your Entries</div>
+                        <div class="result-entries-value">2 entries</div>
+                    </div>
+                    
+                    <button class="result-verify-btn" style="background: white; color: black;">View Draw Results</button>
+                    <button class="result-action-btn">Enter Next Raffle →</button>
+                </div>
+                -->
+            </div>
+        </div>
+    </main>
+
+    <section class="verification-section">
+        <div class="container">
+            <h3 class="section-title">🔗 Verify This Draw</h3>
+            <div class="verification-grid">
+                <div class="verification-item">
+                    <div class="verification-item-label">VRF Request ID</div>
+                    <div class="verification-item-value">0x8f3a9b2c1d4e5f6789012345678901234567890123456789</div>
+                    <a href="#" class="verification-item-link">View on Polygonscan →</a>
+                </div>
+                <div class="verification-item">
+                    <div class="verification-item-label">Random Number</div>
+                    <div class="verification-item-value">847293746582910374658291037465829103746582</div>
+                    <a href="#" class="verification-item-link">How VRF works →</a>
+                </div>
+                <div class="verification-item">
+                    <div class="verification-item-label">Draw Transaction</div>
+                    <div class="verification-item-value">0x1234567890abcdef1234567890abcdef12345678</div>
+                    <a href="#" class="verification-item-link">View Transaction →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="next-raffle-section">
+        <div class="container">
+            <div class="next-raffle-card">
+                <div class="next-raffle-info">
+                    <div class="next-raffle-label">Next Daily Raffle</div>
+                    <h3 class="next-raffle-title">Daily Raffle #143</h3>
+                    <p class="next-raffle-desc">Now live • Draws in 23h 42m</p>
+                </div>
+                <div class="next-raffle-stats">
+                    <div class="next-raffle-stat">
+                        <div class="next-raffle-stat-value">$1,250</div>
+                        <div class="next-raffle-stat-label">Current Pool</div>
+                    </div>
+                    <div class="next-raffle-stat">
+                        <div class="next-raffle-stat-value">245</div>
+                        <div class="next-raffle-stat-label">Entries</div>
+                    </div>
+                    <button class="next-raffle-btn">Enter Now</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">GitHub</a>
+                <a href="#">Docs</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 FairWin</div>
+        </div>
+    </footer>
+</body>
+</html>
