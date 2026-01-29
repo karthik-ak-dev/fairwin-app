@@ -81,7 +81,7 @@ export default function PastWinners({ raffleId }: PastWinnersProps) {
       <div className="space-y-3">
         {winners.slice(0, 5).map((winner: WinnerItem, i: number) => (
           <div
-            key={`${winner.walletAddress}-${winner.rank}`}
+            key={winner.winnerId}
             className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-b-0"
           >
             <div className="flex items-center gap-3">

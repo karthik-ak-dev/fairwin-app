@@ -122,7 +122,7 @@ export default function WinnersPage() {
             <div className="rounded-xl border border-white/[0.08] overflow-hidden">
               {filtered.map((w, i) => (
                 <div
-                  key={`${w.raffleId}-${w.rank}-${i}`}
+                  key={w.winnerId}
                   className="flex items-center justify-between px-6 py-4 border-b border-white/[0.05] last:border-b-0 hover:bg-white/[0.02] transition-colors"
                 >
                   <div className="flex items-center gap-4 min-w-0">
@@ -170,7 +170,7 @@ export default function WinnersPage() {
               {topWinners.map((w, i) => {
                 const config = PODIUM_CONFIG[i] ?? PODIUM_CONFIG[2];
                 return (
-                  <div key={`${w.raffleId}-${w.rank}`} className={`rounded-xl border p-6 text-center ${config.color}`}>
+                  <div key={w.winnerId} className={`rounded-xl border p-6 text-center ${config.color}`}>
                     <span className="text-4xl block mb-3">{config.emoji}</span>
                     <p className={`text-3xl font-bold ${config.textColor} mb-1`}>
                       {formatUSDC(w.prize)}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
-import { payoutRepo } from '@/lib/db/repositories';
+import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
 import { serverError } from '@/lib/api/validate';
 
 export async function GET(request: NextRequest) {
@@ -16,9 +16,12 @@ export async function GET(request: NextRequest) {
 
     let result;
     if (raffleId) {
-      result = await payoutRepo.getByRaffle(raffleId, limit, startKey);
+      // Query winners by raffle
+      const items = await winnerRepo.getByRaffle(raffleId, limit, startKey);
+      result = { items, lastKey: undefined };
     } else if (status) {
-      result = await payoutRepo.getByStatus(status, limit, startKey);
+      // Query payouts by status
+      result = await payoutRepo.getByStatus(status as any, limit, startKey);
     } else {
       // Default: show pending payouts
       result = await payoutRepo.getByStatus('pending', limit, startKey);
@@ -28,7 +31,12 @@ export async function GET(request: NextRequest) {
       ? Buffer.from(JSON.stringify(result.lastKey)).toString('base64')
       : undefined;
 
-    return NextResponse.json({ payouts: result.items, nextCursor });
+    return NextResponse.json({
+      items: raffleId ? result.items : result.items,
+      winners: raffleId ? result.items : undefined,
+      payouts: !raffleId ? result.items : undefined,
+      nextCursor
+    });
   } catch (error) {
     console.error('GET /api/admin/winners error:', error);
     return serverError();

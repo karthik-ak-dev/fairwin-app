@@ -62,7 +62,7 @@ export default function RealtimeWins() {
             ) : (
               winners.map((win, i) => (
                 <WinFeedItem
-                  key={`${win.raffleId}-${win.rank}-${i}`}
+                  key={win.winnerId}
                   wallet={formatAddress(win.walletAddress)}
                   raffle={`Raffle #${win.raffleId.slice(0, 8)}`}
                   prize={formatUSDC(win.prize)}

@@ -22,7 +22,7 @@ export function useAdminStats() {
         revenueThisMonth: 0,
         activeRaffles: apiStats.totalRaffles ?? 0,
         totalEntries: apiStats.totalEntries,
-        totalPlayers: apiStats.totalPlayers,
+        totalUsers: apiStats.totalUsers,
         avgPoolSize: 0,
       }
     : undefined;

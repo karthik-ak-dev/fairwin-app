@@ -53,8 +53,8 @@ export default function DashboardStats({ stats, isLoading }: DashboardStatsProps
       highlight: false,
     },
     {
-      label: 'Total Players',
-      value: formatNumber(stats.totalPlayers),
+      label: 'Total Users',
+      value: formatNumber(stats.totalUsers),
       sub: `Avg pool: ${formatUSDC(stats.avgPoolSize)}`,
       highlight: false,
     },

@@ -14,8 +14,8 @@ export interface AdminStats {
   activeRaffles: number;
   /** Total entries sold across all raffles */
   totalEntries: number;
-  /** Total unique players (wallets) */
-  totalPlayers: number;
+  /** Total unique users (wallets) */
+  totalUsers: number;
   /** Average prize pool size across completed raffles */
   avgPoolSize: number;
 }

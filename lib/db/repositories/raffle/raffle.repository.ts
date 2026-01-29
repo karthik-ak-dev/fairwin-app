@@ -1,6 +1,6 @@
 import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { db, TABLE } from '../client';
-import type { RaffleItem, CreateRaffleInput } from '../models';
+import { db, TABLE } from '../../client';
+import type { RaffleItem, CreateRaffleInput } from '../../models';
 
 export class RaffleRepository {
   async getById(raffleId: string): Promise<RaffleItem | null> {

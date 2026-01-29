@@ -1,6 +1,6 @@
 import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
-import { db, TABLE } from '../client';
-import type { UserItem } from '../models';
+import { db, TABLE } from '../../client';
+import type { UserItem } from '../../models';
 
 export class UserRepository {
   async getByAddress(walletAddress: string): Promise<UserItem | null> {

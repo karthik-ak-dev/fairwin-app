@@ -1,20 +1,42 @@
-export { RaffleRepository } from './raffle.repository';
-export { EntryRepository } from './entry.repository';
-export { UserRepository } from './user.repository';
-export { WinnerRepository } from './winner.repository';
-export { PayoutRepository } from './payout.repository';
-export { StatsRepository } from './stats.repository';
+/**
+ * Database repositories - organized by shared vs game-specific
+ *
+ * Exports both:
+ * 1. Repository classes (for direct instantiation)
+ * 2. Singleton instances (for convenience)
+ */
 
-import { RaffleRepository } from './raffle.repository';
-import { EntryRepository } from './entry.repository';
-import { UserRepository } from './user.repository';
-import { WinnerRepository } from './winner.repository';
-import { PayoutRepository } from './payout.repository';
-import { StatsRepository } from './stats.repository';
+// ============================================
+// Re-export classes
+// ============================================
 
+// Shared repositories
+export { UserRepository } from './shared/user.repository';
+export { StatsRepository } from './shared/platform-stats.repository';
+
+// Raffle game repositories
+export { RaffleRepository } from './raffle/raffle.repository';
+export { EntryRepository } from './raffle/entry.repository';
+export { WinnerRepository } from './raffle/winner.repository';
+export { PayoutRepository } from './raffle/payout.repository';
+
+// ============================================
+// Singleton instances (convenience exports)
+// ============================================
+
+import { UserRepository } from './shared/user.repository';
+import { StatsRepository } from './shared/platform-stats.repository';
+import { RaffleRepository } from './raffle/raffle.repository';
+import { EntryRepository } from './raffle/entry.repository';
+import { WinnerRepository } from './raffle/winner.repository';
+import { PayoutRepository } from './raffle/payout.repository';
+
+// Shared repository instances
+export const userRepo = new UserRepository();
+export const statsRepo = new StatsRepository();
+
+// Raffle game repository instances
 export const raffleRepo = new RaffleRepository();
 export const entryRepo = new EntryRepository();
-export const userRepo = new UserRepository();
 export const winnerRepo = new WinnerRepository();
 export const payoutRepo = new PayoutRepository();
-export const statsRepo = new StatsRepository();

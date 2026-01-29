@@ -170,7 +170,7 @@ export default function VerifyPage() {
                 </h3>
                 <div className="space-y-3">
                   {winners.map((w, i) => (
-                    <div key={`${w.raffleId}-${w.rank}`} className="flex items-center justify-between py-2 border-t border-white/[0.05]">
+                    <div key={w.winnerId} className="flex items-center justify-between py-2 border-t border-white/[0.05]">
                       <div className="flex items-center gap-2">
                         <span>{i === 0 ? '🥇' : i === 1 ? '🥈' : '🍀'}</span>
                         <span className="text-sm font-mono text-white">{formatAddress(w.walletAddress)}</span>
@@ -241,7 +241,7 @@ export default function VerifyPage() {
             <div className="space-y-0">
               {recentWinners.map((w, i) => (
                 <div
-                  key={`${w.raffleId}-${w.rank}-${i}`}
+                  key={w.winnerId}
                   className="flex items-center justify-between py-4 border-t border-white/[0.08] last:border-b gap-4"
                 >
                   <div className="flex items-center gap-3 min-w-0">

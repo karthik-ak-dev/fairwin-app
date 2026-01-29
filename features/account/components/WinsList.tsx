@@ -111,7 +111,7 @@ export default function WinsList({ address }: WinsListProps) {
             const tierStyle = TIER_STYLES[win.tier] || TIER_STYLES['lucky'];
             return (
               <div
-                key={`${win.raffleId}-${win.rank}`}
+                key={win.winnerId}
                 className={`rounded-xl border ${tierStyle.border} ${tierStyle.bg} p-5 transition-colors hover:bg-white/[0.04]`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

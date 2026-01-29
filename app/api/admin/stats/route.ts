@@ -8,7 +8,7 @@ const ZERO_STATS = {
   totalPaidOut: 0,
   totalRaffles: 0,
   totalEntries: 0,
-  totalPlayers: 0,
+  totalUsers: 0,
   totalWinners: 0,
 };
 
@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
             revenueThisMonth: 0, // Computed downstream if needed
             activeRaffles: 0,    // Computed downstream if needed
             totalEntries: stats.totalEntries,
-            totalPlayers: stats.totalPlayers,
+            totalUsers: stats.totalUsers,
             totalPaidOut: stats.totalPaidOut,
             avgPoolSize: 0,      // Computed downstream if needed
             payoutStats: {
