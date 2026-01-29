@@ -1,0 +1,399 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  FairWin Production Environment - DynamoDB Tables
+  Deploys shared tables (Users, PlatformStats) and Raffle game-specific tables for production with enhanced settings
+
+Parameters:
+  Environment:
+    Type: String
+    Default: Prod
+    AllowedValues:
+      - Prod
+    Description: Environment name
+
+Resources:
+  # ===========================================
+  # SHARED TABLES (Cross-Game)
+  # ===========================================
+
+  # Users Table - Shared across all games
+  # Primary Key: walletAddress (HASH)
+  # ===========================================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-Users'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: walletAddress
+          AttributeType: S
+      KeySchema:
+        - AttributeName: walletAddress
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: TableType
+          Value: Shared
+        - Key: CriticalData
+          Value: 'true'
+
+  # ===========================================
+  # PlatformStats Table - Shared across all games
+  # Primary Key: statId (HASH)
+  # Single-record table for global stats
+  # ===========================================
+  PlatformStatsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-PlatformStats'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: statId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: statId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: TableType
+          Value: Shared
+
+  # ===========================================
+  # RAFFLE GAME TABLES
+  # ===========================================
+
+  # Raffle-Raffles Table
+  # Primary Key: raffleId (HASH)
+  # GSI1: status-endTime-index (status as HASH, endTime as RANGE)
+  # GSI2: type-createdAt-index (type as HASH, createdAt as RANGE)
+  # ===========================================
+  RaffleRafflesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-Raffle-Raffles'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: raffleId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: endTime
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: raffleId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: status-endTime-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: endTime
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: type-createdAt-index
+          KeySchema:
+            - AttributeName: type
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: GameType
+          Value: Raffle
+        - Key: CriticalData
+          Value: 'true'
+
+  # ===========================================
+  # Raffle-Entries Table
+  # Primary Key: entryId (HASH)
+  # GSI1: raffleId-createdAt-index (raffleId as HASH, createdAt as RANGE)
+  # GSI2: walletAddress-createdAt-index (walletAddress as HASH, createdAt as RANGE)
+  # ===========================================
+  RaffleEntriesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-Raffle-Entries'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: entryId
+          AttributeType: S
+        - AttributeName: raffleId
+          AttributeType: S
+        - AttributeName: walletAddress
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: entryId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: raffleId-createdAt-index
+          KeySchema:
+            - AttributeName: raffleId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: walletAddress-createdAt-index
+          KeySchema:
+            - AttributeName: walletAddress
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: GameType
+          Value: Raffle
+        - Key: CriticalData
+          Value: 'true'
+
+  # ===========================================
+  # Raffle-Winners Table
+  # Primary Key: winnerId (HASH)
+  # GSI1: raffleId-createdAt-index (raffleId as HASH, createdAt as RANGE)
+  # GSI2: walletAddress-createdAt-index (walletAddress as HASH, createdAt as RANGE)
+  # ===========================================
+  RaffleWinnersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-Raffle-Winners'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: winnerId
+          AttributeType: S
+        - AttributeName: raffleId
+          AttributeType: S
+        - AttributeName: walletAddress
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: winnerId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: raffleId-createdAt-index
+          KeySchema:
+            - AttributeName: raffleId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: walletAddress-createdAt-index
+          KeySchema:
+            - AttributeName: walletAddress
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: GameType
+          Value: Raffle
+        - Key: CriticalData
+          Value: 'true'
+
+  # ===========================================
+  # Raffle-Payouts Table
+  # Primary Key: payoutId (HASH)
+  # GSI1: winnerId-createdAt-index (winnerId as HASH, createdAt as RANGE)
+  # GSI2: status-createdAt-index (status as HASH, createdAt as RANGE)
+  # ===========================================
+  RafflePayoutsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub 'FairWin-${Environment}-Raffle-Payouts'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: payoutId
+          AttributeType: S
+        - AttributeName: winnerId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: payoutId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: winnerId-createdAt-index
+          KeySchema:
+            - AttributeName: winnerId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: status-createdAt-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: FairWin
+        - Key: ManagedBy
+          Value: CloudFormation
+        - Key: GameType
+          Value: Raffle
+        - Key: CriticalData
+          Value: 'true'
+
+Outputs:
+  # Shared Tables
+  UsersTableName:
+    Description: Users table name (Shared)
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub '${Environment}-UsersTableName'
+
+  UsersTableArn:
+    Description: Users table ARN (Shared)
+    Value: !GetAtt UsersTable.Arn
+    Export:
+      Name: !Sub '${Environment}-UsersTableArn'
+
+  PlatformStatsTableName:
+    Description: PlatformStats table name (Shared)
+    Value: !Ref PlatformStatsTable
+    Export:
+      Name: !Sub '${Environment}-PlatformStatsTableName'
+
+  PlatformStatsTableArn:
+    Description: PlatformStats table ARN (Shared)
+    Value: !GetAtt PlatformStatsTable.Arn
+    Export:
+      Name: !Sub '${Environment}-PlatformStatsTableArn'
+
+  # Raffle Game Tables
+  RaffleRafflesTableName:
+    Description: Raffle-Raffles table name
+    Value: !Ref RaffleRafflesTable
+    Export:
+      Name: !Sub '${Environment}-RaffleRafflesTableName'
+
+  RaffleRafflesTableArn:
+    Description: Raffle-Raffles table ARN
+    Value: !GetAtt RaffleRafflesTable.Arn
+    Export:
+      Name: !Sub '${Environment}-RaffleRafflesTableArn'
+
+  RaffleEntriesTableName:
+    Description: Raffle-Entries table name
+    Value: !Ref RaffleEntriesTable
+    Export:
+      Name: !Sub '${Environment}-RaffleEntriesTableName'
+
+  RaffleEntriesTableArn:
+    Description: Raffle-Entries table ARN
+    Value: !GetAtt RaffleEntriesTable.Arn
+    Export:
+      Name: !Sub '${Environment}-RaffleEntriesTableArn'
+
+  RaffleWinnersTableName:
+    Description: Raffle-Winners table name
+    Value: !Ref RaffleWinnersTable
+    Export:
+      Name: !Sub '${Environment}-RaffleWinnersTableName'
+
+  RaffleWinnersTableArn:
+    Description: Raffle-Winners table ARN
+    Value: !GetAtt RaffleWinnersTable.Arn
+    Export:
+      Name: !Sub '${Environment}-RaffleWinnersTableArn'
+
+  RafflePayoutsTableName:
+    Description: Raffle-Payouts table name
+    Value: !Ref RafflePayoutsTable
+    Export:
+      Name: !Sub '${Environment}-RafflePayoutsTableName'
+
+  RafflePayoutsTableArn:
+    Description: Raffle-Payouts table ARN
+    Value: !GetAtt RafflePayoutsTable.Arn
+    Export:
+      Name: !Sub '${Environment}-RafflePayoutsTableArn'

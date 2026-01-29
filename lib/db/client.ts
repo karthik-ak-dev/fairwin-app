@@ -17,9 +17,10 @@ export const db = DynamoDBDocumentClient.from(client, {
 });
 
 export const TABLE = {
-  RAFFLES: process.env.DYNAMODB_TABLE_RAFFLES || 'fairwin-raffles',
-  ENTRIES: process.env.DYNAMODB_TABLE_ENTRIES || 'fairwin-entries',
-  USERS: process.env.DYNAMODB_TABLE_USERS || 'fairwin-users',
-  WINNERS: process.env.DYNAMODB_TABLE_WINNERS || 'fairwin-winners',
-  PAYOUTS: process.env.DYNAMODB_TABLE_PAYOUTS || 'fairwin-payouts',
+  RAFFLES: process.env.DYNAMODB_TABLE_RAFFLES || 'FairWin-Stage-Raffle-Raffles',
+  ENTRIES: process.env.DYNAMODB_TABLE_ENTRIES || 'FairWin-Stage-Raffle-Entries',
+  USERS: process.env.DYNAMODB_TABLE_USERS || 'FairWin-Stage-Users',
+  WINNERS: process.env.DYNAMODB_TABLE_WINNERS || 'FairWin-Stage-Raffle-Winners',
+  PAYOUTS: process.env.DYNAMODB_TABLE_PAYOUTS || 'FairWin-Stage-Raffle-Payouts',
+  PLATFORM_STATS: process.env.DYNAMODB_TABLE_PLATFORM_STATS || 'FairWin-Stage-PlatformStats',
 } as const;
