@@ -308,3 +308,36 @@ export async function getTokenBalances(
     );
   }
 }
+
+/**
+ * Get total protocol fees collected by contract
+ *
+ * This is the source of truth for fee tracking.
+ * Contract tracks all fees collected from raffles in `protocolFeesCollected` variable.
+ * Admin can withdraw these fees using withdrawFees() function.
+ *
+ * @param chainId Chain ID
+ * @returns Total fees collected in USDC (smallest unit, 6 decimals)
+ * @throws ContractReadError if read fails
+ */
+export async function getProtocolFeesCollected(
+  chainId: number = 137
+): Promise<bigint> {
+  try {
+    const client = getClient(chainId);
+    const addresses = getContractAddress(chainId);
+
+    const fees = await client.readContract({
+      address: addresses.raffle,
+      abi: FAIRWIN_ABI,
+      functionName: 'protocolFeesCollected',
+    });
+
+    return fees as bigint;
+  } catch (error) {
+    throw new ContractReadError(
+      'protocolFeesCollected',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+  }
+}

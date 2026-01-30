@@ -1,14 +1,14 @@
 /**
  * Raffle Draw Service
  *
- * Handles winner selection and draw process.
- * Integrates with Chainlink VRF for provably fair randomness.
+ * Handles draw initiation only.
+ * Winner selection happens ON-CHAIN via Chainlink VRF.
+ * Winners are recorded via blockchain event listeners.
  */
 
 import { raffleRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
-import type { EntryItem } from '@/lib/db/models';
 import type { DrawInitiationResult, WinnerSelectionResult } from '../types';
 import {
   RaffleNotFoundError,
@@ -32,8 +32,10 @@ import * as contractWriteService from '../blockchain/contract-write.service';
  * Flow:
  * 1. Validate raffle state
  * 2. Change status to 'drawing'
- * 3. Request randomness from Chainlink VRF
+ * 3. Request randomness from Chainlink VRF (triggers on-chain draw)
  * 4. Store VRF request ID
+ * 5. Contract will select winners and pay them automatically
+ * 6. Event listener will record winners when WinnersSelected event fires
  *
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws RaffleNotDrawableError if raffle cannot be drawn
@@ -70,7 +72,13 @@ export async function initiateRaffleDraw(
     status: 'drawing',
   });
 
-  // Request randomness from VRF
+  // Request randomness from VRF (triggers on-chain draw)
+  // Contract will:
+  // 1. Request random number from Chainlink VRF
+  // 2. Receive callback with random number
+  // 3. Select winners ON-CHAIN
+  // 4. Pay winners AUTOMATICALLY
+  // 5. Emit WinnersSelected event
   const vrfResult = await contractWriteService.requestRandomness(
     raffleId,
     chainId
@@ -90,75 +98,16 @@ export async function initiateRaffleDraw(
 }
 
 /**
- * Select winners using weighted random selection
+ * Get winners for a completed raffle
  *
- * Called by VRF callback after randomness is fulfilled
+ * This function READS winners that were already selected by the contract
+ * and recorded by the event listener. It does NOT select winners.
  *
- * Algorithm:
- * - Creates pool where each entry is represented numEntries times
- * - Uses random seed to select winners from pool
- * - Ensures no duplicate winners
+ * @deprecated This is now just a data retrieval function.
+ * Winners are selected on-chain and recorded via WinnersSelected event listener.
  */
-export function selectWinnersWeighted(
-  entries: EntryItem[],
-  randomSeed: bigint,
-  winnerCount: number
-): string[] {
-  // Build weighted pool
-  const pool: string[] = [];
-  const participantMap = new Map<string, number>();
-
-  // Aggregate entries by wallet
-  for (const entry of entries) {
-    const current = participantMap.get(entry.walletAddress) || 0;
-    participantMap.set(entry.walletAddress, current + entry.numEntries);
-  }
-
-  // Add to pool based on entry count (weight)
-  const participantEntries = Array.from(participantMap.entries());
-  for (const [wallet, count] of participantEntries) {
-    for (let i = 0; i < count; i++) {
-      pool.push(wallet);
-    }
-  }
-
-  const winners: string[] = [];
-  const selectedWallets = new Set<string>();
-  let currentSeed = randomSeed;
-
-  // Select winners
-  for (let i = 0; i < winnerCount && pool.length > 0; i++) {
-    // Get index using current seed
-    const index = Number(currentSeed % BigInt(pool.length));
-    const winner = pool[index];
-
-    // Ensure no duplicates
-    if (!selectedWallets.has(winner)) {
-      winners.push(winner);
-      selectedWallets.add(winner);
-
-      // Remove all entries for this winner from pool
-      const filteredPool = pool.filter((addr) => addr !== winner);
-      pool.length = 0;
-      pool.push(...filteredPool);
-    }
-
-    // Update seed for next iteration
-    currentSeed = BigInt('0x' + hashBigInt(currentSeed));
-  }
-
-  return winners;
-}
-
-/**
- * Complete raffle draw with random number
- *
- * Called after VRF fulfillment with the random number
- * Selects winners and updates raffle status to completed
- */
-export async function completeRaffleDraw(
-  raffleId: string,
-  randomNumber: bigint
+export async function getDrawResults(
+  raffleId: string
 ): Promise<WinnerSelectionResult> {
   // Get raffle
   const raffle = await raffleRepo.getById(raffleId);
@@ -166,56 +115,13 @@ export async function completeRaffleDraw(
     throw new RaffleNotFoundError(raffleId);
   }
 
-  // Get all entries
-  const entriesResult = await entryRepo.getByRaffle(raffleId);
-  const entries = entriesResult.items;
-
-  // Select winners using weighted algorithm
-  const winnerAddresses = selectWinnersWeighted(entries, randomNumber, raffle.winnerCount);
-
-  // Calculate prize amounts (equal distribution for now)
-  const prizePerWinner = Math.floor(raffle.winnerPayout / raffle.winnerCount);
-
-  // Create winner records
-  const winners = await Promise.all(
-    winnerAddresses.map((walletAddress, index) =>
-      winnerRepo.create({
-        raffleId,
-        walletAddress,
-        ticketNumber: 0, // Will be set by actual ticket selection logic
-        totalTickets: raffle.totalEntries,
-        prize: prizePerWinner,
-        tier: `${index + 1}${index === 0 ? 'st' : index === 1 ? 'nd' : index === 2 ? 'rd' : 'th'}`,
-      })
-    )
-  );
-
-  // Update raffle status to completed
-  await raffleRepo.update(raffleId, {
-    status: 'completed',
-    vrfRandomWord: randomNumber.toString(),
-  });
+  // Get winners that were recorded by event listener
+  const winnersResult = await winnerRepo.getByRaffle(raffleId);
 
   return {
     raffleId,
-    winners,
-    randomNumber: randomNumber.toString(),
+    winners: winnersResult.items,
+    randomNumber: raffle.vrfRandomWord || '0',
     timestamp: Date.now(),
   };
-
-}
-/**
- * Simple hash function for bigint
- */
-function hashBigInt(value: bigint): string {
-  const str = value.toString();
-  let hash = 0;
-
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-
-  return Math.abs(hash).toString(16).padStart(16, '0');
 }

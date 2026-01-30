@@ -292,3 +292,128 @@ export async function getUSDCAllowance(
     );
   }
 }
+
+/**
+ * Withdraw accumulated protocol fees
+ *
+ * Admin-only operation to withdraw platform revenue.
+ * Contract tracks fees in `protocolFeesCollected` variable.
+ * Admin can only withdraw fees - active raffle pools are untouchable.
+ *
+ * Contract function: withdrawFees(address recipient, uint256 amount)
+ *
+ * @param recipient Address to receive the fees
+ * @param amount Amount to withdraw in USDC (smallest unit, 6 decimals)
+ * @param chainId Chain ID
+ * @returns Transaction hash and amount withdrawn
+ * @throws ContractWriteError if withdrawal fails
+ *
+ * @example
+ * // Withdraw $100 USDC
+ * await withdrawProtocolFees('0x...', BigInt(100_000_000), 137)
+ */
+export async function withdrawProtocolFees(
+  recipient: string,
+  amount: bigint,
+  chainId: number = 137
+): Promise<{ transactionHash: string; amount: bigint }> {
+  try {
+    const { publicClient, walletClient } = await getClients(chainId);
+    const addresses = getContractAddress(chainId);
+
+    if (!walletClient) {
+      throw new ContractWriteError('withdrawFees', 'No wallet connected');
+    }
+
+    // Execute withdrawal
+    const hash = await walletClient.writeContract({
+      address: addresses.raffle,
+      abi: FAIRWIN_ABI,
+      functionName: 'withdrawFees',
+      args: [recipient as `0x${string}`, amount],
+    });
+
+    // Wait for receipt
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status !== 'success') {
+      throw new ContractWriteError('withdrawFees', 'Transaction failed');
+    }
+
+    // Parse FeesWithdrawn event to get actual amount
+    const feeLog = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: FAIRWIN_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'FeesWithdrawn';
+      } catch {
+        return false;
+      }
+    });
+
+    let withdrawnAmount = amount; // Default to requested amount
+    if (feeLog) {
+      const decoded = decodeEventLog({
+        abi: FAIRWIN_ABI,
+        data: feeLog.data,
+        topics: feeLog.topics,
+      });
+      withdrawnAmount = (decoded.args as any).amount || amount;
+    }
+
+    return {
+      transactionHash: hash,
+      amount: withdrawnAmount,
+    };
+  } catch (error) {
+    throw new ContractWriteError('withdrawFees', (error as Error).message);
+  }
+}
+
+/**
+ * Emergency cancel a raffle stuck in Drawing state
+ *
+ * ONLY works if 12+ hours passed since draw triggered.
+ * This is for cases when Chainlink VRF fails to respond.
+ * Admin cannot abuse this - 12-hour delay prevents cancelling just because they don't like winners.
+ *
+ * Contract function: emergencyCancelDrawing(uint256 raffleId)
+ *
+ * @param raffleId Raffle ID to cancel
+ * @param chainId Chain ID
+ * @returns Transaction hash
+ * @throws ContractWriteError if cancellation fails or 12-hour delay not met
+ */
+export async function emergencyCancelDrawing(
+  raffleId: string,
+  chainId: number = 137
+): Promise<{ transactionHash: string }> {
+  try {
+    const { publicClient, walletClient } = await getClients(chainId);
+    const addresses = getContractAddress(chainId);
+
+    if (!walletClient) {
+      throw new ContractWriteError('emergencyCancelDrawing', 'No wallet connected');
+    }
+
+    const hash = await walletClient.writeContract({
+      address: addresses.raffle,
+      abi: FAIRWIN_ABI,
+      functionName: 'emergencyCancelDrawing',
+      args: [BigInt(raffleId)],
+    });
+
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status !== 'success') {
+      throw new ContractWriteError('emergencyCancelDrawing', 'Transaction failed');
+    }
+
+    return { transactionHash: hash };
+  } catch (error) {
+    throw new ContractWriteError('emergencyCancelDrawing', (error as Error).message);
+  }
+}

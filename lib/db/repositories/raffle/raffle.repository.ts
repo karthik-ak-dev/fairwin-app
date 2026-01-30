@@ -96,4 +96,26 @@ export class RaffleRepository {
       },
     }));
   }
+
+  /**
+   * Get active raffles with contractState='active'
+   * Used for syncing protocol fees from blockchain
+   *
+   * @param limit Maximum number of items to return
+   * @param startKey Pagination cursor
+   * @returns Active raffles
+   */
+  async getActiveRaffles(limit = 50, startKey?: Record<string, any>) {
+    const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
+      TableName: TABLE.RAFFLES,
+      IndexName: 'status-endTime-index',
+      KeyConditionExpression: '#status = :status',
+      ExpressionAttributeNames: { '#status': 'status' },
+      ExpressionAttributeValues: { ':status': 'active' },
+      Limit: limit,
+      ScanIndexForward: false,
+      ...(startKey && { ExclusiveStartKey: startKey }),
+    }));
+    return { items: (Items as RaffleItem[]) ?? [], lastKey: LastEvaluatedKey };
+  }
 }

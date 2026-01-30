@@ -44,15 +44,47 @@ export interface RaffleItem {
   type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
 
   /**
-   * Current lifecycle status of the raffle
-   * Determines which operations are allowed
+   * On-chain contract state - SOURCE OF TRUTH
+   * Must exactly match contract's RaffleState enum (FairWinRaffle.sol:515-520)
    *
-   * - scheduled: Created but not started yet
-   * - active: Accepting entries (current time >= startTime)
-   * - ending: Less than 5 min until endTime (urgency indicator)
-   * - drawing: VRF request sent, awaiting random number
-   * - completed: Draw complete, winners selected
-   * - cancelled: Admin cancelled, refunds processed
+   * - Active: Raffle accepting entries on-chain
+   * - Drawing: VRF requested, awaiting random number callback
+   * - Completed: Winners selected and paid automatically by contract
+   * - Cancelled: Raffle cancelled on-chain, refunds available
+   *
+   * This field is synced from blockchain events and is READ-ONLY from our perspective.
+   * We do NOT set this field - we READ it from contract and record what we see.
+   *
+   * Contract State Transitions (on-chain only):
+   * - Active → Drawing (when triggerDraw() called)
+   * - Drawing → Completed (when VRF callback succeeds and winners paid)
+   * - Active → Cancelled (when cancelRaffle() called)
+   * - Drawing → Cancelled (emergency cancel after 12h if VRF fails)
+   */
+  contractState?: 'active' | 'drawing' | 'completed' | 'cancelled';
+
+  /**
+   * Backend display status - COMPUTED FIELD
+   * Used for frontend display logic and admin pre-scheduling.
+   * This is a COMPUTED value, not stored directly.
+   *
+   * - scheduled: Backend-only state (before raffle created on-chain)
+   * - active: Contract is Active + current time >= startTime
+   * - ending: Contract is Active + less than 5min until endTime (urgency UI)
+   * - drawing: Contract is Drawing (VRF in progress)
+   * - completed: Contract is Completed (winners paid)
+   * - cancelled: Contract is Cancelled (refunds available)
+   *
+   * Display Status Computation Logic:
+   * ```typescript
+   * if (!contractState) return 'scheduled'; // Not on-chain yet
+   * if (contractState === 'active' && Date.now() < startTime) return 'scheduled';
+   * if (contractState === 'active' && endTime - Date.now() < 5min) return 'ending';
+   * return contractState; // 'active', 'drawing', 'completed', or 'cancelled'
+   * ```
+   *
+   * DEPRECATED: This field will be removed once all code uses contractState + computation.
+   * For now, kept for backward compatibility during migration.
    */
   status: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 
