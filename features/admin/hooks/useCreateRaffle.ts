@@ -36,6 +36,7 @@ export function useCreateRaffle() {
         description: input.description ?? '',
         entryPrice: input.entryPrice,
         maxEntriesPerUser: input.maxEntriesPerUser,
+        winnerCount: input.winnersCount ?? 1,
         startTime,
         endTime,
       };

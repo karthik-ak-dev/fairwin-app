@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!isAdmin(request)) return unauthorized();
 
     const body = await request.json();
-    const { type, title, description, entryPrice, maxEntriesPerUser, startTime, endTime } = body;
+    const { type, title, description, entryPrice, maxEntriesPerUser, winnerCount, startTime, endTime } = body;
 
     if (!type || !title || !entryPrice || !startTime || !endTime) {
       return badRequest('Missing required fields: type, title, entryPrice, startTime, endTime');
@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       description: description || '',
       entryPrice,
       maxEntriesPerUser: maxEntriesPerUser || 50,
+      winnerCount: winnerCount || 1,
       startTime,
       endTime,
     });

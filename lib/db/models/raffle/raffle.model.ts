@@ -125,6 +125,14 @@ export interface RaffleItem {
   winnerPayout: number;
 
   /**
+   * Number of winners to be selected for this raffle
+   * Determines how many participants will receive prizes
+   * Common values: 1 (single winner), 3 (top 3), 5 (top 5), 10 (top 10)
+   * Prize pool is divided among winners according to prize distribution
+   */
+  winnerCount: number;
+
+  /**
    * ISO 8601 timestamp when raffle starts accepting entries
    * Example: "2025-01-29T00:00:00.000Z"
    * Status changes from scheduled → active at this time
@@ -214,5 +222,5 @@ export interface RaffleItem {
  */
 export type CreateRaffleInput = Pick<
   RaffleItem,
-  'type' | 'title' | 'description' | 'entryPrice' | 'maxEntriesPerUser' | 'startTime' | 'endTime'
+  'type' | 'title' | 'description' | 'entryPrice' | 'maxEntriesPerUser' | 'winnerCount' | 'startTime' | 'endTime'
 >;
