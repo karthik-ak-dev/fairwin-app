@@ -330,13 +330,13 @@ export async function getProtocolFeesCollected(
     const fees = await client.readContract({
       address: addresses.raffle,
       abi: FAIRWIN_ABI,
-      functionName: 'protocolFeesCollected',
+      functionName: 'accumulatedFees', // NOTE: ABI function name is accumulatedFees
     });
 
     return fees as bigint;
   } catch (error) {
     throw new ContractReadError(
-      'protocolFeesCollected',
+      'accumulatedFees',
       error instanceof Error ? error.message : 'Unknown error'
     );
   }

@@ -49,11 +49,14 @@ export async function getAdminWalletBalances(chainId: number = 137): Promise<Wal
 /**
  * Check if admin wallet has sufficient balance for operation
  *
- * @param operation Type of operation ('payout' | 'vrf' | 'gas')
+ * NOTE: Admin wallet does NOT pay winners - contract does automatically.
+ * Admin wallet only needs MATIC (gas) and LINK (VRF).
+ *
+ * @param operation Type of operation ('vrf' | 'gas')
  * @param amount Optional amount for operation (in token's smallest unit)
  */
 export async function validateSufficientBalance(
-  operation: 'payout' | 'vrf' | 'gas',
+  operation: 'vrf' | 'gas',
   amount?: bigint,
   chainId: number = 137
 ): Promise<boolean> {
@@ -62,15 +65,10 @@ export async function validateSufficientBalance(
   }
 
   // Determine which token to check based on operation
-  let token: 'matic' | 'usdc' | 'link';
+  let token: 'matic' | 'link';
   let requiredAmount: bigint;
 
   switch (operation) {
-    case 'payout':
-      token = 'usdc';
-      requiredAmount = amount || BigInt(0);
-      break;
-
     case 'vrf':
       token = 'link';
       // Typical VRF request costs ~0.1 LINK (18 decimals)
@@ -123,14 +121,9 @@ export async function getLowBalanceWarnings(chainId: number = 137): Promise<stri
     );
   }
 
-  // Check USDC balance (for payouts)
-  // Recommended: at least $100 USDC
-  const minUsdc = BigInt(100000000); // $100 USDC (6 decimals)
-  if (balances.balances.usdc < minUsdc) {
-    warnings.push(
-      `Low USDC balance: $${balances.formatted.usdc} USDC (recommended: $100+ for payouts)`
-    );
-  }
+  // NOTE: USDC balance check REMOVED
+  // Admin wallet does NOT pay winners - contract pays them automatically
+  // Winners are paid from raffle prize pools held in the contract
 
   return warnings;
 }

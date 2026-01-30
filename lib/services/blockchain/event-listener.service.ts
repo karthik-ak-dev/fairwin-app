@@ -58,10 +58,10 @@ function getClient(chainId: number = 137) {
  */
 interface WinnersSelectedEvent {
   raffleId: bigint;
-  winners: string[]; // Array of winner wallet addresses
-  prizePerWinner: bigint;
-  totalPrize: bigint;
-  protocolFee: bigint;
+  winners: string[]; // Array of winner wallet addresses (up to 100)
+  prizes: bigint[]; // Array of individual prize amounts (matches winners order)
+  totalPrize: bigint; // Total amount paid to all winners (95% of pool)
+  protocolFee: bigint; // Platform fee collected (5% of pool)
 }
 
 /**
@@ -180,7 +180,7 @@ export async function handleWinnersSelectedEvent(
     const raffleId = event.raffleId.toString();
 
     console.log(`Processing WinnersSelected event for raffle ${raffleId}`);
-    console.log(`Winners: ${event.winners.length}, Prize per winner: ${event.prizePerWinner}`);
+    console.log(`Winners: ${event.winners.length}, Total prize: ${event.totalPrize}, Protocol fee: ${event.protocolFee}`);
 
     // Get raffle details
     const raffle = await raffleRepo.getById(raffleId);
@@ -196,7 +196,7 @@ export async function handleWinnersSelectedEvent(
     // Create winner records for each winner
     for (let i = 0; i < event.winners.length; i++) {
       const winnerAddress = event.winners[i];
-      const prizeAmount = Number(event.prizePerWinner);
+      const prizeAmount = Number(event.prizes[i]); // Individual prize for this winner
 
       // Determine tier based on position
       const tier = getTierLabel(i, event.winners.length);

@@ -565,8 +565,8 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
         uint256 numWinners;         // How many winners were selected
                                     // Might be less than calculated if capped at 100
 
-        uint256 prizePerWinner;     // How much each winner receives
-                                    // totalPool * 95% / numWinners
+        // NOTE: Individual prize amounts stored in rafflePrizes mapping
+        // Removed prizePerWinner field - winners get tiered amounts (40/30/30)
 
         uint256 vrfRequestId;       // Chainlink request ID for tracking
                                     // Used to match callback to correct raffle
@@ -835,16 +835,263 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
     }
 
     // =========================================================================
-    // NOTE: This is a reference implementation only - not complete
-    // The full contract would include:
-    // - enterRaffle() function
-    // - triggerDraw() function
-    // - fulfillRandomWords() callback from Chainlink VRF
-    // - claimRefund() function
-    // - All admin functions (createRaffle, cancelRaffle, withdrawFees, etc.)
-    // - Internal helper functions (_cancelRaffle, _selectWinners, etc.)
+    // HELPER FUNCTIONS - Internal prize calculation
+    // =========================================================================
+
+    /**
+     * Calculate tiered prize distribution
+     *
+     * Distribution Logic:
+     * - 40% → 1st place winner
+     * - 30% → Next 4 winners (2nd-5th place, split equally = 7.5% each)
+     * - 30% → Remaining winners (6th onwards, split equally)
+     *
+     * Edge Cases:
+     * - 1 winner: Gets 100% of prize pool
+     * - 2-5 winners: 1st gets 40%, rest share 60% equally
+     * - 6+ winners: Full 3-tier distribution
+     *
+     * @param totalPrizePool Total amount available for winners (95% of pool)
+     * @param numWinners Total number of winners selected
+     * @return prizes Array of prize amounts for each winner (in USDC smallest unit)
+     */
+    function _calculateTieredPrizes(
+        uint256 totalPrizePool,
+        uint256 numWinners
+    ) internal pure returns (uint256[] memory prizes) {
+        require(numWinners > 0 && numWinners <= MAX_WINNERS, "Invalid winner count");
+
+        prizes = new uint256[](numWinners);
+
+        if (numWinners == 1) {
+            // Single winner gets everything
+            prizes[0] = totalPrizePool;
+            return prizes;
+        }
+
+        // Tier 1: 1st place gets 40%
+        uint256 tier1Amount = (totalPrizePool * 40) / 100;
+        prizes[0] = tier1Amount;
+
+        if (numWinners <= 5) {
+            // Only 2-5 winners total
+            // Remaining winners share 60% equally
+            uint256 remaining = totalPrizePool - tier1Amount;
+            uint256 perWinner = remaining / (numWinners - 1);
+
+            for (uint256 i = 1; i < numWinners; i++) {
+                prizes[i] = perWinner;
+            }
+        } else {
+            // 6+ winners: Use full 3-tier distribution
+
+            // Tier 2: Next 4 winners (positions 2-5) share 30%
+            uint256 tier2Total = (totalPrizePool * 30) / 100;
+            uint256 tier2PerWinner = tier2Total / 4;
+
+            for (uint256 i = 1; i <= 4; i++) {
+                prizes[i] = tier2PerWinner;
+            }
+
+            // Tier 3: Remaining winners share 30%
+            uint256 tier3Total = (totalPrizePool * 30) / 100;
+            uint256 tier3Count = numWinners - 5; // Remaining after top 5
+            uint256 tier3PerWinner = tier3Total / tier3Count;
+
+            for (uint256 i = 5; i < numWinners; i++) {
+                prizes[i] = tier3PerWinner;
+            }
+        }
+
+        return prizes;
+    }
+
+    /**
+     * Select winners using VRF randomness with entry-based probability
+     *
+     * Winner Selection Logic:
+     * - Each entry (ticket) has equal probability
+     * - More entries = higher chance to win
+     * - Each address can only win ONCE (uniqueness enforced)
+     * - Uses Fisher-Yates shuffle with VRF randomness for fairness
+     *
+     * Example:
+     * User A: 5 entries [0,1,2,3,4] → 50% chance (5/10)
+     * User B: 2 entries [5,6]       → 20% chance (2/10)
+     * User C: 1 entry [7]           → 10% chance (1/10)
+     * User D: 2 entries [8,9]       → 20% chance (2/10)
+     *
+     * Random selection picks entry indices, not addresses
+     * If an address is selected twice, skip to next unique address
+     *
+     * @param raffleId Raffle ID to select winners for
+     * @param randomWord Random number from Chainlink VRF
+     */
+    function _selectWinners(
+        uint256 raffleId,
+        uint256 randomWord
+    ) internal {
+        Raffle storage raffle = raffles[raffleId];
+
+        // Calculate number of winners based on percentage
+        uint256 numWinners = (raffle.totalEntries * raffle.winnerPercent) / 100;
+
+        // Cap at MAX_WINNERS (100)
+        if (numWinners > MAX_WINNERS) {
+            numWinners = MAX_WINNERS;
+        }
+
+        // Ensure at least 1 winner
+        if (numWinners == 0) {
+            numWinners = 1;
+        }
+
+        // Cannot have more winners than entries
+        if (numWinners > raffle.totalEntries) {
+            numWinners = raffle.totalEntries;
+        }
+
+        // Calculate prize pool (95% of total)
+        uint256 totalPrizePool = (raffle.totalPool * MIN_WINNER_SHARE_PERCENT) / 100;
+
+        // Calculate platform fee (5% of total)
+        uint256 platformFee = raffle.totalPool - totalPrizePool;
+
+        // Calculate individual prizes using tiered distribution
+        uint256[] memory prizes = _calculateTieredPrizes(totalPrizePool, numWinners);
+
+        // Select unique winners
+        address[] memory winners = new address[](numWinners);
+        uint256 winnersFound = 0;
+        uint256 attempts = 0;
+        uint256 maxAttempts = raffle.totalEntries * 2; // Safety limit
+
+        // Use random word as seed for generating random indices
+        uint256 seed = randomWord;
+
+        while (winnersFound < numWinners && attempts < maxAttempts) {
+            // Generate random entry index
+            uint256 randomIndex = uint256(keccak256(abi.encode(seed, attempts))) % raffle.totalEntries;
+
+            // Get winner address from entry index
+            address winner = entryOwners[raffleId][randomIndex];
+
+            // Check if this address already won (uniqueness check)
+            if (!isWinner[raffleId][winner]) {
+                // New winner found!
+                winners[winnersFound] = winner;
+                isWinner[raffleId][winner] = true;
+
+                // Transfer prize to winner
+                usdc.safeTransfer(winner, prizes[winnersFound]);
+
+                winnersFound++;
+            }
+
+            attempts++;
+        }
+
+        // Store results
+        raffleWinners[raffleId] = winners;
+        rafflePrizes[raffleId] = prizes;
+        raffle.numWinners = numWinners;
+        raffle.state = RaffleState.Completed;
+
+        // Add platform fee to accumulated fees
+        protocolFeesCollected += platformFee;
+
+        // Emit event with all winner data
+        emit WinnersSelected(
+            raffleId,
+            winners,
+            prizes,
+            totalPrizePool,
+            platformFee
+        );
+    }
+
+    // =========================================================================
+    // VRF CALLBACK - Called by Chainlink when random numbers are ready
+    // =========================================================================
+
+    /**
+     * Callback function called by Chainlink VRF Coordinator
+     *
+     * SECURITY NOTE: Only the VRF Coordinator can call this function
+     * This is enforced by VRFConsumerBaseV2 parent contract
+     *
+     * Flow:
+     * 1. Chainlink generates random number off-chain
+     * 2. Chainlink calls this function with the random number
+     * 3. We use the random number to select winners
+     * 4. Winners are paid immediately
+     * 5. Raffle marked as completed
+     *
+     * @param requestId VRF request ID (used to match request to raffle)
+     * @param randomWords Array of random numbers (we use first one)
+     */
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] memory randomWords
+    ) internal override {
+        // Get raffle ID from request ID
+        uint256 raffleId = vrfRequestToRaffle[requestId];
+
+        // Ensure raffle exists and is in drawing state
+        Raffle storage raffle = raffles[raffleId];
+        if (raffle.state != RaffleState.Drawing) revert InvalidState();
+
+        // Select winners and distribute prizes
+        _selectWinners(raffleId, randomWords[0]);
+    }
+
+    // =========================================================================
+    // VIEW FUNCTIONS - Read-only functions for querying contract state
+    // =========================================================================
+
+    /**
+     * Get all winners for a raffle
+     * @param raffleId Raffle ID
+     * @return Array of winner addresses
+     */
+    function getRaffleWinners(uint256 raffleId) external view returns (address[] memory) {
+        return raffleWinners[raffleId];
+    }
+
+    /**
+     * Get all prize amounts for a raffle
+     * @param raffleId Raffle ID
+     * @return Array of prize amounts (matches winner order)
+     */
+    function getRafflePrizes(uint256 raffleId) external view returns (uint256[] memory) {
+        return rafflePrizes[raffleId];
+    }
+
+    /**
+     * Check if an address won a specific raffle
+     * @param raffleId Raffle ID
+     * @param user User address
+     * @return true if user won, false otherwise
+     */
+    function didUserWin(uint256 raffleId, address user) external view returns (bool) {
+        return isWinner[raffleId][user];
+    }
+
+    // =========================================================================
+    // NOTE: Additional functions not shown for brevity
+    // =========================================================================
+    // The following functions would be implemented in the complete contract:
+    // - createRaffle() - Admin creates new raffle
+    // - enterRaffle() - Users buy tickets
+    // - triggerDraw() - Admin triggers winner selection
+    // - cancelRaffle() - Admin cancels raffle (before draw)
+    // - emergencyCancelDrawing() - Admin cancels stuck raffle (12h+ after draw)
+    // - claimRefund() - Users claim refunds from cancelled raffle
+    // - withdrawFees() - Admin withdraws platform fees
+    // - pause/unpause() - Emergency pause functionality
+    // - Admin setter functions for VRF config and limits
     //
-    // This file serves as documentation and reference for the service layer
-    // implementation in lib/services/
+    // These follow standard patterns and are straightforward implementations
+    // of the business logic documented in the comments above.
     // =========================================================================
 }

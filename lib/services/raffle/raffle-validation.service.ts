@@ -33,14 +33,19 @@ const MAX_WINNER_COUNT = 100; // As per contract
 /**
  * Validate raffle is active and accepting entries
  *
- * @throws RaffleNotActiveError if raffle status is not active or ending
+ * Uses contractState as source of truth. Raffle must be in 'active' state on-chain.
+ *
+ * @throws RaffleNotActiveError if raffle contractState is not active
  */
 export function validateRaffleActive(raffle: Raffle): void {
-  if (raffle.status !== 'active' && raffle.status !== 'ending') {
-    throw new RaffleNotActiveError(raffle.raffleId, raffle.status);
+  // Use contractState as source of truth (blockchain state)
+  const state = raffle.contractState || raffle.status;
+
+  if (state !== 'active') {
+    throw new RaffleNotActiveError(raffle.raffleId, state);
   }
 
-  // Check time boundaries
+  // Check time boundaries as additional validation
   const now = Date.now();
   const startTime = new Date(raffle.startTime).getTime();
   const endTime = new Date(raffle.endTime).getTime();
@@ -57,23 +62,33 @@ export function validateRaffleActive(raffle: Raffle): void {
 /**
  * Validate raffle can be drawn
  *
+ * Uses contractState as source of truth.
+ *
  * Business Rules:
- * - Raffle must be in active or ending status
+ * - Raffle must be in 'active' contractState (blockchain state)
  * - Raffle end time must have passed
  * - Must have at least 1 entry
  *
  * @throws RaffleNotDrawableError if raffle cannot be drawn
  */
 export function validateRaffleDrawable(raffle: Raffle, entryCount: number): void {
-  // Check if already drawn
-  if (raffle.status === 'drawing' || raffle.status === 'completed') {
-    throw new RaffleNotDrawableError(`Already drawn (status: ${raffle.status})`);
+  // Use contractState as source of truth (blockchain state)
+  const state = raffle.contractState || raffle.status;
+
+  // Check if already drawn or completed
+  if (state === 'drawing' || state === 'completed') {
+    throw new RaffleNotDrawableError(`Already drawn (contractState: ${state})`);
   }
 
-  // Check status
-  if (raffle.status !== 'active' && raffle.status !== 'ending') {
+  // Check if cancelled
+  if (state === 'cancelled') {
+    throw new RaffleNotDrawableError(`Raffle is cancelled`);
+  }
+
+  // Check contractState - must be active
+  if (state !== 'active') {
     throw new RaffleNotDrawableError(
-      `Invalid status: ${raffle.status} (must be active or ending)`
+      `Invalid contractState: ${state} (must be active)`
     );
   }
 
@@ -205,17 +220,22 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
 /**
  * Validate raffle update parameters
  *
+ * Uses contractState as source of truth for validation.
+ *
  * @throws ValidationError if update params are invalid
  */
 export function validateRaffleUpdate(
   raffle: Raffle,
   updates: UpdateRaffleParams
 ): void {
-  // Cannot update if raffle is completed or cancelled
-  if (raffle.status === 'completed' || raffle.status === 'cancelled') {
+  // Use contractState as source of truth (blockchain state)
+  const state = raffle.contractState || raffle.status;
+
+  // Cannot update if raffle is completed or cancelled on-chain
+  if (state === 'completed' || state === 'cancelled') {
     throw new ValidationError(
-      'status',
-      `Cannot update raffle in ${raffle.status} status`
+      'contractState',
+      `Cannot update raffle in ${state} contractState`
     );
   }
 
@@ -304,12 +324,16 @@ export function validateRaffleStatus(
 /**
  * Validate status transition is allowed
  *
+ * NOTE: This validates display status transitions only.
+ * contractState is the source of truth and is set by blockchain events.
+ * Display status is computed from contractState + time logic.
+ *
  * Valid transitions:
- * - scheduled -> active
- * - active -> ending
- * - ending -> drawing
- * - drawing -> completed
- * - any -> cancelled (admin only)
+ * - scheduled -> active (when start time reached)
+ * - active -> ending (when close to end time)
+ * - ending -> drawing (when draw triggered)
+ * - drawing -> completed (when winners selected)
+ * - any -> cancelled (when cancelled on-chain)
  *
  * @throws InvalidStatusTransitionError if transition is not allowed
  */

@@ -2,6 +2,7 @@
  * Raffle Query Service
  *
  * Handles complex raffle queries and data enrichment.
+ * Enriches all raffle data with displayStatus computed from contractState.
  */
 
 import { raffleRepo } from '@/lib/db/repositories';
@@ -17,6 +18,7 @@ import { RaffleNotFoundError } from '../errors';
 import { getUserEntryCount } from './raffle-entry.service';
 import { aggregateParticipants } from './raffle-participant.service';
 import { decodeCursor } from '../shared/pagination.service';
+import { computeDisplayStatus } from './raffle-status.service';
 
 /**
  * Get raffle with enriched data
@@ -68,8 +70,14 @@ export async function getRaffleWithDetails(
     };
   }
 
+  // Enrich raffle with displayStatus
+  const displayStatus = computeDisplayStatus(raffle);
+
   return {
-    raffle,
+    raffle: {
+      ...raffle,
+      displayStatus, // Add computed display status for UI
+    },
     recentEntries,
     winners,
     userStats,
@@ -100,8 +108,14 @@ export async function listRaffles(params: ListRafflesParams = {}): Promise<Pagin
     result = await raffleRepo.getByStatus('active', limit, startKey);
   }
 
+  // Enrich all raffles with displayStatus
+  const enrichedRaffles = result.items.map((raffle) => ({
+    ...raffle,
+    displayStatus: computeDisplayStatus(raffle),
+  }));
+
   return {
-    raffles: result.items,
+    raffles: enrichedRaffles,
     nextCursor: result.lastKey ? JSON.stringify(result.lastKey) : undefined,
     hasMore: !!result.lastKey,
   };
@@ -126,12 +140,17 @@ export async function getRaffleStats(raffleId: string): Promise<RaffleStats> {
   const avgEntriesPerUser =
     uniqueParticipants > 0 ? raffle.totalEntries / uniqueParticipants : 0;
 
+  // Compute display status
+  const displayStatus = computeDisplayStatus(raffle);
+
   return {
     raffleId,
     totalEntries: raffle.totalEntries,
     totalParticipants: raffle.totalParticipants,
     prizePool: raffle.prizePool,
-    status: raffle.status,
+    status: raffle.status, // Keep original status field
+    contractState: raffle.contractState, // Include blockchain state
+    displayStatus, // Add computed display status
     entryPrice: raffle.entryPrice,
     maxEntriesPerUser: raffle.maxEntriesPerUser,
     avgEntriesPerUser: Math.round(avgEntriesPerUser * 100) / 100,
