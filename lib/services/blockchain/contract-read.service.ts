@@ -9,6 +9,7 @@
 
 import { getPublicClient } from '@wagmi/core';
 import { polygon, polygonAmoy } from 'viem/chains';
+import { decodeEventLog } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, getContractAddress } from '@/lib/blockchain';
 import type {
@@ -98,21 +99,24 @@ export async function verifyEntryOnChain(
       return { valid: false };
     }
 
-    // Parse logs for EntryCreated event
-    // Event signature: EntryCreated(string raffleId, address user, uint256 numEntries)
-    const entryCreatedTopic = '0x...'; // TODO: Add actual event signature hash
-
-    const entryLog = receipt.logs.find(
-      (log) => log.topics[0] === entryCreatedTopic && log.address === addresses.raffle
-    );
+    // Parse logs for EntrySubmitted event
+    const entryLog = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: FAIRWIN_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'EntrySubmitted' && log.address.toLowerCase() === addresses.raffle.toLowerCase();
+      } catch {
+        return false;
+      }
+    });
 
     if (!entryLog) {
       return { valid: false };
     }
 
-    // Decode log data
-    // TODO: Properly decode event data using ABI
-    // For now, return basic validation
     return {
       valid: true,
       blockNumber: Number(receipt.blockNumber),
@@ -180,8 +184,23 @@ export async function verifyPayoutTransaction(
       return { valid: false };
     }
 
-    // Parse logs for payout event or USDC transfer
-    // TODO: Properly parse payout event from logs
+    // Parse logs for WinnerSelected event (which includes prize payout)
+    const payoutLog = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: FAIRWIN_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'WinnerSelected';
+      } catch {
+        return false;
+      }
+    });
+
+    if (!payoutLog) {
+      return { valid: false };
+    }
 
     return {
       valid: true,
@@ -224,6 +243,67 @@ export async function getVRFRequestStatus(
   } catch (error) {
     throw new ContractReadError(
       'vrfRequests',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+  }
+}
+
+/**
+ * Get token balances for an address
+ *
+ * Reads MATIC, USDC, and LINK balances for the given address
+ *
+ * @throws ContractReadError if read fails
+ */
+export async function getTokenBalances(
+  address: string,
+  chainId: number = 137
+): Promise<{ matic: bigint; usdc: bigint; link: bigint }> {
+  try {
+    const client = getClient(chainId);
+    const addresses = getContractAddress(chainId);
+
+    // ERC20 balanceOf ABI
+    const erc20BalanceAbi = [
+      {
+        type: 'function',
+        name: 'balanceOf',
+        stateMutability: 'view',
+        inputs: [{ name: 'account', type: 'address' }],
+        outputs: [{ name: '', type: 'uint256' }],
+      },
+    ] as const;
+
+    // Fetch all balances in parallel
+    const [maticBalance, usdcBalance, linkBalance] = await Promise.all([
+      // Get MATIC balance (native token)
+      client.getBalance({ address: address as `0x${string}` }),
+
+      // Get USDC balance
+      client.readContract({
+        address: addresses.usdc,
+        abi: erc20BalanceAbi,
+        functionName: 'balanceOf',
+        args: [address as `0x${string}`],
+      }),
+
+      // Get LINK balance
+      client.readContract({
+        address: addresses.link,
+        abi: erc20BalanceAbi,
+        functionName: 'balanceOf',
+        args: [address as `0x${string}`],
+      }),
+    ]);
+
+    return {
+      matic: maticBalance,
+      usdc: usdcBalance as bigint,
+      link: linkBalance as bigint,
+    };
+  } catch (error) {
+    throw new ContractReadError(
+      'getTokenBalances',
       error instanceof Error ? error.message : 'Unknown error'
     );
   }

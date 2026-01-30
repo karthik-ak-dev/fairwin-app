@@ -9,6 +9,7 @@
 
 import { getWalletClient, getPublicClient } from '@wagmi/core';
 import { polygon, polygonAmoy } from 'viem/chains';
+import { decodeEventLog } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, ERC20_ABI, getContractAddress } from '@/lib/blockchain';
 import type {
@@ -72,17 +73,34 @@ export async function requestRandomness(
       throw new ContractWriteError('requestRandomWords', 'Transaction failed');
     }
 
-    // Parse logs for VRF request event
-    // Event: RandomWordsRequested(bytes32 requestId, string raffleId)
-    const vrfRequestTopic = '0x...'; // TODO: Add actual event signature
-
-    const vrfLog = receipt.logs.find(
-      (log) => log.topics[0] === vrfRequestTopic && log.address === addresses.raffle
-    );
+    // Parse logs for DrawRequested event
+    const vrfLog = receipt.logs.find((log) => {
+      try {
+        const decoded = decodeEventLog({
+          abi: FAIRWIN_ABI,
+          data: log.data,
+          topics: log.topics,
+        });
+        return decoded.eventName === 'DrawRequested';
+      } catch {
+        return false;
+      }
+    });
 
     // Decode request ID from log
-    // TODO: Properly decode event data
-    const requestId = vrfLog?.topics[1] || '0x0';
+    let requestId = '0x0';
+    if (vrfLog) {
+      try {
+        const decoded = decodeEventLog({
+          abi: FAIRWIN_ABI,
+          data: vrfLog.data,
+          topics: vrfLog.topics,
+        });
+        requestId = (decoded.args as any).requestId?.toString() || '0x0';
+      } catch {
+        // If decoding fails, use a default value
+      }
+    }
 
     return {
       requestId,

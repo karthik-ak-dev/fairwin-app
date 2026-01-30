@@ -40,16 +40,18 @@ export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '137', 10);
  * Maps chain ID to deployed contract addresses
  * Makes it easy to support multiple networks
  */
-export const CONTRACT_ADDRESSES: Record<number, { raffle: Address; usdc: Address }> = {
+export const CONTRACT_ADDRESSES: Record<number, { raffle: Address; usdc: Address; link: Address }> = {
   // Polygon Mainnet
   137: {
     raffle: FAIRWIN_RAFFLE_ADDRESS,
     usdc: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as Address, // Official USDC
+    link: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39' as Address, // Chainlink LINK on Polygon
   },
   // Polygon Amoy Testnet
   80002: {
     raffle: FAIRWIN_RAFFLE_ADDRESS,
     usdc: '0x41E94Eb71898E8A2eF47C1B6a4c8B1A0fAdf3660' as Address, // Testnet USDC
+    link: '0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904' as Address, // LINK on Amoy Testnet
   },
 };
 
@@ -57,14 +59,15 @@ export const CONTRACT_ADDRESSES: Record<number, { raffle: Address; usdc: Address
  * Get contract addresses for a specific chain
  *
  * @param chainId - The chain ID to get addresses for
- * @returns Object containing raffle and USDC contract addresses
+ * @returns Object containing raffle, USDC, and LINK contract addresses
  *
  * @example
  * const addresses = getContractAddress(137); // Polygon Mainnet
  * console.log(addresses.raffle); // FairWin Raffle contract address
  * console.log(addresses.usdc);   // USDC contract address
+ * console.log(addresses.link);   // LINK contract address
  */
-export function getContractAddress(chainId: number): { raffle: Address; usdc: Address } {
+export function getContractAddress(chainId: number): { raffle: Address; usdc: Address; link: Address } {
   return CONTRACT_ADDRESSES[chainId] || CONTRACT_ADDRESSES[137]; // Default to Polygon Mainnet
 }
 

@@ -6,6 +6,7 @@
 
 import { userRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
+import { entryRepo } from '@/lib/db/repositories';
 import type { UserItem } from '@/lib/db/models';
 import type { UserSummary } from '../types';
 import { UserNotFoundError } from '../errors';
@@ -53,6 +54,10 @@ export async function getUserSummary(walletAddress: string): Promise<UserSummary
   const winsResult = await winnerRepo.getByUser(walletAddress);
   const wins = winsResult.items;
 
+  // Get all user's entries to calculate total entries made
+  const entriesResult = await entryRepo.getByUser(walletAddress);
+  const totalEntriesMade = entriesResult.items.reduce((sum, e) => sum + e.numEntries, 0);
+
   const totalWon = wins.reduce((sum, w) => sum + w.prize, 0);
   const winRate = user.rafflesEntered > 0 ? (wins.length / user.rafflesEntered) * 100 : 0;
 
@@ -60,7 +65,7 @@ export async function getUserSummary(walletAddress: string): Promise<UserSummary
     user,
     stats: {
       totalRafflesEntered: user.rafflesEntered,
-      totalEntriesMade: 0, // TODO: Calculate total entries made across all raffles
+      totalEntriesMade,
       totalSpent: user.totalSpent,
       totalWon,
       winRate: Math.round(winRate * 100) / 100,

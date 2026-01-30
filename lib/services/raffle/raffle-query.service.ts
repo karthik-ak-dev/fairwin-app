@@ -15,6 +15,7 @@ import type {
 } from '../types';
 import { RaffleNotFoundError } from '../errors';
 import { getUserEntryCount } from './raffle-entry.service';
+import { aggregateParticipants } from './raffle-participant.service';
 import { decodeCursor } from '../shared/pagination.service';
 
 /**
@@ -54,10 +55,16 @@ export async function getRaffleWithDetails(
     const userEntriesResult = await entryRepo.getUserEntriesForRaffle(walletAddress, raffleId);
     const totalSpent = userEntriesResult.reduce((sum, e) => sum + e.totalPaid, 0);
 
+    // Calculate rank by getting all participants sorted by entry count
+    const participantsResult = await aggregateParticipants(raffleId);
+    const userRank = participantsResult.participants.findIndex(
+      (p) => p.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+    ) + 1;
+
     userStats = {
       entries: entryCount,
       totalSpent,
-      rank: 0, // TODO: Calculate rank
+      rank: userRank > 0 ? userRank : 0,
     };
   }
 

@@ -5,6 +5,7 @@
  * Processes random number and triggers winner selection.
  */
 
+import { verifyMessage } from 'viem';
 import { raffleRepo } from '@/lib/db/repositories';
 import * as raffleDrawService from '../raffle/raffle-draw.service';
 import { VRFRequestError } from '../errors';
@@ -60,16 +61,21 @@ export async function handleVRFFulfillment(
  *
  * Validates that the callback came from Chainlink VRF coordinator
  *
+ * Note: This is a defense-in-depth measure. The primary security is enforced
+ * on-chain by the VRF contract itself, which only accepts callbacks from the
+ * authorized VRF coordinator.
+ *
  * @param requestId VRF request ID
- * @param signature Callback signature
+ * @param signature Callback signature (ECDSA signature as hex string)
+ * @param coordinatorAddress Expected VRF coordinator address
  * @returns true if valid, false otherwise
  */
-export function verifyVRFCallback(requestId: string, signature: string): boolean {
-  // TODO: Implement signature verification
-  // Should verify that callback came from Chainlink VRF coordinator
-  // using ECDSA signature validation
-
-  // For now, basic validation
+export async function verifyVRFCallback(
+  requestId: string,
+  signature: string,
+  coordinatorAddress: string
+): Promise<boolean> {
+  // Basic validation
   if (!requestId || requestId.length === 0) {
     return false;
   }
@@ -78,8 +84,19 @@ export function verifyVRFCallback(requestId: string, signature: string): boolean
     return false;
   }
 
-  // In production, verify signature against VRF coordinator address
-  return true;
+  try {
+    // Verify ECDSA signature
+    const isValid = await verifyMessage({
+      address: coordinatorAddress as `0x${string}`,
+      message: requestId,
+      signature: signature as `0x${string}`,
+    });
+
+    return isValid;
+  } catch {
+    // Signature verification failed
+    return false;
+  }
 }
 
 /**

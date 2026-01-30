@@ -58,13 +58,24 @@ export async function getParticipationStats(walletAddress: string): Promise<Part
 
   const winRate = user.rafflesEntered > 0 ? (wins.length / user.rafflesEntered) * 100 : 0;
 
-  // TODO: Calculate active and completed raffles separately
+  // Get all user's entries and their associated raffles
+  const entriesResult = await entryRepo.getByUser(walletAddress);
+  const raffleIds = Array.from(new Set(entriesResult.items.map(e => e.raffleId)));
+
+  // Get raffle statuses to separate active vs completed
+  const raffles = await Promise.all(raffleIds.map(id => raffleRepo.getById(id)));
+  const activeStatuses = ['scheduled', 'active', 'ending', 'drawing'];
+  const completedStatuses = ['completed', 'cancelled'];
+
+  const activeRaffles = raffles.filter(r => r && activeStatuses.includes(r.status)).length;
+  const completedRaffles = raffles.filter(r => r && completedStatuses.includes(r.status)).length;
+
   return {
     totalRaffles: user.rafflesEntered,
     totalEntries: user.activeEntries,
     totalSpent: user.totalSpent,
-    activeRaffles: user.activeEntries, // TODO: Get actual count of active raffles
-    completedRaffles: user.rafflesEntered - user.activeEntries, // Approximation
+    activeRaffles,
+    completedRaffles,
     winCount: wins.length,
     winRate: Math.round(winRate * 100) / 100,
   };
