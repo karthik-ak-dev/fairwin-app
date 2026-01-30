@@ -1,22 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
-import { serverError } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { isAdmin } from '@/lib/api/admin-auth';
+import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
 
+/**
+ * GET /api/admin/wallet
+ *
+ * Get admin wallet information (admin only)
+ *
+ * Returns wallet address and balances
+ */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) return unauthorized();
+    if (!isAdmin(request)) {
+      return unauthorized();
+    }
 
     const adminAddress = process.env.ADMIN_WALLET_ADDRESS || '';
 
-    // Actual chain reads come in a later phase; return placeholders for now
-    return NextResponse.json({
+    // TODO: Integrate with blockchain service to fetch real balances
+    // For now, return placeholders
+    return success({
       address: adminAddress,
-      maticBalance: 0,
-      usdcBalance: 0,
-      linkBalance: 0,
+      balances: {
+        matic: 0,
+        usdc: 0,
+        link: 0,
+      },
     });
   } catch (error) {
-    console.error('GET /api/admin/wallet error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

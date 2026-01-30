@@ -1,17 +1,23 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { handleError } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
 import { winnerRepo } from '@/lib/db/repositories';
-import { serverError } from '@/lib/api/validate';
 
+/**
+ * GET /api/raffles/[id]/winners
+ *
+ * Get winners for a completed raffle
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const winners = await winnerRepo.getByRaffle(id);
-    return NextResponse.json({ winners });
+    const result = await winnerRepo.getByRaffle(id);
+
+    return success({ winners: result.items });
   } catch (error) {
-    console.error('GET /api/raffles/[id]/winners error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

@@ -1,17 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { userRepo } from '@/lib/db/repositories';
-import { badRequest, serverError, isValidAddress } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { handleError, badRequest } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
+import { getUserSummary } from '@/lib/services/user/user-profile.service';
 
+/**
+ * GET /api/user
+ *
+ * Get user profile with statistics
+ *
+ * Query params:
+ * - address: Wallet address (required)
+ */
 export async function GET(request: NextRequest) {
   try {
     const address = request.nextUrl.searchParams.get('address');
-    if (!address) return badRequest('Missing required parameter: address');
-    if (!isValidAddress(address)) return badRequest('Invalid wallet address');
 
-    const user = await userRepo.getOrCreate(address);
-    return NextResponse.json({ user });
+    if (!address) {
+      return badRequest('Missing required parameter: address');
+    }
+
+    const result = await getUserSummary(address);
+
+    return success(result);
   } catch (error) {
-    console.error('GET /api/user error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

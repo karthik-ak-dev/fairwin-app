@@ -315,6 +315,7 @@ export interface UpdateRaffleParams {
   startTime?: number;
   endTime?: number;
   winnerCount?: number;
+  status?: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 }
 
 // ============================================================================

@@ -1,51 +1,55 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { raffleRepo, entryRepo, winnerRepo } from '@/lib/db/repositories';
-import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
-import { notFound, serverError } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { isAdmin } from '@/lib/api/admin-auth';
+import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
+import { getRaffleWithDetails } from '@/lib/services/raffle/raffle-query.service';
+import { updateRaffle } from '@/lib/services/raffle/raffle-management.service';
 
+/**
+ * GET /api/raffles/[id]
+ *
+ * Get raffle details with enriched data (recent entries, winners if completed)
+ */
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
-    const raffle = await raffleRepo.getById(id);
-    if (!raffle) return notFound('Raffle not found');
+    const result = await getRaffleWithDetails(id);
 
-    const recentEntries = (await entryRepo.getByRaffle(id, 10)).items;
-
-    let winners;
-    if (raffle.status === 'completed') {
-      winners = await winnerRepo.getByRaffle(id);
-    }
-
-    return NextResponse.json({ raffle, recentEntries, ...(winners && { winners }) });
+    return success(result);
   } catch (error) {
-    console.error('GET /api/raffles/[id] error:', error);
-    return serverError();
+    return handleError(error);
   }
 }
 
+/**
+ * PATCH /api/raffles/[id]
+ *
+ * Update raffle (admin only)
+ *
+ * Body: Partial raffle fields to update
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isAdmin(request)) return unauthorized();
+    if (!isAdmin(request)) {
+      return unauthorized();
+    }
 
     const { id } = await params;
-    const existing = await raffleRepo.getById(id);
-    if (!existing) return notFound('Raffle not found');
-
     const body = await request.json();
-    const { raffleId: _rid, createdAt: _ca, ...allowedUpdates } = body;
 
-    await raffleRepo.update(id, allowedUpdates);
-    const updated = await raffleRepo.getById(id);
+    // Remove fields that shouldn't be updated
+    const { raffleId: _rid, createdAt: _ca, ...updates } = body;
 
-    return NextResponse.json({ raffle: updated });
+    const raffle = await updateRaffle(id, updates);
+
+    return success({ raffle });
   } catch (error) {
-    console.error('PATCH /api/raffles/[id] error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

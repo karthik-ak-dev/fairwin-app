@@ -1,44 +1,61 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
+import { NextRequest } from 'next/server';
+import { isAdmin } from '@/lib/api/admin-auth';
+import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
 import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
-import { serverError } from '@/lib/api/validate';
+import { encodeCursor, decodeCursor } from '@/lib/services/shared/pagination.service';
 
+/**
+ * GET /api/admin/winners
+ *
+ * Get winners or payouts with filtering (admin only)
+ *
+ * Query params:
+ * - raffleId: Filter winners by raffle ID
+ * - status: Filter payouts by status (pending, paid, failed)
+ * - limit: Number of items per page (default: 50)
+ * - cursor: Pagination cursor
+ */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) return unauthorized();
+    if (!isAdmin(request)) {
+      return unauthorized();
+    }
 
     const { searchParams } = request.nextUrl;
     const status = searchParams.get('status');
     const raffleId = searchParams.get('raffleId');
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const cursor = searchParams.get('cursor');
-    const startKey = cursor ? JSON.parse(Buffer.from(cursor, 'base64').toString()) : undefined;
+    const startKey = cursor ? JSON.parse(decodeCursor(cursor)) : undefined;
 
     let result;
+    let responseKey: string;
+
     if (raffleId) {
       // Query winners by raffle
-      const items = await winnerRepo.getByRaffle(raffleId, limit, startKey);
-      result = { items, lastKey: undefined };
+      result = await winnerRepo.getByRaffle(raffleId, limit, startKey);
+      responseKey = 'winners';
     } else if (status) {
       // Query payouts by status
       result = await payoutRepo.getByStatus(status as any, limit, startKey);
+      responseKey = 'payouts';
     } else {
       // Default: show pending payouts
       result = await payoutRepo.getByStatus('pending', limit, startKey);
+      responseKey = 'payouts';
     }
 
-    const nextCursor = result.lastKey
-      ? Buffer.from(JSON.stringify(result.lastKey)).toString('base64')
-      : undefined;
+    const nextCursor = result.lastKey ? encodeCursor(JSON.stringify(result.lastKey)) : undefined;
 
-    return NextResponse.json({
-      items: raffleId ? result.items : result.items,
-      winners: raffleId ? result.items : undefined,
-      payouts: !raffleId ? result.items : undefined,
-      nextCursor
+    return success({
+      [responseKey]: result.items,
+      pagination: {
+        nextCursor,
+        hasMore: !!result.lastKey,
+      },
     });
   } catch (error) {
-    console.error('GET /api/admin/winners error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

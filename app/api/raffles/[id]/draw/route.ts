@@ -1,29 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { raffleRepo } from '@/lib/db/repositories';
-import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
-import { badRequest, notFound, serverError } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { isAdmin } from '@/lib/api/admin-auth';
+import { handleError, unauthorized, badRequest } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
+import { initiateRaffleDraw } from '@/lib/services/raffle/raffle-draw.service';
 
+/**
+ * POST /api/raffles/[id]/draw
+ *
+ * Initiate raffle draw (admin only)
+ *
+ * Triggers the VRF randomness request and updates raffle status to 'drawing'
+ *
+ * Body (optional):
+ * - chainId: Blockchain chain ID (default: 137 for Polygon)
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isAdmin(request)) return unauthorized();
-
-    const { id } = await params;
-    const raffle = await raffleRepo.getById(id);
-    if (!raffle) return notFound('Raffle not found');
-
-    if (raffle.status !== 'active' && raffle.status !== 'ending') {
-      return badRequest(`Cannot draw raffle with status: ${raffle.status}. Must be active or ending.`);
+    if (!isAdmin(request)) {
+      return unauthorized();
     }
 
-    await raffleRepo.update(id, { status: 'drawing', drawTime: new Date().toISOString() });
-    const updated = await raffleRepo.getById(id);
+    const { id } = await params;
+    const body = await request.json().catch(() => ({}));
+    const chainId = body.chainId || 137;
 
-    return NextResponse.json({ raffle: updated });
+    if (typeof chainId !== 'number') {
+      return badRequest('chainId must be a number');
+    }
+
+    const result = await initiateRaffleDraw(id, chainId);
+
+    return success(result);
   } catch (error) {
-    console.error('POST /api/raffles/[id]/draw error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

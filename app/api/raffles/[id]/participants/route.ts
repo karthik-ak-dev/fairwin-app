@@ -1,7 +1,17 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { entryRepo } from '@/lib/db/repositories';
-import { serverError } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { handleError } from '@/lib/api/error-handler';
+import { paginated } from '@/lib/api/responses';
+import { aggregateParticipants } from '@/lib/services/raffle/raffle-participant.service';
 
+/**
+ * GET /api/raffles/[id]/participants
+ *
+ * Get aggregated participants for a raffle (sorted by entry count)
+ *
+ * Query params:
+ * - limit: Number of participants per page (default: 50)
+ * - cursor: Pagination cursor
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,38 +19,19 @@ export async function GET(
   try {
     const { id } = await params;
     const { searchParams } = request.nextUrl;
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
-    const cursor = searchParams.get('cursor');
-    const startKey = cursor ? JSON.parse(Buffer.from(cursor, 'base64').toString()) : undefined;
 
-    const result = await entryRepo.getByRaffle(id, limit, startKey);
+    const result = await aggregateParticipants(id, {
+      limit: parseInt(searchParams.get('limit') || '50', 10),
+      cursor: searchParams.get('cursor') || undefined,
+    });
 
-    // Aggregate entries by wallet
-    const participantMap = new Map<string, { walletAddress: string; numEntries: number; totalPaid: number; createdAt: string }>();
-    for (const entry of result.items) {
-      const existing = participantMap.get(entry.walletAddress);
-      if (existing) {
-        existing.numEntries += entry.numEntries;
-        existing.totalPaid += entry.totalPaid;
-        if (entry.createdAt < existing.createdAt) existing.createdAt = entry.createdAt;
-      } else {
-        participantMap.set(entry.walletAddress, {
-          walletAddress: entry.walletAddress,
-          numEntries: entry.numEntries,
-          totalPaid: entry.totalPaid,
-          createdAt: entry.createdAt,
-        });
-      }
-    }
-
-    const participants = Array.from(participantMap.values()).sort((a, b) => b.numEntries - a.numEntries);
-    const nextCursor = result.lastKey
-      ? Buffer.from(JSON.stringify(result.lastKey)).toString('base64')
-      : undefined;
-
-    return NextResponse.json({ participants, nextCursor });
+    return paginated(
+      result.participants,
+      result.hasMore,
+      result.nextCursor,
+      result.totalParticipants
+    );
   } catch (error) {
-    console.error('GET /api/raffles/[id]/participants error:', error);
-    return serverError();
+    return handleError(error);
   }
 }

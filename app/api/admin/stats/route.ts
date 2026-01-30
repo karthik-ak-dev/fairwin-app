@@ -1,52 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { isAdmin, unauthorized } from '@/lib/api/admin-auth';
-import { statsRepo } from '@/lib/db/repositories';
-import { serverError } from '@/lib/api/validate';
+import { NextRequest } from 'next/server';
+import { isAdmin } from '@/lib/api/admin-auth';
+import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { success } from '@/lib/api/responses';
+import { getPlatformStats } from '@/lib/services/admin/admin-stats.service';
 
-const ZERO_STATS = {
-  totalRevenue: 0,
-  totalPaidOut: 0,
-  totalRaffles: 0,
-  totalEntries: 0,
-  totalUsers: 0,
-  totalWinners: 0,
-};
-
+/**
+ * GET /api/admin/stats
+ *
+ * Get platform statistics (admin only)
+ */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) return unauthorized();
+    if (!isAdmin(request)) {
+      return unauthorized();
+    }
 
-    const stats = await statsRepo.get();
+    const stats = await getPlatformStats();
 
-    return NextResponse.json({
-      stats: stats
-        ? {
-            totalRevenue: stats.totalRevenue,
-            revenueThisMonth: 0, // Computed downstream if needed
-            activeRaffles: 0,    // Computed downstream if needed
-            totalEntries: stats.totalEntries,
-            totalUsers: stats.totalUsers,
-            totalPaidOut: stats.totalPaidOut,
-            avgPoolSize: 0,      // Computed downstream if needed
-            payoutStats: {
-              totalPaid: stats.totalPaidOut,
-              thisMonth: 0,
-              thisWeek: 0,
-              avgPayout: stats.totalWinners > 0 ? stats.totalPaidOut / stats.totalWinners : 0,
-              totalCount: stats.totalWinners,
-              pendingCount: 0,
-            },
-          }
-        : {
-            ...ZERO_STATS,
-            revenueThisMonth: 0,
-            activeRaffles: 0,
-            avgPoolSize: 0,
-            payoutStats: { totalPaid: 0, thisMonth: 0, thisWeek: 0, avgPayout: 0, totalCount: 0, pendingCount: 0 },
-          },
-    });
+    return success({ stats });
   } catch (error) {
-    console.error('GET /api/admin/stats error:', error);
-    return serverError();
+    return handleError(error);
   }
 }
