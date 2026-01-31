@@ -1,12 +1,84 @@
 import { NextResponse } from 'next/server';
+import { verifyToken, extractTokenFromHeader } from '@/lib/services/auth/jwt.service';
 
-export function isAdmin(request: Request): boolean {
-  const wallet = request.headers.get('x-wallet-address');
-  const admin = process.env.ADMIN_WALLET_ADDRESS;
-  if (!admin || !wallet) return false;
-  return wallet.toLowerCase() === admin.toLowerCase();
+/**
+ * Verify JWT token from Authorization header
+ *
+ * @param request Request object with Authorization header
+ * @returns Verified token payload with address and isAdmin flag
+ * @throws Error if token is missing, invalid, or expired
+ */
+export async function verifyAuthToken(request: Request) {
+  const authHeader = request.headers.get('Authorization');
+  const token = extractTokenFromHeader(authHeader);
+
+  if (!token) {
+    throw new Error('Missing authentication token');
+  }
+
+  const payload = await verifyToken(token);
+  return payload;
 }
 
-export function unauthorized() {
-  return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+/**
+ * Check if request is from authenticated admin
+ *
+ * @param request Request object with Authorization header
+ * @returns True if request has valid admin token
+ */
+export async function isAdmin(request: Request): Promise<boolean> {
+  try {
+    const payload = await verifyAuthToken(request);
+    return payload.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if request is from authenticated user (admin or regular)
+ *
+ * @param request Request object with Authorization header
+ * @returns Wallet address if authenticated, null otherwise
+ */
+export async function getAuthenticatedAddress(request: Request): Promise<string | null> {
+  try {
+    const payload = await verifyAuthToken(request);
+    return payload.address;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Require admin authentication - throws if not admin
+ *
+ * @param request Request object
+ * @returns Verified admin address
+ * @throws Error if not authenticated or not admin
+ */
+export async function requireAdmin(request: Request): Promise<string> {
+  const payload = await verifyAuthToken(request);
+
+  if (!payload.isAdmin) {
+    throw new Error('Admin privileges required');
+  }
+
+  return payload.address;
+}
+
+/**
+ * Require user authentication - throws if not authenticated
+ *
+ * @param request Request object
+ * @returns Verified wallet address
+ * @throws Error if not authenticated
+ */
+export async function requireAuth(request: Request): Promise<string> {
+  const payload = await verifyAuthToken(request);
+  return payload.address;
+}
+
+export function unauthorized(message: string = 'Unauthorized') {
+  return NextResponse.json({ error: message }, { status: 401 });
 }

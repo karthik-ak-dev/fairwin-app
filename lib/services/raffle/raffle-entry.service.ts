@@ -18,6 +18,7 @@ import {
   validatePositiveNumber,
   validateTransactionHash,
 } from './raffle-validation.service';
+import { verifyEntryTransaction } from '../blockchain/transaction-verification.service';
 
 /**
  * Create a raffle entry with full validation and atomic updates
@@ -66,14 +67,28 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
     );
   }
 
-  // Create entry record
+  // CRITICAL SECURITY: Verify transaction on blockchain
+  // This prevents fake entries by confirming the transaction actually happened
+  const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '137', 10);
+  const verification = await verifyEntryTransaction(
+    params.transactionHash,
+    params.walletAddress,
+    params.raffleId,
+    params.numEntries,
+    chainId
+  );
+
+  // Use verified block number from blockchain (more trustworthy than client-provided)
+  const verifiedBlockNumber = verification.blockNumber;
+
+  // Create entry record with verified block number
   const entry = await entryRepo.create({
     raffleId: params.raffleId,
     walletAddress: params.walletAddress,
     numEntries: params.numEntries,
     totalPaid: params.totalPaid,
     transactionHash: params.transactionHash,
-    blockNumber: params.blockNumber,
+    blockNumber: verifiedBlockNumber, // Use blockchain-verified block number
   });
 
   // Check if this is user's first entry in this raffle
