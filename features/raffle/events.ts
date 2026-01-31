@@ -14,11 +14,8 @@ export const RAFFLE_EVENTS = {
   DrawRequested: parseAbiItem(
     'event DrawRequested(uint256 indexed raffleId, uint256 requestId)'
   ),
-  WinnerSelected: parseAbiItem(
-    'event WinnerSelected(uint256 indexed raffleId, address indexed winner, uint256 prize, uint8 tier)'
-  ),
-  PayoutCompleted: parseAbiItem(
-    'event PayoutCompleted(uint256 indexed raffleId, address indexed winner, uint256 amount, bytes32 txHash)'
+  WinnersSelected: parseAbiItem(
+    'event WinnersSelected(uint256 indexed raffleId, address[] winners, uint256[] prizes, uint256 totalPrize, uint256 protocolFee)'
   ),
   RaffleCancelled: parseAbiItem(
     'event RaffleCancelled(uint256 indexed raffleId, string reason)'
@@ -48,18 +45,12 @@ export interface DrawRequestedEvent {
   requestId: bigint;
 }
 
-export interface WinnerSelectedEvent {
+export interface WinnersSelectedEvent {
   raffleId: bigint;
-  winner: Address;
-  prize: bigint;
-  tier: number;
-}
-
-export interface PayoutCompletedEvent {
-  raffleId: bigint;
-  winner: Address;
-  amount: bigint;
-  txHash: `0x${string}`;
+  winners: Address[];
+  prizes: bigint[];
+  totalPrize: bigint;
+  protocolFee: bigint;
 }
 
 export interface RaffleCancelledEvent {
@@ -91,13 +82,14 @@ export function parseEntrySubmitted(log: Log): EntrySubmittedEvent {
   };
 }
 
-export function parseWinnerSelected(log: Log): WinnerSelectedEvent {
-  const args = log as unknown as { args: WinnerSelectedEvent };
+export function parseWinnersSelected(log: Log): WinnersSelectedEvent {
+  const args = log as unknown as { args: WinnersSelectedEvent };
   return {
     raffleId: args.args.raffleId,
-    winner: args.args.winner,
-    prize: args.args.prize,
-    tier: args.args.tier,
+    winners: args.args.winners,
+    prizes: args.args.prizes,
+    totalPrize: args.args.totalPrize,
+    protocolFee: args.args.protocolFee,
   };
 }
 

@@ -7,8 +7,8 @@
  *
  * Fee Flow:
  * 1. User enters raffle, pays entry fee
- * 2. Contract splits fee: 90% to prize pool, 10% to platform
- * 3. Platform fees accumulate in contract's `protocolFeesCollected`
+ * 2. Contract splits fee: 95% to prize pool, 5% to platform
+ * 3. Platform fees accumulate in contract's `accumulatedFees`
  * 4. Admin calls withdrawFees() to claim revenue
  * 5. USDC transferred from contract to admin wallet
  */
@@ -144,16 +144,19 @@ export function formatFees(fees: bigint): string {
  * Queries FeesWithdrawn events from contract to build withdrawal history.
  * Useful for accounting and reconciliation.
  *
- * @param chainId Chain ID
- * @returns Array of past withdrawals
+ * NOTE: This function returns empty array as fee withdrawal history is not
+ * critical for MVP. Withdrawal events can be tracked via block explorer.
+ * Future enhancement: Implement event querying for admin dashboard analytics.
  *
- * @todo Implement event querying
+ * @param chainId Chain ID
+ * @returns Array of past withdrawals (currently empty)
  */
 export async function getWithdrawalHistory(
   chainId: number = 137
 ): Promise<FeeWithdrawal[]> {
-  // TODO: Query FeesWithdrawn events from contract
+  // NOTE: Event querying not implemented in MVP
+  // Admin can view withdrawal history on Polygonscan instead
+  // Future: Query FeesWithdrawn events from contract
   // event FeesWithdrawn(address indexed to, uint256 amount)
-  // Return array of past withdrawals for admin dashboard
   return [];
 }

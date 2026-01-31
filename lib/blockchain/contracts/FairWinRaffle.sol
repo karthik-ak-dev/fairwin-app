@@ -435,8 +435,10 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
      * This counter ONLY increases when a raffle completes.
      * Admin's withdrawFees function can ONLY access this amount.
      * Active raffle pools are completely separate and untouchable.
+     *
+     * NOTE: Variable name matches ABI function name for consistency
      */
-    uint256 public protocolFeesCollected;
+    uint256 public accumulatedFees;
 
     // -------------------------------------------------------------------------
     // Emergency Cancel Protection
@@ -662,6 +664,19 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
      */
     mapping(uint256 => mapping(address => bool)) public isWinner;
 
+    /**
+     * @notice Individual prize amounts for each winner per raffle
+     * @dev rafflePrizes[raffleId] = array of prize amounts
+     *
+     * Stores tiered prize distribution (40/30/30):
+     * - 1st place: 40% of prize pool
+     * - 2nd-5th: Share 30% equally (7.5% each)
+     * - 6th+: Share remaining 30% equally
+     *
+     * Array order matches raffleWinners array
+     */
+    mapping(uint256 => uint256[]) public rafflePrizes;
+
 
     // =========================================================================
     // EVENTS - Logs emitted for off-chain tracking
@@ -694,28 +709,25 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
     );
 
     /// @notice Emitted when someone enters a raffle
-    event RaffleEntered(
+    event EntrySubmitted(
         uint256 indexed raffleId,
-        address indexed user,           // indexed = can search by user
-        uint256 numEntries,
-        uint256 totalUserEntries,       // their total after this entry
-        uint256 amountPaid
+        address indexed participant,    // indexed = can search by user
+        uint256 numEntries
     );
 
     /// @notice Emitted when draw is triggered (VRF requested)
-    event DrawTriggered(
+    event DrawRequested(
         uint256 indexed raffleId,
-        uint256 vrfRequestId,
-        uint256 expectedWinners
+        uint256 requestId
     );
 
     /// @notice Emitted when winners are selected and paid
     event WinnersSelected(
         uint256 indexed raffleId,
         address[] winners,              // array of all winner addresses
-        uint256 prizePerWinner,
-        uint256 totalPrize,
-        uint256 protocolFee
+        uint256[] prizes,               // array of individual prize amounts (tiered)
+        uint256 totalPrize,             // total 95% paid to all winners
+        uint256 protocolFee             // 5% platform fee
     );
 
     /// @notice Emitted when raffle is cancelled
@@ -998,7 +1010,7 @@ contract FairWinRaffle is Ownable2Step, Pausable, ReentrancyGuard, VRFConsumerBa
         raffle.state = RaffleState.Completed;
 
         // Add platform fee to accumulated fees
-        protocolFeesCollected += platformFee;
+        accumulatedFees += platformFee;
 
         // Emit event with all winner data
         emit WinnersSelected(

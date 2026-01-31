@@ -39,14 +39,14 @@ function getClient(chainId: number = 137) {
 }
 
 /**
- * WinnersSelected Event Structure (from FairWinRaffle.sol:713-719)
+ * WinnersSelected Event Structure (from FairWinRaffle.sol)
  *
  * event WinnersSelected(
  *   uint256 indexed raffleId,
  *   address[] winners,              // array of all winner addresses
- *   uint256 prizePerWinner,
- *   uint256 totalPrize,
- *   uint256 protocolFee
+ *   uint256[] prizes,                // array of individual prize amounts
+ *   uint256 totalPrize,              // total 95% paid to winners
+ *   uint256 protocolFee              // 5% platform fee
  * );
  *
  * This event is emitted when:
@@ -135,7 +135,7 @@ export async function listenForWinnersSelected(
     // Get logs for WinnersSelected event
     const logs = await client.getLogs({
       address: addresses.raffle,
-      event: parseAbiItem('event WinnersSelected(uint256 indexed raffleId, address[] winners, uint256 prizePerWinner, uint256 totalPrize, uint256 protocolFee)'),
+      event: parseAbiItem('event WinnersSelected(uint256 indexed raffleId, address[] winners, uint256[] prizes, uint256 totalPrize, uint256 protocolFee)'),
       fromBlock,
       toBlock,
       ...(raffleId && { args: { raffleId: BigInt(raffleId) } }),

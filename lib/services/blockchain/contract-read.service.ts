@@ -145,7 +145,7 @@ export async function getWinnersFromContract(
     const winners = await client.readContract({
       address: addresses.raffle,
       abi: FAIRWIN_ABI,
-      functionName: 'getWinners',
+      functionName: 'getRaffleWinners',
       args: [raffleId],
     });
 
@@ -184,7 +184,7 @@ export async function verifyPayoutTransaction(
       return { valid: false };
     }
 
-    // Parse logs for WinnerSelected event (which includes prize payout)
+    // Parse logs for WinnersSelected event (which includes prize payout)
     const payoutLog = receipt.logs.find((log) => {
       try {
         const decoded = decodeEventLog({
@@ -192,7 +192,7 @@ export async function verifyPayoutTransaction(
           data: log.data,
           topics: log.topics,
         });
-        return decoded.eventName === 'WinnerSelected';
+        return decoded.eventName === 'WinnersSelected';
       } catch {
         return false;
       }
