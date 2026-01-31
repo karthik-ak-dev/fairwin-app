@@ -35,6 +35,7 @@ import {
   getAvailableFees,
   formatFees,
 } from '@/lib/services/admin/admin-fees.service';
+import { isValidWalletAddress, AUTH_ERROR_MESSAGES } from '@/lib/constants/auth.constants';
 
 /**
  * POST /api/admin/fees/withdraw
@@ -55,8 +56,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate recipient address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(recipient)) {
-      return badRequest('Invalid recipient address format');
+    if (!isValidWalletAddress(recipient)) {
+      return badRequest(AUTH_ERROR_MESSAGES.INVALID_ADDRESS);
     }
 
     let result;

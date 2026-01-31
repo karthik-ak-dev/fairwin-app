@@ -17,6 +17,7 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { decodeEventLog, type TransactionReceipt } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, getContractAddress } from '@/lib/blockchain';
+import { TRANSACTION_HASH_REGEX } from '@/lib/constants/auth.constants';
 
 /**
  * Get public client for reading blockchain data
@@ -202,5 +203,5 @@ export async function verifyPayoutTransaction(
  * Check if a transaction hash is valid format
  */
 export function isValidTransactionHash(hash: string): boolean {
-  return /^0x[a-fA-F0-9]{64}$/.test(hash);
+  return TRANSACTION_HASH_REGEX.test(hash);
 }

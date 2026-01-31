@@ -12,12 +12,10 @@
  */
 
 import { randomBytes } from 'crypto';
+import { CHALLENGE_EXPIRATION_MS } from '@/lib/constants/auth.constants';
 
 // Store challenges in memory (for MVP - use Redis in production)
 const challengeStore = new Map<string, { challenge: string; timestamp: number }>();
-
-// Challenge expires after 5 minutes
-const CHALLENGE_EXPIRATION_MS = 5 * 60 * 1000;
 
 /**
  * Generate a challenge message for wallet signature

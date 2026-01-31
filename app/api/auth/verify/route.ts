@@ -4,6 +4,7 @@ import { success } from '@/lib/api/responses';
 import { verifyChallenge } from '@/lib/services/auth/challenge.service';
 import { verifyWalletSignature } from '@/lib/services/auth/signature.service';
 import { generateToken, getExpirationSeconds } from '@/lib/services/auth/jwt.service';
+import { isValidWalletAddress, AUTH_ERROR_MESSAGES } from '@/lib/constants/auth.constants';
 
 /**
  * POST /api/auth/verify
@@ -32,20 +33,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate address format
-    if (!/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      return badRequest('Invalid wallet address format');
+    if (!isValidWalletAddress(address)) {
+      return badRequest(AUTH_ERROR_MESSAGES.INVALID_ADDRESS);
     }
 
     // Verify challenge is valid and not expired
     const isChallengeValid = verifyChallenge(address, challenge);
     if (!isChallengeValid) {
-      return badRequest('Invalid or expired challenge. Please request a new one.');
+      return badRequest(AUTH_ERROR_MESSAGES.EXPIRED_CHALLENGE);
     }
 
     // Verify signature
     const isSignatureValid = await verifyWalletSignature(address, challenge, signature);
     if (!isSignatureValid) {
-      return badRequest('Invalid signature. Signature does not match the claimed address.');
+      return badRequest(AUTH_ERROR_MESSAGES.INVALID_SIGNATURE);
     }
 
     // Check if user is admin

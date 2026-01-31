@@ -14,10 +14,10 @@
  */
 
 import { SignJWT, jwtVerify } from 'jose';
+import { JWT_EXPIRATION, JWT_EXPIRATION_SECONDS } from '@/lib/constants/auth.constants';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-in-production';
 const JWT_ISSUER = 'fairwin';
-const JWT_EXPIRATION = '24h'; // 24 hours
 
 interface TokenPayload {
   address: string;
@@ -97,19 +97,5 @@ export function extractTokenFromHeader(authHeader: string | null): string | null
  * Get expiration time in seconds
  */
 export function getExpirationSeconds(): number {
-  // Parse duration string (e.g., "24h" -> 86400 seconds)
-  const match = JWT_EXPIRATION.match(/^(\d+)([smhd])$/);
-  if (!match) return 86400; // Default 24 hours
-
-  const value = parseInt(match[1]);
-  const unit = match[2];
-
-  const multipliers: Record<string, number> = {
-    s: 1,
-    m: 60,
-    h: 3600,
-    d: 86400,
-  };
-
-  return value * (multipliers[unit] || 3600);
+  return JWT_EXPIRATION_SECONDS;
 }
