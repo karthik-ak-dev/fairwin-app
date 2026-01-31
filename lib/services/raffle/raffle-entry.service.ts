@@ -1,12 +1,18 @@
 /**
- * Raffle Entry Service
+ * Raffle Entry Service - Refactored with Shared Business Logic
  *
  * Handles all entry creation logic and validation.
- * Coordinates atomic updates across multiple repositories.
+ * Uses shared business logic to avoid duplication with event sync.
+ *
+ * Architecture:
+ * - Platform API calls createEntry() → verifies transaction → processEntry()
+ * - Event Sync calls processEntry() directly
+ * - processEntry() is the single source of truth for entry creation logic
  */
 
 import { raffleRepo, entryRepo, userRepo, statsRepo } from '@/lib/db/repositories';
 import type { CreateEntryParams, CreateEntryResult, ValidationResult } from '../types';
+import type { EntryItem } from '@/lib/db/models';
 import {
   RaffleNotFoundError,
   InvalidEntryError,
@@ -21,16 +27,117 @@ import {
 import { verifyEntryTransaction } from '../blockchain/transaction-verification.service';
 
 /**
- * Create a raffle entry with full validation and atomic updates
+ * SHARED BUSINESS LOGIC: Process entry creation
+ *
+ * This is the single source of truth for entry processing logic.
+ * Used by both:
+ * - Platform API (after transaction verification)
+ * - Event sync (from blockchain events)
+ *
+ * @param params Entry parameters
+ * @returns Created entry
+ */
+export async function processEntry(params: {
+  raffleId: string;
+  walletAddress: string;
+  numEntries: number;
+  totalPaid: number;
+  transactionHash: string;
+  blockNumber: number;
+  source: 'PLATFORM' | 'DIRECT_CONTRACT';
+}): Promise<EntryItem> {
+  const { raffleId, walletAddress, numEntries, totalPaid, transactionHash, blockNumber, source } =
+    params;
+
+  // 1. Check for existing entry (deduplication)
+  const existingEntry = await entryRepo.findByTransactionHash(transactionHash);
+
+  if (existingEntry) {
+    // Entry exists - update source if needed
+    if (existingEntry.source === 'PLATFORM' && source === 'DIRECT_CONTRACT') {
+      await entryRepo.updateSource(existingEntry.entryId, 'BOTH');
+      console.log(`[EntryService] Entry ${existingEntry.entryId} updated to BOTH`);
+    }
+    return existingEntry;
+  }
+
+  // 2. Create new entry
+  const entry = await entryRepo.create({
+    raffleId,
+    walletAddress: walletAddress.toLowerCase(),
+    numEntries,
+    totalPaid,
+    transactionHash,
+    blockNumber,
+  });
+
+  // Set source field
+  await entryRepo.updateSource(entry.entryId, source);
+
+  console.log(`[EntryService] Created entry ${entry.entryId} with source=${source}`);
+
+  // 3. Update all related entities (raffle, user, platform stats)
+  await updateRelatedEntitiesForEntry(raffleId, walletAddress, numEntries, totalPaid);
+
+  return entry;
+}
+
+/**
+ * Update raffle stats, user stats, and platform stats
+ * Extracted to avoid duplication between platform API and event sync
+ */
+async function updateRelatedEntitiesForEntry(
+  raffleId: string,
+  walletAddress: string,
+  numEntries: number,
+  totalPaid: number
+): Promise<void> {
+  // 1. Update Raffle stats
+  const raffle = await raffleRepo.getById(raffleId);
+  if (!raffle) throw new RaffleNotFoundError(raffleId);
+
+  const uniqueParticipants = await entryRepo.countUniqueParticipants(raffleId);
+  const newPrizePool = raffle.prizePool + totalPaid;
+
+  await raffleRepo.update(raffleId, {
+    totalEntries: raffle.totalEntries + numEntries,
+    totalParticipants: uniqueParticipants,
+    prizePool: newPrizePool,
+    protocolFee: newPrizePool * 0.1,
+    winnerPayout: newPrizePool * 0.9,
+  });
+
+  // 2. Update User stats
+  const isNewUser = !(await userRepo.getByAddress(walletAddress));
+  const hasEnteredThisRaffleBefore = await entryRepo.hasUserEnteredRaffle(
+    walletAddress,
+    raffleId
+  );
+
+  await userRepo.recordEntry(
+    walletAddress,
+    raffleId,
+    numEntries,
+    totalPaid,
+    hasEnteredThisRaffleBefore
+  );
+
+  // 3. Update PlatformStats
+  await statsRepo.recordEntry(totalPaid, isNewUser);
+}
+
+/**
+ * Platform API: Create entry with full validation and transaction verification
  *
  * Business Rules:
  * - Raffle must exist and be active/ending
  * - User cannot exceed max entries per raffle
  * - Entry must have valid transaction hash and block number
+ * - Transaction must be verified on blockchain
  * - All repository updates must succeed atomically
  *
  * Side Effects:
- * - Creates entry record
+ * - Creates entry record with source='PLATFORM'
  * - Updates raffle stats (totalEntries, prizePool, totalParticipants)
  * - Updates user stats (totalSpent, rafflesEntered, activeEntries)
  * - Updates platform stats (totalEntries, totalRevenue, totalUsers)
@@ -81,41 +188,16 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
   // Use verified block number from blockchain (more trustworthy than client-provided)
   const verifiedBlockNumber = verification.blockNumber;
 
-  // Create entry record with verified block number
-  const entry = await entryRepo.create({
+  // Process entry using shared business logic
+  const entry = await processEntry({
     raffleId: params.raffleId,
     walletAddress: params.walletAddress,
     numEntries: params.numEntries,
     totalPaid: params.totalPaid,
     transactionHash: params.transactionHash,
-    blockNumber: verifiedBlockNumber, // Use blockchain-verified block number
+    blockNumber: verifiedBlockNumber,
+    source: 'PLATFORM', // Platform API always marks as PLATFORM
   });
-
-  // Check if this is user's first entry in this raffle
-  const isNewParticipant = userEntryCount === 0;
-
-  // Perform atomic updates across repositories
-  await Promise.all([
-    // Update raffle stats
-    raffleRepo.incrementEntries(
-      params.raffleId,
-      params.numEntries,
-      params.totalPaid,
-      isNewParticipant
-    ),
-
-    // Get or create user, then increment stats
-    userRepo.getOrCreate(params.walletAddress).then(() =>
-      userRepo.incrementEntries(
-        params.walletAddress,
-        params.totalPaid, // spent
-        params.numEntries // numEntries
-      )
-    ),
-
-    // Update platform stats
-    statsRepo.incrementEntryStats(params.totalPaid, isNewParticipant),
-  ]);
 
   // Return result
   return {

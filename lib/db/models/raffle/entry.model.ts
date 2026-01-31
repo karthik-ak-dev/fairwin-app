@@ -92,10 +92,25 @@ export interface EntryItem {
    * - confirmed: Transaction mined and verified on-chain (normal state)
    * - pending: Transaction submitted but not yet mined (temporary)
    * - failed: Transaction reverted or failed (rare, requires investigation)
+   * - refunded: Entry refunded due to raffle cancellation
    *
    * Most entries should be 'confirmed' within seconds
    */
-  status: 'confirmed' | 'pending' | 'failed';
+  status: 'confirmed' | 'pending' | 'failed' | 'refunded';
+
+  /**
+   * Source of entry creation
+   *
+   * - PLATFORM: Created through platform API (user entered via frontend)
+   * - DIRECT_CONTRACT: Created from blockchain event sync (user called contract directly)
+   * - BOTH: Created via platform AND confirmed by blockchain event sync
+   *
+   * Used for:
+   * - Analytics: Track platform vs direct contract usage
+   * - Debugging: Identify entries that bypassed platform
+   * - Reconciliation: Ensure platform entries match blockchain events
+   */
+  source?: 'PLATFORM' | 'DIRECT_CONTRACT' | 'BOTH';
 
   /**
    * ISO 8601 timestamp of when entry was created
@@ -108,6 +123,16 @@ export interface EntryItem {
    * - Entry cutoff enforcement (no entries after endTime)
    */
   createdAt: string;
+
+  /**
+   * ISO 8601 timestamp of when entry was last updated
+   * Example: "2025-01-29T14:35:00.000Z"
+   *
+   * Updated when:
+   * - Entry source changes (PLATFORM → BOTH)
+   * - Entry status changes (confirmed → refunded)
+   */
+  updatedAt?: string;
 }
 
 /**

@@ -32,6 +32,20 @@ export interface RaffleItem {
   raffleId: string;
 
   /**
+   * Smart contract's raffle ID (uint256 from blockchain)
+   * This is the ID used on-chain to identify the raffle
+   * Example: "1", "2", "3" (sequential uint256 as string)
+   *
+   * Used for:
+   * - Mapping blockchain events to database records
+   * - Calling contract functions with correct raffleId
+   * - Event synchronization from blockchain
+   *
+   * Set after raffle is created on-chain via RaffleCreated event
+   */
+  contractRaffleId?: string;
+
+  /**
    * Raffle frequency/type
    * Determines prize pool size and duration
    *

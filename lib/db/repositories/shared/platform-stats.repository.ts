@@ -142,4 +142,106 @@ export class StatsRepository {
       },
     }));
   }
+
+  /**
+   * Get last synced block number (for event sync)
+   */
+  async getLastSyncedBlock(): Promise<number> {
+    const stats = await this.get();
+    return stats?.lastSyncedBlock || 0;
+  }
+
+  /**
+   * Update last synced block (for event sync)
+   */
+  async updateLastSyncedBlock(blockNumber: number, error?: string): Promise<void> {
+    const updateExpression = error
+      ? 'SET lastSyncedBlock = :block, lastSyncedAt = :timestamp, lastSyncError = :error, updatedAt = :updatedAt'
+      : 'SET lastSyncedBlock = :block, lastSyncedAt = :timestamp, updatedAt = :updatedAt REMOVE lastSyncError';
+
+    const expressionAttributeValues: Record<string, any> = {
+      ':block': blockNumber,
+      ':timestamp': new Date().toISOString(),
+      ':updatedAt': new Date().toISOString(),
+    };
+
+    if (error) {
+      expressionAttributeValues[':error'] = error;
+    }
+
+    await db.send(new UpdateCommand({
+      TableName: TABLE.PLATFORM_STATS,
+      Key: STATS_KEY,
+      UpdateExpression: updateExpression,
+      ExpressionAttributeValues: expressionAttributeValues,
+    }));
+  }
+
+  /**
+   * Record new entry (increment entry count and revenue)
+   * Used by shared business logic
+   */
+  async recordEntry(totalPaid: number, isNewUser: boolean): Promise<void> {
+    const protocolFee = totalPaid * 0.10;
+    await this.increment({
+      totalEntries: 1,
+      totalRevenue: protocolFee,
+      ...(isNewUser && { totalUsers: 1 }),
+    });
+  }
+
+  /**
+   * Record payout (increment payout count and amount)
+   * Used by shared business logic
+   */
+  async recordPayout(totalPrize: number, winnerCount: number): Promise<void> {
+    const stats = await this.getOrCreate();
+
+    // Update main counters
+    await this.increment({
+      totalPaidOut: totalPrize,
+      totalWinners: winnerCount,
+    });
+
+    // Update payoutStats nested object
+    const updatedPayoutStats = {
+      ...(stats.payoutStats || {}),
+      totalPaid: (stats.payoutStats?.totalPaid || 0) + totalPrize,
+      totalCount: (stats.payoutStats?.totalCount || 0) + winnerCount,
+      avgPayout:
+        ((stats.payoutStats?.totalPaid || 0) + totalPrize) /
+        ((stats.payoutStats?.totalCount || 0) + winnerCount),
+      // Keep other fields unchanged
+      thisMonth: stats.payoutStats?.thisMonth || 0,
+      thisWeek: stats.payoutStats?.thisWeek || 0,
+      pendingCount: stats.payoutStats?.pendingCount || 0,
+      failedCount: stats.payoutStats?.failedCount || 0,
+    };
+
+    await this.updatePayoutStats(updatedPayoutStats);
+  }
+
+  /**
+   * Generic update method for flexibility
+   */
+  async update(updates: Partial<PlatformStatsItem>): Promise<void> {
+    const entries = Object.entries({ ...updates, updatedAt: new Date().toISOString() });
+    const expressions: string[] = [];
+    const names: Record<string, string> = {};
+    const values: Record<string, any> = {};
+
+    entries.forEach(([key, val]) => {
+      expressions.push(`#${key} = :${key}`);
+      names[`#${key}`] = key;
+      values[`:${key}`] = val;
+    });
+
+    await db.send(new UpdateCommand({
+      TableName: TABLE.PLATFORM_STATS,
+      Key: STATS_KEY,
+      UpdateExpression: `SET ${expressions.join(', ')}`,
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    }));
+  }
 }

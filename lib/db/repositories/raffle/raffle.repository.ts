@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand, PutCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { RaffleItem, CreateRaffleInput } from '../../models';
 
@@ -117,5 +117,55 @@ export class RaffleRepository {
       ...(startKey && { ExclusiveStartKey: startKey }),
     }));
     return { items: (Items as RaffleItem[]) ?? [], lastKey: LastEvaluatedKey };
+  }
+
+  /**
+   * Find raffle by blockchain contract raffle ID
+   * Note: Uses Scan - optimize with GSI if performance becomes an issue
+   */
+  async findByContractRaffleId(contractRaffleId: string): Promise<RaffleItem | null> {
+    const { Items } = await db.send(new ScanCommand({
+      TableName: TABLE.RAFFLES,
+      FilterExpression: 'contractRaffleId = :contractId',
+      ExpressionAttributeValues: { ':contractId': contractRaffleId },
+      Limit: 1,
+    }));
+    return (Items?.[0] as RaffleItem) ?? null;
+  }
+
+  /**
+   * Update contract raffle ID after blockchain creation
+   */
+  async updateContractRaffleId(raffleId: string, contractRaffleId: string): Promise<void> {
+    await this.update(raffleId, { contractRaffleId });
+  }
+
+  /**
+   * Find raffles by status (no pagination, for event sync)
+   */
+  async findByStatus(status: RaffleItem['status']): Promise<RaffleItem[]> {
+    const allItems: RaffleItem[] = [];
+    let exclusiveStartKey: Record<string, any> | undefined;
+
+    let hasMore = true;
+    while (hasMore) {
+      const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
+        TableName: TABLE.RAFFLES,
+        IndexName: 'status-endTime-index',
+        KeyConditionExpression: '#status = :status',
+        ExpressionAttributeNames: { '#status': 'status' },
+        ExpressionAttributeValues: { ':status': status },
+        ...(exclusiveStartKey && { ExclusiveStartKey: exclusiveStartKey }),
+      }));
+
+      if (Items && Items.length > 0) {
+        allItems.push(...(Items as RaffleItem[]));
+      }
+
+      exclusiveStartKey = LastEvaluatedKey;
+      hasMore = !!LastEvaluatedKey;
+    }
+
+    return allItems;
   }
 }

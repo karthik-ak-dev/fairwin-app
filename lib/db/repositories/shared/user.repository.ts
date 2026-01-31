@@ -94,4 +94,84 @@ export class UserRepository {
       },
     }));
   }
+
+  /**
+   * Alias for getByAddress (more intuitive naming)
+   */
+  async findByWalletAddress(walletAddress: string): Promise<UserItem | null> {
+    return this.getByAddress(walletAddress);
+  }
+
+  /**
+   * Update active entries count (can be positive or negative delta)
+   */
+  async updateActiveEntries(walletAddress: string, delta: number): Promise<void> {
+    const user = await this.getByAddress(walletAddress);
+    if (!user) return;
+
+    await this.update(walletAddress, {
+      activeEntries: Math.max(0, user.activeEntries + delta),
+      lastActive: new Date().toISOString(),
+    });
+  }
+
+  /**
+   * Record entry for user (create user if doesn't exist, update stats if exists)
+   * Used by shared business logic
+   */
+  async recordEntry(
+    walletAddress: string,
+    raffleId: string,
+    numEntries: number,
+    totalPaid: number,
+    hasEnteredThisRaffleBefore: boolean
+  ): Promise<void> {
+    const user = await this.getByAddress(walletAddress);
+
+    if (!user) {
+      // Create new user
+      const now = new Date().toISOString();
+      const newUser: UserItem = {
+        walletAddress: walletAddress.toLowerCase(),
+        totalWon: 0,
+        totalSpent: totalPaid,
+        rafflesEntered: 1,
+        rafflesWon: 0,
+        winRate: 0,
+        activeEntries: numEntries,
+        lastActive: now,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await db.send(new PutCommand({
+        TableName: TABLE.USERS,
+        Item: newUser,
+        ConditionExpression: 'attribute_not_exists(walletAddress)',
+      })).catch((err) => {
+        if (err.name === 'ConditionalCheckFailedException') return;
+        throw err;
+      });
+    } else {
+      // Update existing user
+      await this.update(walletAddress, {
+        totalSpent: user.totalSpent + totalPaid,
+        rafflesEntered: hasEnteredThisRaffleBefore ? user.rafflesEntered : user.rafflesEntered + 1,
+        activeEntries: user.activeEntries + numEntries,
+        lastActive: new Date().toISOString(),
+      });
+    }
+  }
+
+  /**
+   * Process refund (decrement stats when raffle is cancelled)
+   */
+  async processRefund(walletAddress: string, numEntries: number, totalPaid: number): Promise<void> {
+    const user = await this.getByAddress(walletAddress);
+    if (!user) return;
+
+    await this.update(walletAddress, {
+      activeEntries: Math.max(0, user.activeEntries - numEntries),
+      totalSpent: Math.max(0, user.totalSpent - totalPaid),
+    });
+  }
 }
