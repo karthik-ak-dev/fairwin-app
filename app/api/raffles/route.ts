@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
  *
  * Create a new raffle (admin only)
  *
+ * BLOCKCHAIN-FIRST: Creates raffle on blockchain before saving to database.
+ *
  * Body:
  * - type: Raffle type (daily, weekly, mega, flash, monthly)
  * - title: Raffle title
@@ -48,6 +50,7 @@ export async function GET(request: NextRequest) {
  * - startTime: Start timestamp (milliseconds)
  * - endTime: End timestamp (milliseconds)
  * - platformFeePercent: Platform fee percentage (optional, default: 5)
+ * - chainId: Blockchain chain ID (optional, default: 137 for Polygon)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +69,7 @@ export async function POST(request: NextRequest) {
       startTime,
       endTime,
       platformFeePercent,
+      chainId,
     } = body;
 
     // Validate required fields
@@ -73,17 +77,20 @@ export async function POST(request: NextRequest) {
       return badRequest('Missing required fields: type, title, entryPrice, startTime, endTime');
     }
 
-    const raffle = await createRaffle({
-      type,
-      title,
-      description: description || '',
-      entryPrice,
-      maxEntriesPerUser: maxEntriesPerUser || 50,
-      winnerCount: winnerCount || 1,
-      startTime,
-      endTime,
-      platformFeePercent: platformFeePercent || 5,
-    });
+    const raffle = await createRaffle(
+      {
+        type,
+        title,
+        description: description || '',
+        entryPrice,
+        maxEntriesPerUser: maxEntriesPerUser || 50,
+        winnerCount: winnerCount || 1,
+        startTime,
+        endTime,
+        platformFeePercent: platformFeePercent || 5,
+      },
+      chainId || 137 // Default to Polygon Mainnet
+    );
 
     return created({ raffle });
   } catch (error) {

@@ -253,20 +253,32 @@ export interface RaffleItem {
  * - prizePool, protocolFee, winnerPayout: Start at 0, grow with entries
  * - createdAt, updatedAt: Set to current time
  *
+ * Optional blockchain fields (set when raffle is created on-chain):
+ * - contractRaffleId: On-chain raffle ID from RaffleCreated event
+ * - contractAddress: Smart contract address managing this raffle
+ * - transactionHash: Transaction hash of raffle creation
+ * - contractState: Initial on-chain state (usually 'active')
+ *
  * Example Usage:
  * ```typescript
+ * // After creating on blockchain
  * await raffleRepo.create({
  *   type: 'daily',
  *   title: 'Daily Raffle - Jan 29',
  *   description: 'Win up to 1000 USDC!',
  *   entryPrice: 1000000, // 1 USDC
  *   maxEntriesPerUser: 50,
+ *   winnerCount: 1,
  *   startTime: '2025-01-29T00:00:00Z',
- *   endTime: '2025-01-29T23:59:59Z'
+ *   endTime: '2025-01-29T23:59:59Z',
+ *   contractRaffleId: '1',
+ *   contractAddress: '0x...',
+ *   transactionHash: '0x...',
+ *   contractState: 'active'
  * });
  * ```
  */
 export type CreateRaffleInput = Pick<
   RaffleItem,
   'type' | 'title' | 'description' | 'entryPrice' | 'maxEntriesPerUser' | 'winnerCount' | 'startTime' | 'endTime'
->;
+> & Partial<Pick<RaffleItem, 'contractRaffleId' | 'contractAddress' | 'transactionHash' | 'contractState'>>;
