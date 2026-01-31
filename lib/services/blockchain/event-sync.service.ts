@@ -18,8 +18,7 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { parseAbiItem } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { getContractAddress } from '@/lib/blockchain';
-import { raffleRepository } from '@/lib/db/repositories/raffle';
-import { statsRepository } from '@/lib/db/repositories/shared';
+import { raffleRepo, statsRepo } from '@/lib/db/repositories';
 import {
   handleEntrySubmittedEvent,
   handleDrawRequestedEvent,
@@ -80,7 +79,7 @@ export async function syncBlockchainEvents(
     const latestBlock = Number(await client.getBlockNumber());
 
     // 2. Get last synced block from database
-    const lastSynced = await statsRepository.getLastSyncedBlock();
+    const lastSynced = await statsRepo.getLastSyncedBlock();
     const fromBlock = lastSynced + 1;
     const toBlock = latestBlock;
 
@@ -99,7 +98,7 @@ export async function syncBlockchainEvents(
     );
 
     // 4. Get all active raffles
-    const activeRaffles = await raffleRepository.findByStatus('active');
+    const activeRaffles = await raffleRepo.findByStatus('active');
     console.log(`[EventSync] Found ${activeRaffles.length} active raffles`);
 
     // 5. Get contract address
@@ -211,7 +210,7 @@ export async function syncBlockchainEvents(
     }
 
     // 7. Update last synced block (even if there were errors - best-effort)
-    await statsRepository.updateLastSyncedBlock(
+    await statsRepo.updateLastSyncedBlock(
       toBlock,
       errors.length > 0 ? `${errors.length} errors occurred` : undefined
     );
@@ -239,7 +238,7 @@ export async function syncBlockchainEvents(
 
     // Try to save error to database
     try {
-      await statsRepository.updateLastSyncedBlock(
+      await statsRepo.updateLastSyncedBlock(
         result.syncedBlocks.to || 0,
         `Fatal error: ${errorMsg}`
       );

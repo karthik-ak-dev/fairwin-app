@@ -10,12 +10,14 @@
  * - Transaction-safe operations
  */
 
-import { raffleRepository } from '@/lib/db/repositories/raffle';
-import { entryRepository } from '@/lib/db/repositories/raffle';
-import { winnerRepository } from '@/lib/db/repositories/raffle';
-import { payoutRepository } from '@/lib/db/repositories/raffle';
-import { userRepository } from '@/lib/db/repositories/shared';
-import { statsRepository } from '@/lib/db/repositories/shared';
+import {
+  raffleRepo,
+  entryRepo,
+  winnerRepo,
+  payoutRepo,
+  userRepo,
+  statsRepo,
+} from '@/lib/db/repositories';
 
 /**
  * Process winner selection
@@ -36,13 +38,13 @@ export async function processWinnerSelection(params: {
   const { raffleId, winners, prizes, totalPrize, transactionHash } = params;
 
   // 1. Get raffle
-  const raffle = await raffleRepository.getById(raffleId);
+  const raffle = await raffleRepo.getById(raffleId);
   if (!raffle) {
     throw new Error(`Raffle ${raffleId} not found`);
   }
 
   // 2. Update raffle status to completed
-  await raffleRepository.update(raffleId, {
+  await raffleRepo.update(raffleId, {
     contractState: 'completed',
     status: 'completed',
   });
@@ -53,7 +55,7 @@ export async function processWinnerSelection(params: {
     const prizeAmount = prizes[i];
 
     // 3a. Create Winner record
-    const winner = await winnerRepository.create({
+    const winner = await winnerRepo.create({
       raffleId,
       walletAddress: winnerAddress,
       ticketNumber: i + 1, // Simplified (actual should be calculated from VRF random word)
@@ -64,7 +66,7 @@ export async function processWinnerSelection(params: {
     });
 
     // 3b. Create Payout record (already paid on-chain by contract)
-    await payoutRepository.create({
+    await payoutRepo.create({
       winnerId: winner.winnerId,
       raffleId,
       walletAddress: winnerAddress,
@@ -75,11 +77,11 @@ export async function processWinnerSelection(params: {
     });
 
     // 3c. Update User stats (increment winnings and win count)
-    await userRepository.recordWin(winnerAddress, prizeAmount);
+    await userRepo.recordWin(winnerAddress, prizeAmount);
   }
 
   // 4. Update PlatformStats (increment payout totals)
-  await statsRepository.recordPayout(totalPrize, winners.length);
+  await statsRepo.recordPayout(totalPrize, winners.length);
 
   // 5. Decrement activeEntries for all participants
   await decrementActiveEntriesForRaffle(raffleId);
@@ -100,17 +102,17 @@ export async function processWinnerSelection(params: {
  */
 export async function processRaffleCancellation(raffleId: string): Promise<void> {
   // 1. Update raffle status
-  await raffleRepository.update(raffleId, {
+  await raffleRepo.update(raffleId, {
     contractState: 'cancelled',
     status: 'cancelled',
   });
 
   // 2. Get all entries
-  const allEntries = await entryRepository.findByRaffleId(raffleId);
+  const allEntries = await entryRepo.findByRaffleId(raffleId);
 
   // 3. Mark all entries as refunded
   const entryIds = allEntries.map((e) => e.entryId);
-  await entryRepository.markAsRefunded(entryIds);
+  await entryRepo.markAsRefunded(entryIds);
 
   // 4. Process refunds for each user
   const refundsByUser = new Map<string, { numEntries: number; totalPaid: number }>();
@@ -127,8 +129,8 @@ export async function processRaffleCancellation(raffleId: string): Promise<void>
   }
 
   // Update user stats (decrement activeEntries, totalSpent)
-  for (const [walletAddress, { numEntries, totalPaid }] of refundsByUser) {
-    await userRepository.processRefund(walletAddress, numEntries, totalPaid);
+  for (const [walletAddress, { numEntries, totalPaid }] of Array.from(refundsByUser.entries())) {
+    await userRepo.processRefund(walletAddress, numEntries, totalPaid);
   }
 
   console.log(
@@ -141,7 +143,7 @@ export async function processRaffleCancellation(raffleId: string): Promise<void>
  * Shared by winner selection and raffle cancellation
  */
 async function decrementActiveEntriesForRaffle(raffleId: string): Promise<void> {
-  const allEntries = await entryRepository.findByRaffleId(raffleId);
+  const allEntries = await entryRepo.findByRaffleId(raffleId);
 
   // Group by user
   const entriesByUser = new Map<string, number>();
@@ -151,8 +153,8 @@ async function decrementActiveEntriesForRaffle(raffleId: string): Promise<void> 
   }
 
   // Update each user (decrement activeEntries)
-  for (const [walletAddress, totalEntries] of entriesByUser) {
-    await userRepository.updateActiveEntries(walletAddress, -totalEntries);
+  for (const [walletAddress, totalEntries] of Array.from(entriesByUser.entries())) {
+    await userRepo.updateActiveEntries(walletAddress, -totalEntries);
   }
 }
 

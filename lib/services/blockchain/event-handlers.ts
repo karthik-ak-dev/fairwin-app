@@ -13,7 +13,7 @@
 
 import { decodeEventLog, type Log } from 'viem';
 import { FAIRWIN_ABI } from '@/lib/blockchain';
-import { raffleRepository } from '@/lib/db/repositories/raffle';
+import { raffleRepo } from '@/lib/db/repositories';
 import { processEntry } from '@/lib/services/raffle/raffle-entry.service';
 import {
   processWinnerSelection,
@@ -37,7 +37,7 @@ export async function handleEntrySubmittedEvent(
       topics: log.topics,
     });
 
-    const args = decoded.args as {
+    const args = decoded.args as unknown as {
       raffleId: bigint;
       participant: string;
       numEntries: bigint;
@@ -89,7 +89,7 @@ export async function handleWinnersSelectedEvent(
       topics: log.topics,
     });
 
-    const args = decoded.args as {
+    const args = decoded.args as unknown as {
       raffleId: bigint;
       winners: string[];
       prizes: bigint[];
@@ -138,7 +138,7 @@ export async function handleDrawRequestedEvent(
       topics: log.topics,
     });
 
-    const args = decoded.args as {
+    const args = decoded.args as unknown as {
       raffleId: bigint;
       requestId: bigint;
     };
@@ -150,7 +150,7 @@ export async function handleDrawRequestedEvent(
     );
 
     // Simple status update
-    await raffleRepository.update(raffle.raffleId, {
+    await raffleRepo.update(raffle.raffleId, {
       contractState: 'drawing',
       status: 'drawing',
       vrfRequestId: requestId,
@@ -180,7 +180,7 @@ export async function handleRaffleCancelledEvent(
       topics: log.topics,
     });
 
-    const args = decoded.args as {
+    const args = decoded.args as unknown as {
       raffleId: bigint;
       reason?: string;
     };

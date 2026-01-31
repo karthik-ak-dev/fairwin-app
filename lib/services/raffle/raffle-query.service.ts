@@ -77,7 +77,7 @@ export async function getRaffleWithDetails(
     raffle: {
       ...raffle,
       displayStatus, // Add computed display status for UI
-    },
+    } as any,
     recentEntries,
     winners,
     userStats,

@@ -91,7 +91,7 @@ export function verifyChallenge(address: string, challenge: string): boolean {
 function cleanupExpiredChallenges(): void {
   const now = Date.now();
 
-  for (const [address, data] of challengeStore.entries()) {
+  for (const [address, data] of Array.from(challengeStore.entries())) {
     if (now - data.timestamp > CHALLENGE_EXPIRATION_MS) {
       challengeStore.delete(address);
     }

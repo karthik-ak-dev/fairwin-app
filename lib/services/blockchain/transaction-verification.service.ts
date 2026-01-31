@@ -92,7 +92,7 @@ export async function verifyEntryTransaction(
     topics: entryLog.topics,
   });
 
-  const args = decoded.args as {
+  const args = decoded.args as unknown as {
     raffleId: bigint;
     player: string;
     numEntries: bigint;
@@ -183,7 +183,7 @@ export async function verifyPayoutTransaction(
     topics: winnerLog.topics,
   });
 
-  const args = decoded.args as {
+  const args = decoded.args as unknown as {
     raffleId: bigint;
   };
 

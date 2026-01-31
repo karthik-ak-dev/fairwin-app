@@ -81,6 +81,8 @@ export interface RaffleStats {
   totalParticipants: number;
   prizePool: number;
   status: string;
+  contractState?: string;
+  displayStatus?: string;
   entryPrice: number;
   maxEntriesPerUser: number;
   avgEntriesPerUser: number;

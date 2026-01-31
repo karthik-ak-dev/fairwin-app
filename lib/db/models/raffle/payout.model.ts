@@ -201,4 +201,8 @@ export interface PayoutItem {
  * - All payouts should have status='paid' and a valid transactionHash
  * - Transaction hash should be verifiable on Polygonscan
  */
-export type CreatePayoutInput = Pick<PayoutItem, 'winnerId' | 'raffleId' | 'walletAddress' | 'amount'>;
+export type CreatePayoutInput = Pick<PayoutItem, 'winnerId' | 'raffleId' | 'walletAddress' | 'amount'> & {
+  status?: 'pending' | 'processing' | 'paid' | 'failed';
+  transactionHash?: string;
+  processedAt?: string;
+};

@@ -189,4 +189,6 @@ export interface WinnerItem {
 export type CreateWinnerInput = Pick<
   WinnerItem,
   'raffleId' | 'walletAddress' | 'ticketNumber' | 'totalTickets' | 'prize' | 'tier'
->;
+> & {
+  transactionHash?: string;
+};
