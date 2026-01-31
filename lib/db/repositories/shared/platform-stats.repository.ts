@@ -82,31 +82,10 @@ export class StatsRepository {
   }
 
   /**
-   * Increment entry stats (revenue + entry count + optionally user count)
-   */
-  async incrementEntryStats(amount: number, isNewUser: boolean): Promise<void> {
-    await this.increment({
-      totalEntries: 1,
-      totalRevenue: amount,
-      ...(isNewUser && { totalUsers: 1 }),
-    });
-  }
-
-  /**
    * Increment raffle count
    */
   async incrementRaffleCount(): Promise<void> {
     await this.increment({ totalRaffles: 1 });
-  }
-
-  /**
-   * Increment winner stats (winners + paid out)
-   */
-  async incrementWinnerStats(payoutAmount: number): Promise<void> {
-    await this.increment({
-      totalWinners: 1,
-      totalPaidOut: payoutAmount,
-    });
   }
 
   /**
@@ -124,24 +103,6 @@ export class StatsRepository {
     }));
   }
 
-  /**
-   * Update revenue by game (for multi-game support)
-   */
-  async updateRevenueByGame(game: string, amount: number): Promise<void> {
-    await db.send(new UpdateCommand({
-      TableName: TABLE.PLATFORM_STATS,
-      Key: STATS_KEY,
-      UpdateExpression: 'SET revenueByGame.#game = if_not_exists(revenueByGame.#game, :zero) + :amount, updatedAt = :now',
-      ExpressionAttributeNames: {
-        '#game': game,
-      },
-      ExpressionAttributeValues: {
-        ':amount': amount,
-        ':zero': 0,
-        ':now': new Date().toISOString(),
-      },
-    }));
-  }
 
   /**
    * Get last synced block number (for event sync)
@@ -221,27 +182,4 @@ export class StatsRepository {
     await this.updatePayoutStats(updatedPayoutStats);
   }
 
-  /**
-   * Generic update method for flexibility
-   */
-  async update(updates: Partial<PlatformStatsItem>): Promise<void> {
-    const entries = Object.entries({ ...updates, updatedAt: new Date().toISOString() });
-    const expressions: string[] = [];
-    const names: Record<string, string> = {};
-    const values: Record<string, any> = {};
-
-    entries.forEach(([key, val]) => {
-      expressions.push(`#${key} = :${key}`);
-      names[`#${key}`] = key;
-      values[`:${key}`] = val;
-    });
-
-    await db.send(new UpdateCommand({
-      TableName: TABLE.PLATFORM_STATS,
-      Key: STATS_KEY,
-      UpdateExpression: `SET ${expressions.join(', ')}`,
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
-    }));
-  }
 }

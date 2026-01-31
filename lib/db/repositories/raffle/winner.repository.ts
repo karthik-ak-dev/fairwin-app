@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { WinnerItem, CreateWinnerInput } from '../../models';
 
@@ -17,17 +17,6 @@ export class WinnerRepository {
       Item: item
     }));
     return item;
-  }
-
-  /**
-   * Get winner by ID
-   */
-  async getById(winnerId: string): Promise<WinnerItem | null> {
-    const { Item } = await db.send(new GetCommand({
-      TableName: TABLE.WINNERS,
-      Key: { winnerId },
-    }));
-    return (Item as WinnerItem) ?? null;
   }
 
   /**
@@ -80,18 +69,4 @@ export class WinnerRepository {
     }));
   }
 
-  /**
-   * Count total winners for a raffle
-   */
-  async countByRaffle(raffleId: string): Promise<number> {
-    const { Count } = await db.send(new QueryCommand({
-      TableName: TABLE.WINNERS,
-      IndexName: 'raffleId-createdAt-index',
-      KeyConditionExpression: '#raffleId = :raffleId',
-      ExpressionAttributeNames: { '#raffleId': 'raffleId' },
-      ExpressionAttributeValues: { ':raffleId': raffleId },
-      Select: 'COUNT',
-    }));
-    return Count ?? 0;
-  }
 }

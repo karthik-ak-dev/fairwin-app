@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { PayoutItem, CreatePayoutInput } from '../../models';
 
@@ -20,17 +20,6 @@ export class PayoutRepository {
       Item: item
     }));
     return item;
-  }
-
-  /**
-   * Get payout by ID
-   */
-  async getById(payoutId: string): Promise<PayoutItem | null> {
-    const { Item } = await db.send(new GetCommand({
-      TableName: TABLE.PAYOUTS,
-      Key: { payoutId },
-    }));
-    return (Item as PayoutItem) ?? null;
   }
 
   /**
@@ -103,18 +92,4 @@ export class PayoutRepository {
     }));
   }
 
-  /**
-   * Count payouts by status
-   */
-  async countByStatus(status: PayoutItem['status']): Promise<number> {
-    const { Count } = await db.send(new QueryCommand({
-      TableName: TABLE.PAYOUTS,
-      IndexName: 'status-createdAt-index',
-      KeyConditionExpression: '#status = :status',
-      ExpressionAttributeNames: { '#status': 'status' },
-      ExpressionAttributeValues: { ':status': status },
-      Select: 'COUNT',
-    }));
-    return Count ?? 0;
-  }
 }

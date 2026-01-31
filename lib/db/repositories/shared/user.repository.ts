@@ -63,20 +63,6 @@ export class UserRepository {
     }));
   }
 
-  async incrementEntries(walletAddress: string, spent: number, numEntries: number): Promise<void> {
-    await db.send(new UpdateCommand({
-      TableName: TABLE.USERS,
-      Key: { walletAddress },
-      UpdateExpression: 'SET updatedAt = :now, lastActive = :now ADD totalSpent :spent, rafflesEntered :one, activeEntries :entries',
-      ExpressionAttributeValues: {
-        ':spent': spent,
-        ':one': 1,
-        ':entries': numEntries,
-        ':now': new Date().toISOString(),
-      },
-    }));
-  }
-
   async recordWin(walletAddress: string, prize: number): Promise<void> {
     const user = await this.getOrCreate(walletAddress);
     const newRafflesWon = user.rafflesWon + 1;
@@ -93,13 +79,6 @@ export class UserRepository {
         ':now': new Date().toISOString(),
       },
     }));
-  }
-
-  /**
-   * Alias for getByAddress (more intuitive naming)
-   */
-  async findByWalletAddress(walletAddress: string): Promise<UserItem | null> {
-    return this.getByAddress(walletAddress);
   }
 
   /**

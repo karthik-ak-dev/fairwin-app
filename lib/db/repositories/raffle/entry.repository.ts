@@ -1,4 +1,4 @@
-import { GetCommand, PutCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { EntryItem, CreateEntryInput } from '../../models';
 
@@ -18,17 +18,6 @@ export class EntryRepository {
       Item: item
     }));
     return item;
-  }
-
-  /**
-   * Get entry by ID
-   */
-  async getById(entryId: string): Promise<EntryItem | null> {
-    const { Item } = await db.send(new GetCommand({
-      TableName: TABLE.ENTRIES,
-      Key: { entryId },
-    }));
-    return (Item as EntryItem) ?? null;
   }
 
   /**
@@ -87,38 +76,6 @@ export class EntryRepository {
       },
     }));
     return (Items as EntryItem[]) ?? [];
-  }
-
-  /**
-   * Count total entries for a raffle
-   * Uses: raffleId-createdAt-index GSI
-   */
-  async countByRaffle(raffleId: string): Promise<number> {
-    const { Count } = await db.send(new QueryCommand({
-      TableName: TABLE.ENTRIES,
-      IndexName: 'raffleId-createdAt-index',
-      KeyConditionExpression: '#raffleId = :raffleId',
-      ExpressionAttributeNames: { '#raffleId': 'raffleId' },
-      ExpressionAttributeValues: { ':raffleId': raffleId },
-      Select: 'COUNT',
-    }));
-    return Count ?? 0;
-  }
-
-  /**
-   * Update entry status
-   */
-  async updateStatus(entryId: string, status: EntryItem['status']): Promise<void> {
-    await db.send(new UpdateCommand({
-      TableName: TABLE.ENTRIES,
-      Key: { entryId },
-      UpdateExpression: 'SET #status = :status, updatedAt = :updatedAt',
-      ExpressionAttributeNames: { '#status': 'status' },
-      ExpressionAttributeValues: {
-        ':status': status,
-        ':updatedAt': new Date().toISOString()
-      },
-    }));
   }
 
   /**
