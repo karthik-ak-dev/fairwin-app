@@ -163,6 +163,15 @@
     "type": "event"
   },
   {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "uint256", "name": "raffleId", "type": "uint256" },
+      { "indexed": false, "internalType": "string", "name": "reason", "type": "string" }
+    ],
+    "name": "RaffleCancelled",
+    "type": "event"
+  },
+  {
     "inputs": [{ "internalType": "uint256", "name": "_raffleId", "type": "uint256" }],
     "name": "getRaffleWinners",
     "outputs": [{ "internalType": "address[]", "name": "", "type": "address[]" }],
