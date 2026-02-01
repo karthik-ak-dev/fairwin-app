@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { isAdmin } from '@/lib/api/admin-auth';
-import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { requireAdmin } from '@/lib/api/admin-auth';
+import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { getRaffleWithDetails } from '@/lib/services/raffle/raffle-query.service';
 import { updateRaffle } from '@/lib/services/raffle/raffle-management.service';
@@ -36,9 +36,7 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized();
-    }
+    await requireAdmin(request);
 
     const { id } = await params;
     const body = await request.json();

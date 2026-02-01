@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { isAdmin } from '@/lib/api/admin-auth';
-import { handleError, unauthorized, badRequest } from '@/lib/api/error-handler';
+import { requireAdmin } from '@/lib/api/admin-auth';
+import { handleError, badRequest } from '@/lib/api/error-handler';
 import { created } from '@/lib/api/responses';
 import { createRaffle } from '@/lib/services/raffle/raffle-management.service';
 
@@ -25,9 +25,7 @@ import { createRaffle } from '@/lib/services/raffle/raffle-management.service';
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized();
-    }
+    await requireAdmin(request);
 
     const body = await request.json();
     const {

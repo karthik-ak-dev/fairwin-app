@@ -21,21 +21,6 @@ export async function verifyAuthToken(request: Request) {
 }
 
 /**
- * Check if request is from authenticated admin
- *
- * @param request Request object with Authorization header
- * @returns True if request has valid admin token
- */
-export async function isAdmin(request: Request): Promise<boolean> {
-  try {
-    const payload = await verifyAuthToken(request);
-    return payload.isAdmin === true;
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Require admin authentication - throws if not admin
  *
  * @param request Request object

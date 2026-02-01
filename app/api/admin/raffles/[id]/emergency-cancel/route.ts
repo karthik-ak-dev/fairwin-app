@@ -24,8 +24,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { isAdmin } from '@/lib/api/admin-auth';
-import { handleError, unauthorized, notFound } from '@/lib/api/error-handler';
+import { requireAdmin } from '@/lib/api/admin-auth';
+import { handleError, notFound } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { emergencyCancelDrawing } from '@/lib/services/raffle/raffle-blockchain.service';
 import { raffleRepo } from '@/lib/db/repositories';
@@ -35,9 +35,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized('Admin access required');
-    }
+    await requireAdmin(request);
 
     const { id: raffleId } = await params;
     const body = await request.json();

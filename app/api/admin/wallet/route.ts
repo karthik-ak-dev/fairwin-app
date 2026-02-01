@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
-import { isAdmin } from '@/lib/api/admin-auth';
-import { handleError, unauthorized } from '@/lib/api/error-handler';
+import { requireAdmin } from '@/lib/api/admin-auth';
+import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { getTokenBalances } from '@/lib/services/blockchain/contract-read.service';
 
@@ -16,9 +16,7 @@ import { getTokenBalances } from '@/lib/services/blockchain/contract-read.servic
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized();
-    }
+    await requireAdmin(request);
 
     const adminAddress = process.env.ADMIN_WALLET_ADDRESS || '';
 
