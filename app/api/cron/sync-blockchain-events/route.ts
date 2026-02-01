@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { syncBlockchainEvents } from '@/lib/services/blockchain/event-sync.service';
+import { syncBlockchainEvents } from '@/lib/services/raffle/raffle-event-sync.service';
 
 /**
  * POST /api/cron/sync-blockchain-events

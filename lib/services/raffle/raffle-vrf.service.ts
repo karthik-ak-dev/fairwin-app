@@ -14,7 +14,7 @@
 
 import { raffleRepo } from '@/lib/db/repositories';
 import { VRFRequestError } from '../errors';
-import { getVRFRequestStatus } from '../raffle/raffle-blockchain.service';
+import { getVRFRequestStatus } from './raffle-blockchain.service';
 
 /**
  * Verify VRF fulfillment happened on-chain

@@ -13,6 +13,11 @@ export * as raffleParticipant from './raffle/raffle-participant.service';
 export * as raffleValidation from './raffle/raffle-validation.service';
 export * as raffleStatus from './raffle/raffle-status.service';
 export * as raffleBlockchain from './raffle/raffle-blockchain.service';
+export * as raffleEventHandlers from './raffle/raffle-event-handlers';
+export * as raffleEventListener from './raffle/raffle-event-listener.service';
+export * as raffleEventSync from './raffle/raffle-event-sync.service';
+export * as raffleTransactionVerification from './raffle/raffle-transaction-verification.service';
+export * as raffleVrf from './raffle/raffle-vrf.service';
 
 // User services
 export * as userProfile from './user/user-profile.service';
@@ -25,12 +30,10 @@ export * as adminWallet from './admin/admin-wallet.service';
 export * as adminFees from './admin/admin-fees.service';
 // Removed: adminPayout - Manual payout processing deleted
 
-// Blockchain services
+// Blockchain services (generic only)
 export * as contractRead from './blockchain/contract-read.service';
 export * as contractWrite from './blockchain/contract-write.service';
-export * as vrfCallback from './blockchain/vrf-callback.service';
 export * as walletBalance from './blockchain/wallet-balance.service';
-export * as eventListener from './blockchain/event-listener.service';
 
 // Shared utilities
 export * from './shared/cache.service';

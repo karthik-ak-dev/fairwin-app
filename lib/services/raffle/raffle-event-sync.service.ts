@@ -24,7 +24,7 @@ import {
   handleDrawRequestedEvent,
   handleWinnersSelectedEvent,
   handleRaffleCancelledEvent,
-} from './event-handlers';
+} from './raffle-event-handlers';
 
 export interface SyncResult {
   success: boolean;

@@ -24,7 +24,7 @@ import {
   validatePositiveNumber,
   validateTransactionHash,
 } from './raffle-validation.service';
-import { verifyEntryTransaction } from '../blockchain/transaction-verification.service';
+import { verifyEntryTransaction } from './raffle-transaction-verification.service';
 
 /**
  * SHARED BUSINESS LOGIC: Process entry creation
