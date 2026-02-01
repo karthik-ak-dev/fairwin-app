@@ -6,14 +6,13 @@
  */
 
 import { type Address } from 'viem';
+import { env } from '@/lib/env';
 
 /**
  * Main FairWin Raffle contract address
  * Set via environment variable for security and flexibility
  */
-export const FAIRWIN_RAFFLE_ADDRESS = (
-  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000'
-) as Address;
+export const FAIRWIN_RAFFLE_ADDRESS = env.CONTRACT_ADDRESS as Address;
 
 /**
  * USDC Token Contract Addresses
@@ -25,14 +24,12 @@ export const FAIRWIN_RAFFLE_ADDRESS = (
  * Polygon Amoy Testnet (80002): 0x41E94Eb71898E8A2eF47C1B6a4c8B1A0fAdf3660
  * - USDC Faucet available at: https://faucet.circle.com/
  */
-export const USDC_ADDRESS = (
-  process.env.NEXT_PUBLIC_USDC_CONTRACT || '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'
-) as Address;
+export const USDC_ADDRESS = env.USDC_CONTRACT as Address;
 
 /**
  * Default chain ID (Polygon Mainnet)
  */
-export const CHAIN_ID = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '137', 10);
+export const CHAIN_ID = env.CHAIN_ID;
 
 /**
  * Chain-specific contract addresses
@@ -82,8 +79,7 @@ export function getContractAddress(chainId: number): { raffle: Address; usdc: Ad
  * // https://polygonscan.com/tx/0x1234...
  */
 export function polygonscanTx(hash: string): string {
-  const base = process.env.NEXT_PUBLIC_POLYGONSCAN_URL || 'https://polygonscan.com';
-  return `${base}/tx/${hash}`;
+  return `${env.POLYGONSCAN_URL}/tx/${hash}`;
 }
 
 /**
@@ -97,6 +93,5 @@ export function polygonscanTx(hash: string): string {
  * // https://polygonscan.com/address/0xABC...
  */
 export function polygonscanAddress(address: string): string {
-  const base = process.env.NEXT_PUBLIC_POLYGONSCAN_URL || 'https://polygonscan.com';
-  return `${base}/address/${address}`;
+  return `${env.POLYGONSCAN_URL}/address/${address}`;
 }

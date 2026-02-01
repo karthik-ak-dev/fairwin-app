@@ -1,6 +1,7 @@
 import { GetCommand, PutCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { RaffleItem, CreateRaffleInput } from '../../models';
+import { env } from '@/lib/env';
 
 export class RaffleRepository {
   async getById(raffleId: string): Promise<RaffleItem | null> {
@@ -50,7 +51,7 @@ export class RaffleRepository {
       prizePool: 0,
       protocolFee: 0,
       winnerPayout: 0,
-      contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '',
+      contractAddress: env.CONTRACT_ADDRESS,
       createdAt: now,
       updatedAt: now,
     };

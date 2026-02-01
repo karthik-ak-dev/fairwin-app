@@ -23,6 +23,8 @@ export const env = {
 /** Server-only environment (lazy getters — only evaluated when accessed) */
 export const serverEnv = {
   get AWS_REGION() { return optionalEnv('AWS_REGION', 'ap-south-1'); },
+  get AWS_ACCESS_KEY_ID() { return optionalEnv('AWS_ACCESS_KEY_ID'); },
+  get AWS_SECRET_ACCESS_KEY() { return optionalEnv('AWS_SECRET_ACCESS_KEY'); },
   get ADMIN_WALLET_ADDRESS() { return requireEnv('ADMIN_WALLET_ADDRESS'); },
   get VRF_SUBSCRIPTION_ID() { return requireEnv('VRF_SUBSCRIPTION_ID'); },
   get VRF_COORDINATOR() { return optionalEnv('VRF_COORDINATOR', '0xAE975071Be8F8eE67addBC1A82488F1C24858067'); },
@@ -31,6 +33,12 @@ export const serverEnv = {
   get SECRETS_OPERATOR_KEY_NAME() { return optionalEnv('SECRETS_OPERATOR_KEY_NAME', 'fairwin/operator-private-key'); },
   get JWT_SECRET() { return requireEnv('JWT_SECRET'); },
   get JWT_ISSUER() { return optionalEnv('JWT_ISSUER', 'fairwin'); },
+  get DYNAMODB_TABLE_RAFFLES() { return optionalEnv('DYNAMODB_TABLE_RAFFLES', 'FairWin-Stage-Raffle-Raffles'); },
+  get DYNAMODB_TABLE_ENTRIES() { return optionalEnv('DYNAMODB_TABLE_ENTRIES', 'FairWin-Stage-Raffle-Entries'); },
+  get DYNAMODB_TABLE_USERS() { return optionalEnv('DYNAMODB_TABLE_USERS', 'FairWin-Stage-Users'); },
+  get DYNAMODB_TABLE_WINNERS() { return optionalEnv('DYNAMODB_TABLE_WINNERS', 'FairWin-Stage-Raffle-Winners'); },
+  get DYNAMODB_TABLE_PAYOUTS() { return optionalEnv('DYNAMODB_TABLE_PAYOUTS', 'FairWin-Stage-Raffle-Payouts'); },
+  get DYNAMODB_TABLE_PLATFORM_STATS() { return optionalEnv('DYNAMODB_TABLE_PLATFORM_STATS', 'FairWin-Stage-PlatformStats'); },
 } as const;
 
 /** Call at server startup to surface missing vars early */

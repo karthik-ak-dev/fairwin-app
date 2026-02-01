@@ -3,15 +3,14 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit';
 import { polygon, polygonAmoy } from 'wagmi/chains';
 import { http } from 'wagmi';
-
-const projectId = process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID || 'demo';
+import { env } from '@/lib/env';
 
 export const config = getDefaultConfig({
   appName: 'FairWin',
-  projectId,
+  projectId: env.WALLETCONNECT_PROJECT_ID,
   chains: [
     polygon,
-    ...(process.env.NEXT_PUBLIC_CHAIN_ID === '80002' ? [polygonAmoy] : []),
+    ...(env.CHAIN_ID === 80002 ? [polygonAmoy] : []),
   ],
   transports: {
     [polygon.id]: http(),

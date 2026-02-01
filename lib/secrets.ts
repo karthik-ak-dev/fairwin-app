@@ -1,6 +1,7 @@
 import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+import { serverEnv } from '@/lib/env';
 
-const smClient = new SecretsManagerClient({ region: process.env.AWS_REGION || 'ap-south-1' });
+const smClient = new SecretsManagerClient({ region: serverEnv.AWS_REGION });
 
 /** Fetch secret on-demand from AWS Secrets Manager. Never cached in memory. */
 export async function fetchSecret(secretName: string): Promise<string> {

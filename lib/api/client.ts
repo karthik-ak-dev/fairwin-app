@@ -1,4 +1,6 @@
-const API_BASE = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+import { env } from '@/lib/env';
+
+const API_BASE = typeof window !== 'undefined' ? '' : env.APP_URL;
 
 interface ApiOptions {
   method?: string;

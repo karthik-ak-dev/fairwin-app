@@ -1,5 +1,6 @@
+import { serverEnv } from '@/lib/env';
+
 const SOCKET_BASE = 'https://api.socket.tech/v2';
-const API_KEY = process.env.SOCKET_API_KEY || '';
 
 /**
  * Socket.Tech API Response Types
@@ -116,7 +117,7 @@ async function socketFetch<T>(endpoint: string, options?: RequestInit): Promise<
   const res = await fetch(`${SOCKET_BASE}${endpoint}`, {
     ...options,
     headers: {
-      'API-KEY': API_KEY,
+      'API-KEY': serverEnv.SOCKET_API_KEY,
       'Content-Type': 'application/json',
       ...options?.headers,
     },
