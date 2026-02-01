@@ -12,6 +12,7 @@ export * as raffleQuery from './raffle/raffle-query.service';
 export * as raffleParticipant from './raffle/raffle-participant.service';
 export * as raffleValidation from './raffle/raffle-validation.service';
 export * as raffleStatus from './raffle/raffle-status.service';
+export * as raffleBlockchain from './raffle/raffle-blockchain.service';
 
 // User services
 export * as userProfile from './user/user-profile.service';

@@ -18,7 +18,7 @@ import {
 import {
   validateRaffleDrawable,
 } from './raffle-validation.service';
-import * as contractWriteService from '../blockchain/contract-write.service';
+import { requestRandomness } from './raffle-blockchain.service';
 
 /**
  * Initiate raffle draw with VRF request
@@ -79,7 +79,7 @@ export async function initiateRaffleDraw(
   // 3. Select winners ON-CHAIN
   // 4. Pay winners AUTOMATICALLY
   // 5. Emit WinnersSelected event
-  const vrfResult = await contractWriteService.requestRandomness(
+  const vrfResult = await requestRandomness(
     raffleId,
     chainId
   );

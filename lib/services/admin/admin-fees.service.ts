@@ -13,8 +13,10 @@
  * 5. USDC transferred from contract to admin wallet
  */
 
-import { withdrawProtocolFees } from '../blockchain/contract-write.service';
-import { getProtocolFeesCollected } from '../blockchain/contract-read.service';
+import {
+  withdrawProtocolFees,
+  getProtocolFeesCollected,
+} from '../raffle/raffle-blockchain.service';
 
 /**
  * Fee withdrawal result

@@ -14,7 +14,10 @@ import {
   validateStatusTransition,
 } from './raffle-validation.service';
 import { getContractAddress } from '@/lib/blockchain';
-import * as contractWriteService from '../blockchain/contract-write.service';
+import {
+  createRaffleOnChain,
+  cancelRaffleOnChain,
+} from './raffle-blockchain.service';
 
 /**
  * Create a new raffle
@@ -49,7 +52,7 @@ export async function createRaffle(
   const durationSeconds = Math.floor((params.endTime - params.startTime) / 1000);
 
   // STEP 1: Create raffle on blockchain FIRST
-  const blockchainResult = await contractWriteService.createRaffleOnChain(
+  const blockchainResult = await createRaffleOnChain(
     BigInt(params.entryPrice),
     BigInt(durationSeconds),
     BigInt(params.maxEntriesPerUser),
@@ -180,7 +183,7 @@ export async function cancelRaffle(
   }
 
   // STEP 1: Cancel raffle on blockchain FIRST
-  const blockchainResult = await contractWriteService.cancelRaffleOnChain(
+  const blockchainResult = await cancelRaffleOnChain(
     raffle.contractRaffleId,
     chainId
   );
