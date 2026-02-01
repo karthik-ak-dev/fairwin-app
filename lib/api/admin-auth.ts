@@ -36,21 +36,6 @@ export async function isAdmin(request: Request): Promise<boolean> {
 }
 
 /**
- * Check if request is from authenticated user (admin or regular)
- *
- * @param request Request object with Authorization header
- * @returns Wallet address if authenticated, null otherwise
- */
-export async function getAuthenticatedAddress(request: Request): Promise<string | null> {
-  try {
-    const payload = await verifyAuthToken(request);
-    return payload.address;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Require admin authentication - throws if not admin
  *
  * @param request Request object
@@ -77,8 +62,4 @@ export async function requireAdmin(request: Request): Promise<string> {
 export async function requireAuth(request: Request): Promise<string> {
   const payload = await verifyAuthToken(request);
   return payload.address;
-}
-
-export function unauthorized(message: string = 'Unauthorized') {
-  return NextResponse.json({ error: message }, { status: 401 });
 }

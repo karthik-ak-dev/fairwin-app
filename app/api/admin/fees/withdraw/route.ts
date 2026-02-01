@@ -26,8 +26,8 @@
  */
 
 import { NextRequest } from 'next/server';
-import { isAdmin } from '@/lib/api/admin-auth';
-import { handleError, unauthorized, badRequest } from '@/lib/api/error-handler';
+import { requireAdmin } from '@/lib/api/admin-auth';
+import { handleError, badRequest } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import {
   withdrawFees,
@@ -44,9 +44,7 @@ import { isValidWalletAddress, AUTH_ERROR_MESSAGES } from '@/lib/constants/auth.
  */
 export async function POST(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized('Admin access required');
-    }
+    await requireAdmin(request);
 
     const body = await request.json();
     const { recipient, amount, chainId = 137 } = body;
@@ -93,9 +91,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET(request: NextRequest) {
   try {
-    if (!isAdmin(request)) {
-      return unauthorized('Admin access required');
-    }
+    await requireAdmin(request);
 
     const { searchParams } = request.nextUrl;
     const chainId = parseInt(searchParams.get('chainId') || '137', 10);
