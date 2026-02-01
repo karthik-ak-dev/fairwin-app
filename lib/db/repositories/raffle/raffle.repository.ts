@@ -2,6 +2,7 @@ import { GetCommand, PutCommand, QueryCommand, UpdateCommand, ScanCommand } from
 import { db, TABLE } from '../../client';
 import type { RaffleItem, CreateRaffleInput } from '../../models';
 import { env } from '@/lib/env';
+import { pagination } from '@/lib/constants';
 
 export class RaffleRepository {
   async getById(raffleId: string): Promise<RaffleItem | null> {
@@ -12,7 +13,7 @@ export class RaffleRepository {
     return (Item as RaffleItem) ?? null;
   }
 
-  async getByStatus(status: string, limit = 20, startKey?: Record<string, any>) {
+  async getByStatus(status: string, limit = pagination.DEFAULT_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.RAFFLES,
       IndexName: 'status-endTime-index',
@@ -26,7 +27,7 @@ export class RaffleRepository {
     return { items: (Items as RaffleItem[]) ?? [], lastKey: LastEvaluatedKey };
   }
 
-  async getByType(type: string, limit = 20, startKey?: Record<string, any>) {
+  async getByType(type: string, limit = pagination.DEFAULT_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.RAFFLES,
       IndexName: 'type-createdAt-index',
@@ -106,7 +107,7 @@ export class RaffleRepository {
    * @param startKey Pagination cursor
    * @returns Active raffles
    */
-  async getActiveRaffles(limit = 50, startKey?: Record<string, any>) {
+  async getActiveRaffles(limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.RAFFLES,
       IndexName: 'status-endTime-index',

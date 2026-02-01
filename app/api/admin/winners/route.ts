@@ -4,6 +4,7 @@ import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
 import { encodeCursor, decodeCursor } from '@/lib/services/shared/pagination.service';
+import { pagination } from '@/lib/constants';
 
 /**
  * GET /api/admin/winners
@@ -13,7 +14,7 @@ import { encodeCursor, decodeCursor } from '@/lib/services/shared/pagination.ser
  * Query params:
  * - raffleId: Filter winners by raffle ID
  * - status: Filter payouts by status (pending, paid, failed)
- * - limit: Number of items per page (default: 50)
+ * - limit: Number of items per page (default from constants)
  * - cursor: Pagination cursor
  */
 export async function GET(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const status = searchParams.get('status');
     const raffleId = searchParams.get('raffleId');
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = parseInt(searchParams.get('limit') || String(pagination.USER_LIST_LIMIT), 10);
     const cursor = searchParams.get('cursor');
     const startKey = cursor ? JSON.parse(decodeCursor(cursor)) : undefined;
 

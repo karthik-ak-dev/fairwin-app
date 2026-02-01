@@ -1,6 +1,7 @@
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { PayoutItem, CreatePayoutInput } from '../../models';
+import { pagination } from '@/lib/constants';
 
 export class PayoutRepository {
   /**
@@ -26,7 +27,7 @@ export class PayoutRepository {
    * Get all payouts for a winner
    * Uses: winnerId-createdAt-index GSI
    */
-  async getByWinner(winnerId: string, limit = 50, startKey?: Record<string, any>) {
+  async getByWinner(winnerId: string, limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.PAYOUTS,
       IndexName: 'winnerId-createdAt-index',
@@ -44,7 +45,7 @@ export class PayoutRepository {
    * Get all payouts by status (pending, paid, failed)
    * Uses: status-createdAt-index GSI
    */
-  async getByStatus(status: PayoutItem['status'], limit = 50, startKey?: Record<string, any>) {
+  async getByStatus(status: PayoutItem['status'], limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.PAYOUTS,
       IndexName: 'status-createdAt-index',

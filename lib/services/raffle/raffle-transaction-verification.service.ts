@@ -17,13 +17,13 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { decodeEventLog, type TransactionReceipt } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, getContractAddress } from '@/lib/blockchain';
-import { patterns } from '@/lib/constants';
+import { blockchain, patterns } from '@/lib/constants';
 
 /**
  * Get public client for reading blockchain data
  */
-function getClient(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+function getClient(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   return getPublicClient(config, { chainId: chain.id });
 }
 
@@ -34,7 +34,7 @@ function getClient(chainId: number = 137) {
  * @param expectedWallet Expected wallet address that made the entry
  * @param expectedRaffleId Expected raffle ID
  * @param expectedNumEntries Expected number of entries
- * @param chainId Chain ID (137 = Polygon, 80002 = Amoy testnet)
+ * @param chainId Chain ID (Polygon Mainnet, 80002 = Amoy testnet)
  * @returns Transaction receipt if valid
  * @throws Error if transaction is invalid or doesn't match expectations
  */
@@ -43,7 +43,7 @@ export async function verifyEntryTransaction(
   expectedWallet: string,
   expectedRaffleId: string,
   expectedNumEntries: number,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ receipt: TransactionReceipt; blockNumber: number }> {
   const client = getClient(chainId);
   const addresses = getContractAddress(chainId);
@@ -138,7 +138,7 @@ export async function verifyEntryTransaction(
 export async function verifyPayoutTransaction(
   transactionHash: string,
   expectedRaffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ receipt: TransactionReceipt; blockNumber: number }> {
   const client = getClient(chainId);
   const addresses = getContractAddress(chainId);

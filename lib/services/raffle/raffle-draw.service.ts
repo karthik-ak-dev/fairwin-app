@@ -9,6 +9,7 @@
 import { raffleRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
+import { blockchain } from '@/lib/constants';
 import type { DrawInitiationResult, WinnerSelectionResult } from '../types';
 import {
   RaffleNotFoundError,
@@ -43,7 +44,7 @@ import { requestRandomness } from './raffle-blockchain.service';
  */
 export async function initiateRaffleDraw(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<DrawInitiationResult> {
   // Get raffle
   const raffle = await raffleRepo.getById(raffleId);

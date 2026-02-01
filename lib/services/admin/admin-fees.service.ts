@@ -17,6 +17,7 @@ import {
   withdrawProtocolFees,
   getProtocolFeesCollected,
 } from '../raffle/raffle-blockchain.service';
+import { blockchain } from '@/lib/constants';
 
 /**
  * Fee withdrawal result
@@ -34,14 +35,14 @@ export interface FeeWithdrawal {
  * Reads from contract's `protocolFeesCollected` variable.
  * This is the source of truth for how much admin can withdraw.
  *
- * @param chainId Chain ID (137 for Polygon, 80002 for Amoy testnet)
+ * @param chainId Chain ID (Polygon Mainnet, 80002 for Amoy testnet)
  * @returns Total fees collected in USDC (smallest unit, 6 decimals)
  *
  * @example
- * const fees = await getAvailableFees(137);
+ * const fees = await getAvailableFees(blockchain.DEFAULT_CHAIN_ID);
  * // Returns: BigInt(100000000) = $100 USDC
  */
-export async function getAvailableFees(chainId: number = 137): Promise<bigint> {
+export async function getAvailableFees(chainId: number = blockchain.DEFAULT_CHAIN_ID): Promise<bigint> {
   return await getProtocolFeesCollected(chainId);
 }
 
@@ -67,14 +68,14 @@ export async function getAvailableFees(chainId: number = 137): Promise<bigint> {
  * const result = await withdrawFees(
  *   '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
  *   BigInt(100_000_000),
- *   137
+ *   blockchain.DEFAULT_CHAIN_ID
  * );
  * console.log(`Withdrew $${Number(result.amount) / 1_000_000} USDC`);
  */
 export async function withdrawFees(
   recipient: string,
   amount: bigint,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<FeeWithdrawal> {
   // Verify fees available
   const available = await getAvailableFees(chainId);
@@ -111,7 +112,7 @@ export async function withdrawFees(
  */
 export async function withdrawAllFees(
   recipient: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<FeeWithdrawal> {
   const available = await getAvailableFees(chainId);
 
@@ -154,7 +155,7 @@ export function formatFees(fees: bigint): string {
  * @returns Array of past withdrawals (currently empty)
  */
 export async function getWithdrawalHistory(
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<FeeWithdrawal[]> {
   // NOTE: Event querying not implemented in MVP
   // Admin can view withdrawal history on Polygonscan instead

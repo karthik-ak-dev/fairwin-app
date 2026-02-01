@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { initiateRaffleDraw } from '@/lib/services/raffle/raffle-draw.service';
+import { blockchain } from '@/lib/constants';
 
 /**
  * POST /api/raffles/[id]/draw
@@ -12,7 +13,7 @@ import { initiateRaffleDraw } from '@/lib/services/raffle/raffle-draw.service';
  * Triggers the VRF randomness request and updates raffle status to 'drawing'
  *
  * Body (optional):
- * - chainId: Blockchain chain ID (default: 137 for Polygon)
+ * - chainId: Blockchain chain ID (default: Polygon Mainnet)
  */
 export async function POST(
   request: NextRequest,
@@ -23,7 +24,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const chainId = body.chainId || 137;
+    const chainId = body.chainId || blockchain.DEFAULT_CHAIN_ID;
 
     if (typeof chainId !== 'number') {
       return badRequest('chainId must be a number');

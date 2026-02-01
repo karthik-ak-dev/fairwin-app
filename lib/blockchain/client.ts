@@ -10,6 +10,7 @@
 import { getContract, type Address } from 'viem';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import { getContractAddress } from './addresses';
+import { blockchain } from '@/lib/constants';
 import FairWinRaffleABI from './contract-interfaces/FairWinRaffle.json';
 
 /**
@@ -21,7 +22,7 @@ export const FAIRWIN_ABI = FairWinRaffleABI;
 /**
  * Hook to interact with FairWin Raffle contract
  *
- * @param chainId - Chain ID to use (defaults to Polygon Mainnet = 137)
+ * @param chainId - Chain ID to use (defaults to Polygon Mainnet)
  * @returns Contract instances and addresses
  *
  * @example
@@ -33,7 +34,7 @@ export const FAIRWIN_ABI = FairWinRaffleABI;
  * // Write to contract (costs gas, requires connected wallet)
  * await writeContract.write.enterRaffle([raffleId, numEntries]);
  */
-export function useFairWinContract(chainId: number = 137) {
+export function useFairWinContract(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
   const publicClient = usePublicClient({ chainId });
   const { data: walletClient } = useWalletClient({ chainId });
   const addresses = getContractAddress(chainId);

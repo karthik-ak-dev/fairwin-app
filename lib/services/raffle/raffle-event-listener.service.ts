@@ -27,14 +27,15 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { parseAbiItem, decodeEventLog, type Log } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 import { raffleRepo, winnerRepo, payoutRepo, entryRepo } from '@/lib/db/repositories';
 import type { CreateWinnerInput } from '@/lib/db/models';
 
 /**
  * Get the appropriate public client for the chain
  */
-function getClient(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+function getClient(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   return getPublicClient(config, { chainId: chain.id });
 }
 
@@ -126,7 +127,7 @@ export async function listenForWinnersSelected(
   raffleId?: string,
   fromBlock: bigint = BigInt(0),
   toBlock: bigint | 'latest' = 'latest',
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const client = getClient(chainId);
@@ -166,7 +167,7 @@ export async function listenForWinnersSelected(
  */
 export async function handleWinnersSelectedEvent(
   log: Log,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     // Decode event data
@@ -289,7 +290,7 @@ export async function listenForRaffleEntered(
   raffleId?: string,
   fromBlock: bigint = BigInt(0),
   toBlock: bigint | 'latest' = 'latest',
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const client = getClient(chainId);
@@ -326,7 +327,7 @@ export async function listenForRaffleEntered(
  */
 export async function handleRaffleEnteredEvent(
   log: Log,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const decoded = decodeEventLog({
@@ -373,7 +374,7 @@ export async function listenForDrawTriggered(
   raffleId?: string,
   fromBlock: bigint = BigInt(0),
   toBlock: bigint | 'latest' = 'latest',
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const client = getClient(chainId);
@@ -410,7 +411,7 @@ export async function listenForDrawTriggered(
  */
 export async function handleDrawTriggeredEvent(
   log: Log,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const decoded = decodeEventLog({
@@ -451,7 +452,7 @@ export async function listenForRaffleCancelled(
   raffleId?: string,
   fromBlock: bigint = BigInt(0),
   toBlock: bigint | 'latest' = 'latest',
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const client = getClient(chainId);
@@ -488,7 +489,7 @@ export async function listenForRaffleCancelled(
  */
 export async function handleRaffleCancelledEvent(
   log: Log,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   try {
     const decoded = decodeEventLog({
@@ -527,7 +528,7 @@ export async function handleRaffleCancelledEvent(
 export async function syncRaffleEvents(
   raffleId: string,
   fromBlock: bigint = BigInt(0),
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   console.log(`Syncing all events for raffle ${raffleId} from block ${fromBlock}`);
 
@@ -559,7 +560,7 @@ export async function syncRaffleEvents(
 export async function syncAllEvents(
   fromBlock: bigint,
   toBlock: bigint | 'latest' = 'latest',
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<void> {
   console.log(`Syncing all events from block ${fromBlock} to ${toBlock}`);
 

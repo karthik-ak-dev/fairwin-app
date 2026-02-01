@@ -5,6 +5,8 @@
  * Used for caching raffle lookups and other frequently accessed data.
  */
 
+import { auth } from '@/lib/constants';
+
 interface CacheEntry<V> {
   value: V;
   expiresAt: number;
@@ -46,7 +48,7 @@ export class CacheService<K, V> {
    * @param value Value to cache
    * @param ttlMs Time-to-live in milliseconds (default: 5 minutes)
    */
-  set(key: K, value: V, ttlMs: number = 5 * 60 * 1000): void {
+  set(key: K, value: V, ttlMs: number = auth.CHALLENGE_EXPIRATION_MS): void {
     const expiresAt = Date.now() + ttlMs;
 
     this.cache.set(key, {

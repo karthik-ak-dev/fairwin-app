@@ -1,6 +1,7 @@
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { WinnerItem, CreateWinnerInput } from '../../models';
+import { pagination } from '@/lib/constants';
 
 export class WinnerRepository {
   /**
@@ -41,7 +42,7 @@ export class WinnerRepository {
    * Get all wins for a user across all raffles
    * Uses: walletAddress-createdAt-index GSI
    */
-  async getByUser(walletAddress: string, limit = 50, startKey?: Record<string, any>) {
+  async getByUser(walletAddress: string, limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.WINNERS,
       IndexName: 'walletAddress-createdAt-index',

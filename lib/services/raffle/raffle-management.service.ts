@@ -7,6 +7,7 @@
 import { raffleRepo, statsRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
 import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
+import { blockchain } from '@/lib/constants';
 import { RaffleNotFoundError } from '../errors';
 import {
   validateRaffleConfig,
@@ -37,13 +38,13 @@ import {
  * - Sets initial status to 'scheduled' or 'active' based on start time
  *
  * @param params Raffle creation parameters
- * @param chainId Blockchain chain ID (default: 137 for Polygon Mainnet)
+ * @param chainId Blockchain chain ID (default: Polygon Mainnet)
  * @throws InvalidRaffleConfigError if config is invalid
  * @throws ContractWriteError if blockchain creation fails
  */
 export async function createRaffle(
   params: CreateRaffleParams,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<RaffleItem> {
   // Validate configuration
   validateRaffleConfig(params);
@@ -157,14 +158,14 @@ export async function updateRaffle(
  * - Users can claim refunds after cancellation
  *
  * @param raffleId Database raffle ID
- * @param chainId Blockchain chain ID (default: 137 for Polygon Mainnet)
+ * @param chainId Blockchain chain ID (default: Polygon Mainnet)
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws InvalidStatusTransitionError if raffle cannot be cancelled
  * @throws ContractWriteError if blockchain cancellation fails
  */
 export async function cancelRaffle(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<RaffleItem> {
   const raffle = await raffleRepo.getById(raffleId);
   if (!raffle) {

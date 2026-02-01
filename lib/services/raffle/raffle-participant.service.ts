@@ -7,6 +7,7 @@
 import { entryRepo } from '@/lib/db/repositories';
 import type { Participant, ParticipantList, PaginationParams } from '../types';
 import { decodeCursor, encodeCursor } from '../shared/pagination.service';
+import { pagination } from '@/lib/constants';
 
 /**
  * Aggregate participants for a raffle
@@ -22,7 +23,7 @@ export async function aggregateParticipants(
   raffleId: string,
   params: PaginationParams = {}
 ): Promise<ParticipantList> {
-  const { limit = 50, cursor } = params;
+  const { limit = pagination.USER_LIST_LIMIT, cursor } = params;
 
   // Get all entries for raffle
   const entriesResult = await entryRepo.getByRaffle(raffleId);

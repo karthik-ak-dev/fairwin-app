@@ -36,6 +36,42 @@ export const patterns = {
 } as const;
 
 // =============================================================================
+// Blockchain Constants
+// =============================================================================
+
+export const blockchain = {
+  /** Default chain ID (Polygon Mainnet) */
+  DEFAULT_CHAIN_ID: 137,
+
+  /** Supported chain IDs */
+  CHAIN_IDS: {
+    POLYGON_MAINNET: 137,
+    POLYGON_AMOY_TESTNET: 80002,
+  } as const,
+
+  /** Chain names for display */
+  CHAIN_NAMES: {
+    137: 'Polygon Mainnet',
+    80002: 'Polygon Amoy Testnet',
+  } as const,
+} as const;
+
+// =============================================================================
+// Pagination Constants
+// =============================================================================
+
+export const pagination = {
+  /** Default page size for general listings */
+  DEFAULT_LIMIT: 20,
+
+  /** Default page size for user-facing lists (entries, wins, participants) */
+  USER_LIST_LIMIT: 50,
+
+  /** Maximum allowed page size */
+  MAX_LIMIT: 100,
+} as const;
+
+// =============================================================================
 // Raffle Constants
 // =============================================================================
 
@@ -51,6 +87,13 @@ export const raffle = {
     DRAWING: 'drawing',
     COMPLETED: 'completed',
     CANCELLED: 'cancelled',
+  } as const,
+
+  /** Default raffle configuration values */
+  DEFAULTS: {
+    MAX_ENTRIES_PER_USER: 50,
+    PLATFORM_FEE_PERCENT: 5,
+    WINNER_COUNT: 1,
   } as const,
 } as const;
 

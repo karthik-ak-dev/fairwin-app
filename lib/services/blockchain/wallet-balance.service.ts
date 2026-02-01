@@ -11,6 +11,7 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { formatUnits } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { ERC20_ABI, getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 import type { TokenBalances, WalletBalances } from '../types';
 import { ContractReadError } from '../errors';
 
@@ -23,8 +24,8 @@ const LINK_ADDRESSES: Record<number, string> = {
 /**
  * Get the appropriate public client for the chain
  */
-function getClient(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+function getClient(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   return getPublicClient(config, { chainId: chain.id });
 }
 
@@ -32,12 +33,12 @@ function getClient(chainId: number = 137) {
  * Get MATIC balance
  *
  * @param address Wallet address
- * @param chainId Chain ID (137 = Polygon Mainnet, 80002 = Amoy)
+ * @param chainId Chain ID (Polygon Mainnet, 80002 = Amoy)
  * @returns Balance in wei
  */
 export async function getMaticBalance(
   address: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<bigint> {
   try {
     const client = getClient(chainId);
@@ -63,7 +64,7 @@ export async function getMaticBalance(
  */
 export async function getUSDCBalance(
   address: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<bigint> {
   try {
     const client = getClient(chainId);
@@ -94,7 +95,7 @@ export async function getUSDCBalance(
  */
 export async function getLinkBalance(
   address: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<bigint> {
   try {
     const client = getClient(chainId);
@@ -129,7 +130,7 @@ export async function getLinkBalance(
  */
 export async function getAllBalances(
   address: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<WalletBalances> {
   // Fetch all balances in parallel
   const [matic, usdc, link] = await Promise.all([
@@ -171,7 +172,7 @@ export async function hasSufficientBalance(
   address: string,
   token: 'matic' | 'usdc' | 'link',
   amount: bigint,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<boolean> {
   let balance: bigint;
 

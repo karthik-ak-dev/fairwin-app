@@ -15,13 +15,14 @@
 
 import * as socketClient from '@/lib/socket/client';
 import { getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 
 /**
  * Supported chains for bridge
  */
 export const SUPPORTED_BRIDGE_CHAINS = {
   ETHEREUM: 1,
-  POLYGON: 137,
+  POLYGON: blockchain.CHAIN_IDS.POLYGON_MAINNET,
   ARBITRUM: 42161,
   OPTIMISM: 10,
   BASE: 8453,
@@ -58,7 +59,7 @@ export async function getBridgeQuoteForEntry(
   fromTokenAddress: string,
   requiredUSDCAmount: string,
   userAddress: string,
-  targetChainId: number = 137 // Default to Polygon
+  targetChainId: number = blockchain.DEFAULT_CHAIN_ID // Default to Polygon
 ): Promise<{
   quote: socketClient.SocketQuoteResponse;
   estimatedSourceAmount: string;
@@ -113,7 +114,7 @@ export async function prepareBridgeTransaction(
   fromTokenAddress: string,
   requiredUSDCAmount: string,
   userAddress: string,
-  targetChainId: number = 137
+  targetChainId: number = blockchain.DEFAULT_CHAIN_ID
 ) {
   const addresses = getContractAddress(targetChainId);
 
@@ -187,7 +188,7 @@ export async function estimateBridgeCost(
   entryPrice: number,
   numEntries: number,
   userAddress: string,
-  targetChainId: number = 137
+  targetChainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{
   totalUSDCNeeded: string;
   estimatedSourceAmount: string;

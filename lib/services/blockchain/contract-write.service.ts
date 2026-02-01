@@ -11,13 +11,14 @@ import { getWalletClient, getPublicClient } from '@wagmi/core';
 import { polygon, polygonAmoy } from 'viem/chains';
 import { config } from '@/lib/wagmi/config';
 import { ERC20_ABI, getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 import { ContractWriteError } from '../errors';
 
 /**
  * Get the appropriate clients for the chain
  */
-async function getClients(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+async function getClients(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   const publicClient = getPublicClient(config, { chainId: chain.id });
   const walletClient = await getWalletClient(config, { chainId: chain.id });
   return { publicClient, walletClient };
@@ -32,7 +33,7 @@ async function getClients(chainId: number = 137) {
  */
 export async function approveUSDC(
   amount: bigint,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<string> {
   try {
     const { publicClient, walletClient } = await getClients(chainId);
@@ -75,7 +76,7 @@ export async function approveUSDC(
  */
 export async function getUSDCAllowance(
   ownerAddress: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<bigint> {
   try {
     const { publicClient } = await getClients(chainId);

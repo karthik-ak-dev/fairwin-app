@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { created } from '@/lib/api/responses';
 import { createRaffle } from '@/lib/services/raffle/raffle-management.service';
+import { blockchain, raffle } from '@/lib/constants';
 
 /**
  * POST /api/admin/raffles
@@ -16,12 +17,12 @@ import { createRaffle } from '@/lib/services/raffle/raffle-management.service';
  * - title: Raffle title
  * - description: Raffle description (optional)
  * - entryPrice: Price per entry in USDC cents
- * - maxEntriesPerUser: Maximum entries per user (default: 50)
- * - winnerCount: Number of winners (default: 1)
+ * - maxEntriesPerUser: Maximum entries per user (default from constants)
+ * - winnerCount: Number of winners (default from constants)
  * - startTime: Start timestamp (milliseconds)
  * - endTime: End timestamp (milliseconds)
- * - platformFeePercent: Platform fee percentage (optional, default: 5)
- * - chainId: Blockchain chain ID (optional, default: 137 for Polygon)
+ * - platformFeePercent: Platform fee percentage (optional, default from constants)
+ * - chainId: Blockchain chain ID (optional, default: Polygon Mainnet)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -46,22 +47,22 @@ export async function POST(request: NextRequest) {
       return badRequest('Missing required fields: type, title, entryPrice, startTime, endTime');
     }
 
-    const raffle = await createRaffle(
+    const raffleData = await createRaffle(
       {
         type,
         title,
         description: description || '',
         entryPrice,
-        maxEntriesPerUser: maxEntriesPerUser || 50,
-        winnerCount: winnerCount || 1,
+        maxEntriesPerUser: maxEntriesPerUser || raffle.DEFAULTS.MAX_ENTRIES_PER_USER,
+        winnerCount: winnerCount || raffle.DEFAULTS.WINNER_COUNT,
         startTime,
         endTime,
-        platformFeePercent: platformFeePercent || 5,
+        platformFeePercent: platformFeePercent || raffle.DEFAULTS.PLATFORM_FEE_PERCENT,
       },
-      chainId || 137 // Default to Polygon Mainnet
+      chainId || blockchain.DEFAULT_CHAIN_ID
     );
 
-    return created({ raffle });
+    return created({ raffle: raffleData });
   } catch (error) {
     return handleError(error);
   }

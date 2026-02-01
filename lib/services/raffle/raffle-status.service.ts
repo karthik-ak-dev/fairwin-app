@@ -16,6 +16,7 @@
  */
 
 import type { RaffleItem } from '@/lib/db/models';
+import { auth } from '@/lib/constants';
 
 /**
  * Display status type - what users see in the UI
@@ -83,7 +84,7 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'contractState' | 
   }
 
   // Less than 5 minutes until end → show urgency
-  const ENDING_THRESHOLD = 5 * 60 * 1000; // 5 minutes in milliseconds
+  const ENDING_THRESHOLD = auth.CHALLENGE_EXPIRATION_MS; // 5 minutes in milliseconds
   if (raffle.contractState === 'active' && endTime - now <= ENDING_THRESHOLD && now < endTime) {
     return 'ending';
   }

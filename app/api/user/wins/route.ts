@@ -4,6 +4,7 @@ import { success } from '@/lib/api/responses';
 import { winnerRepo } from '@/lib/db/repositories';
 import { encodeCursor } from '@/lib/services/shared/pagination.service';
 import { requireAuth } from '@/lib/api/admin-auth';
+import { pagination } from '@/lib/constants';
 
 /**
  * GET /api/user/wins
@@ -14,7 +15,7 @@ import { requireAuth } from '@/lib/api/admin-auth';
  *
  * Query params:
  * - address: Wallet address (required)
- * - limit: Number of wins per page (default: 50)
+ * - limit: Number of wins per page (default from constants)
  * - cursor: Pagination cursor
  */
 export async function GET(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       return unauthorized('You can only view your own wins');
     }
 
-    const limit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = parseInt(searchParams.get('limit') || String(pagination.USER_LIST_LIMIT), 10);
     const cursor = searchParams.get('cursor');
     const startKey = cursor ? JSON.parse(Buffer.from(cursor, 'base64').toString()) : undefined;
 

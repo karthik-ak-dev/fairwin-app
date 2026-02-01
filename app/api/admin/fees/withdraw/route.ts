@@ -7,7 +7,7 @@
  * Body:
  * - recipient: Address to receive fees
  * - amount: Amount to withdraw in USDC (optional, defaults to all)
- * - chainId: Chain ID (optional, defaults to 137)
+ * - chainId: Chain ID (optional, defaults to Polygon Mainnet)
  *
  * Response:
  * - transactionHash: Blockchain transaction hash
@@ -35,7 +35,7 @@ import {
   getAvailableFees,
   formatFees,
 } from '@/lib/services/admin/admin-fees.service';
-import { isValidWalletAddress, errors } from '@/lib/constants';
+import { isValidWalletAddress, errors, blockchain } from '@/lib/constants';
 
 /**
  * POST /api/admin/fees/withdraw
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     await requireAdmin(request);
 
     const body = await request.json();
-    const { recipient, amount, chainId = 137 } = body;
+    const { recipient, amount, chainId = blockchain.DEFAULT_CHAIN_ID } = body;
 
     if (!recipient) {
       return badRequest('Missing required field: recipient');
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request);
 
     const { searchParams } = request.nextUrl;
-    const chainId = parseInt(searchParams.get('chainId') || '137', 10);
+    const chainId = parseInt(searchParams.get('chainId') || String(blockchain.DEFAULT_CHAIN_ID), 10);
 
     const available = await getAvailableFees(chainId);
 

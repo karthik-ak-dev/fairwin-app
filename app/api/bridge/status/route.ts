@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { waitForBridge } from '@/lib/services/raffle/raffle-entry-bridge.service';
+import { blockchain } from '@/lib/constants';
 
 /**
  * GET /api/bridge/status
@@ -11,7 +12,7 @@ import { waitForBridge } from '@/lib/services/raffle/raffle-entry-bridge.service
  * Query params:
  * - sourceTxHash: Source chain transaction hash
  * - fromChainId: Source chain ID
- * - toChainId: Destination chain ID (optional, defaults to 137 for Polygon)
+ * - toChainId: Destination chain ID (optional, defaults to Polygon Mainnet)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     const fromChainId = parseInt(fromChainIdStr, 10);
-    const toChainId = toChainIdStr ? parseInt(toChainIdStr, 10) : 137;
+    const toChainId = toChainIdStr ? parseInt(toChainIdStr, 10) : blockchain.DEFAULT_CHAIN_ID;
 
     if (isNaN(fromChainId) || isNaN(toChainId)) {
       return badRequest('fromChainId and toChainId must be valid numbers');

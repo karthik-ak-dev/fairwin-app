@@ -13,6 +13,7 @@
  */
 
 import { raffleRepo } from '@/lib/db/repositories';
+import { blockchain } from '@/lib/constants';
 import { VRFRequestError } from '../errors';
 import { getVRFRequestStatus } from './raffle-blockchain.service';
 
@@ -30,7 +31,7 @@ import { getVRFRequestStatus } from './raffle-blockchain.service';
  */
 export async function verifyVRFFulfillment(
   requestId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{
   fulfilled: boolean;
   randomNumber: bigint;

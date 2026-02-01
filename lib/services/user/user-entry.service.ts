@@ -11,6 +11,7 @@ import type { EnrichedEntry, EnrichedEntryList, PaginationParams } from '../type
 import { validateWalletAddress } from '../raffle/raffle-validation.service';
 import { CacheService } from '../shared/cache.service';
 import { encodeCursor, decodeCursor } from '../shared/pagination.service';
+import { pagination } from '@/lib/constants';
 
 // Cache for raffle lookups (5 minute TTL)
 const raffleCache = new CacheService<string, { title: string; type: string; status: string }>();
@@ -27,7 +28,7 @@ export async function getUserEntriesEnriched(
 ): Promise<EnrichedEntryList> {
   validateWalletAddress(walletAddress);
 
-  const { limit = 20, cursor } = params;
+  const { limit = pagination.DEFAULT_LIMIT, cursor } = params;
 
   // Get user entries
   let startKey;

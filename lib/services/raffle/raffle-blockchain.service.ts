@@ -13,14 +13,15 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { decodeEventLog } from 'viem';
 import { config } from '@/lib/wagmi/config';
 import { FAIRWIN_ABI, getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 import type { RequestRandomnessResult, ContractRaffle } from '../types';
 import { ContractWriteError, InsufficientFundsError, ContractReadError } from '../errors';
 
 /**
  * Get the appropriate clients for the chain
  */
-async function getClients(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+async function getClients(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   const publicClient = getPublicClient(config, { chainId: chain.id });
   const walletClient = await getWalletClient(config, { chainId: chain.id });
   return { publicClient, walletClient };
@@ -29,8 +30,8 @@ async function getClients(chainId: number = 137) {
 /**
  * Get public client for reading blockchain data
  */
-function getClient(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+function getClient(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   return getPublicClient(config, { chainId: chain.id });
 }
 
@@ -45,7 +46,7 @@ function getClient(chainId: number = 137) {
  */
 export async function getRaffleFromContract(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<ContractRaffle> {
   try {
     const client = getClient(chainId);
@@ -83,7 +84,7 @@ export async function getRaffleFromContract(
  */
 export async function getWinnersFromContract(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<string[]> {
   try {
     const client = getClient(chainId);
@@ -112,7 +113,7 @@ export async function getWinnersFromContract(
  */
 export async function getVRFRequestStatus(
   requestId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ fulfilled: boolean; randomNumber?: bigint }> {
   try {
     const client = getClient(chainId);
@@ -151,7 +152,7 @@ export async function getVRFRequestStatus(
  * @throws ContractReadError if read fails
  */
 export async function getProtocolFeesCollected(
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<bigint> {
   try {
     const client = getClient(chainId);
@@ -200,14 +201,14 @@ export async function getProtocolFeesCollected(
  *
  * @example
  * // Create raffle with 1 USDC entry fee, 24h duration, max 50 entries per user
- * const result = await createRaffleOnChain(1_000_000, 86400, 50, 137);
+ * const result = await createRaffleOnChain(1_000_000, 86400, 50, blockchain.DEFAULT_CHAIN_ID);
  * // result = { contractRaffleId: "1", transactionHash: "0x...", endTime: 1234567890 }
  */
 export async function createRaffleOnChain(
   entryFee: bigint,
   durationSeconds: bigint,
   maxEntriesPerUser: bigint,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{
   contractRaffleId: string;
   transactionHash: string;
@@ -309,11 +310,11 @@ export async function createRaffleOnChain(
  * @throws ContractWriteError if cancellation fails
  *
  * @example
- * await cancelRaffleOnChain("1", 137);
+ * await cancelRaffleOnChain("1", blockchain.DEFAULT_CHAIN_ID);
  */
 export async function cancelRaffleOnChain(
   contractRaffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ transactionHash: string }> {
   try {
     const { publicClient, walletClient } = await getClients(chainId);
@@ -384,7 +385,7 @@ export async function cancelRaffleOnChain(
  */
 export async function emergencyCancelDrawing(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ transactionHash: string }> {
   try {
     const { publicClient, walletClient } = await getClients(chainId);
@@ -421,7 +422,7 @@ export async function emergencyCancelDrawing(
  */
 export async function requestRandomness(
   raffleId: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<RequestRandomnessResult> {
   try {
     const { publicClient, walletClient } = await getClients(chainId);
@@ -521,12 +522,12 @@ export async function requestRandomness(
  *
  * @example
  * // Withdraw $100 USDC
- * await withdrawProtocolFees('0x...', BigInt(100_000_000), 137)
+ * await withdrawProtocolFees('0x...', BigInt(100_000_000), blockchain.DEFAULT_CHAIN_ID)
  */
 export async function withdrawProtocolFees(
   recipient: string,
   amount: bigint,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ transactionHash: string; amount: bigint }> {
   try {
     const { publicClient, walletClient } = await getClients(chainId);

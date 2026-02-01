@@ -5,6 +5,7 @@
  */
 
 import type { PaginatedResponse } from '../types';
+import { pagination } from '@/lib/constants';
 
 /**
  * Encode cursor to base64
@@ -77,7 +78,7 @@ export function parsePaginationParams(params: URLSearchParams | Record<string, s
   }
 
   // Parse limit (default: 20, max: 100)
-  let limit = 20;
+  let limit = pagination.DEFAULT_LIMIT;
   if (limitStr) {
     const parsed = parseInt(limitStr, 10);
     if (!isNaN(parsed) && parsed > 0) {

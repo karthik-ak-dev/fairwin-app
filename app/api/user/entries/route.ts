@@ -3,6 +3,7 @@ import { handleError, badRequest, unauthorized } from '@/lib/api/error-handler';
 import { paginated } from '@/lib/api/responses';
 import { getUserEntriesEnriched } from '@/lib/services/user/user-entry.service';
 import { requireAuth } from '@/lib/api/admin-auth';
+import { pagination } from '@/lib/constants';
 
 /**
  * GET /api/user/entries
@@ -13,7 +14,7 @@ import { requireAuth } from '@/lib/api/admin-auth';
  *
  * Query params:
  * - address: Wallet address (required)
- * - limit: Number of entries per page (default: 20)
+ * - limit: Number of entries per page (default from constants)
  * - cursor: Pagination cursor
  */
 export async function GET(request: NextRequest) {
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await getUserEntriesEnriched(address, {
-      limit: parseInt(searchParams.get('limit') || '20', 10),
+      limit: parseInt(searchParams.get('limit') || String(pagination.DEFAULT_LIMIT), 10),
       cursor: searchParams.get('cursor') || undefined,
     });
 

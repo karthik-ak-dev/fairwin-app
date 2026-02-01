@@ -26,6 +26,7 @@ import {
   handleRaffleCancelledEvent,
 } from './raffle-event-handlers';
 import { env } from '@/lib/env';
+import { blockchain } from '@/lib/constants';
 
 export interface SyncResult {
   success: boolean;
@@ -70,7 +71,7 @@ export async function syncBlockchainEvents(
 
   try {
     // 1. Get latest block from blockchain
-    const chain = chainId === 137 ? polygon : polygonAmoy;
+    const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
     const client = getPublicClient(config, { chainId: chain.id });
 
     if (!client) {

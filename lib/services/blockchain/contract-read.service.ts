@@ -11,13 +11,14 @@ import { getPublicClient } from '@wagmi/core';
 import { polygon, polygonAmoy } from 'viem/chains';
 import { config } from '@/lib/wagmi/config';
 import { getContractAddress } from '@/lib/blockchain';
+import { blockchain } from '@/lib/constants';
 import { ContractReadError } from '../errors';
 
 /**
  * Get the appropriate public client for the chain
  */
-function getClient(chainId: number = 137) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
+function getClient(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
+  const chain = chainId === blockchain.CHAIN_IDS.POLYGON_MAINNET ? polygon : polygonAmoy;
   return getPublicClient(config, { chainId: chain.id });
 }
 
@@ -31,7 +32,7 @@ function getClient(chainId: number = 137) {
  */
 export async function getTokenBalances(
   address: string,
-  chainId: number = 137
+  chainId: number = blockchain.DEFAULT_CHAIN_ID
 ): Promise<{ matic: bigint; usdc: bigint; link: bigint }> {
   try {
     const client = getClient(chainId);

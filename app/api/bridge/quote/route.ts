@@ -3,6 +3,7 @@ import { handleError, badRequest } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { getBridgeQuoteForEntry, estimateBridgeCost } from '@/lib/services/raffle/raffle-entry-bridge.service';
 import { raffleRepo } from '@/lib/db/repositories';
+import { blockchain } from '@/lib/constants';
 
 /**
  * POST /api/bridge/quote
@@ -53,7 +54,7 @@ export async function POST(request: NextRequest) {
       raffle.entryPrice,
       numEntries,
       userAddress,
-      137 // Polygon mainnet
+      blockchain.DEFAULT_CHAIN_ID
     );
 
     return success({

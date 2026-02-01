@@ -19,6 +19,7 @@ import { getUserEntryCount } from './raffle-entry.service';
 import { aggregateParticipants } from './raffle-participant.service';
 import { decodeCursor } from '../shared/pagination.service';
 import { computeDisplayStatus } from './raffle-status.service';
+import { pagination } from '@/lib/constants';
 
 /**
  * Get raffle with enriched data
@@ -88,7 +89,7 @@ export async function getRaffleWithDetails(
  * List raffles with optional filtering and pagination
  */
 export async function listRaffles(params: ListRafflesParams = {}): Promise<PaginatedRaffles> {
-  const { status, type, limit = 20, cursor } = params;
+  const { status, type, limit = pagination.DEFAULT_LIMIT, cursor } = params;
 
   // Decode cursor if provided
   let startKey;

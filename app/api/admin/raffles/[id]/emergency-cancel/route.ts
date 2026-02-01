@@ -15,7 +15,7 @@
  * - Prevents admin from cancelling just because they don't like winners
  *
  * Body:
- * - chainId: Chain ID (optional, defaults to 137)
+ * - chainId: Chain ID (optional, defaults to Polygon Mainnet)
  *
  * Response:
  * - raffle: Updated raffle object
@@ -29,6 +29,7 @@ import { handleError, notFound } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { emergencyCancelDrawing } from '@/lib/services/raffle/raffle-blockchain.service';
 import { raffleRepo } from '@/lib/db/repositories';
+import { blockchain } from '@/lib/constants';
 
 export async function POST(
   request: NextRequest,
@@ -39,7 +40,7 @@ export async function POST(
 
     const { id: raffleId } = await params;
     const body = await request.json();
-    const { chainId = 137 } = body;
+    const { chainId = blockchain.DEFAULT_CHAIN_ID } = body;
 
     // Verify raffle exists
     const raffle = await raffleRepo.getById(raffleId);
