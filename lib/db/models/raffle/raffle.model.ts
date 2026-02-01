@@ -2,7 +2,8 @@
  * Raffle Model - Raffle Game Specific
  *
  * Represents a single raffle instance where users can buy entries for a chance to win prizes.
- * Raffles use Chainlink VRF for provably fair, on-chain random winner selection.
+ * Winners are selected by the backend using cryptographically secure randomness from Polygon
+ * block hashes, ensuring fairness while maintaining instant draw speed.
  *
  * DynamoDB Table: FairWin-{Env}-Raffle-Raffles
  * Primary Key: raffleId (HASH)
@@ -13,15 +14,15 @@
  * 1. scheduled → Admin creates raffle, not yet accepting entries
  * 2. active → Accepting entries, users can buy tickets
  * 3. ending → Less than 5 minutes until endTime (urgency UI)
- * 4. drawing → VRF request sent, waiting for random number
- * 5. completed → Winners selected, payouts processed
+ * 4. drawing → Backend selecting winners (instant, <1 second)
+ * 5. completed → Winners selected, payouts may be pending
  * 6. cancelled → Admin cancelled (rare, refunds issued)
  *
  * Use Cases:
  * - Raffle listing page (filter by status/type)
  * - Individual raffle detail page
  * - Admin raffle management
- * - VRF draw triggering
+ * - Backend winner selection
  */
 export interface RaffleItem {
   /**
@@ -30,20 +31,6 @@ export interface RaffleItem {
    * Example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
    */
   raffleId: string;
-
-  /**
-   * Smart contract's raffle ID (uint256 from blockchain)
-   * This is the ID used on-chain to identify the raffle
-   * Example: "1", "2", "3" (sequential uint256 as string)
-   *
-   * Used for:
-   * - Mapping blockchain events to database records
-   * - Calling contract functions with correct raffleId
-   * - Event synchronization from blockchain
-   *
-   * Set after raffle is created on-chain via RaffleCreated event
-   */
-  contractRaffleId?: string;
 
   /**
    * Raffle frequency/type
@@ -58,47 +45,21 @@ export interface RaffleItem {
   type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
 
   /**
-   * On-chain contract state - SOURCE OF TRUTH
-   * Must exactly match contract's RaffleState enum (FairWinRaffle.sol:515-520)
+   * Raffle status (backend-controlled)
    *
-   * - Active: Raffle accepting entries on-chain
-   * - Drawing: VRF requested, awaiting random number callback
-   * - Completed: Winners selected and paid automatically by contract
-   * - Cancelled: Raffle cancelled on-chain, refunds available
+   * - scheduled: Admin created raffle, not yet accepting entries
+   * - active: Accepting entries, users can buy tickets
+   * - ending: Less than 5 minutes until endTime (urgency UI)
+   * - drawing: Winners being selected (momentary state)
+   * - completed: Winners selected, payouts may be pending/in-progress
+   * - cancelled: Admin cancelled (refunds issued if needed)
    *
-   * This field is synced from blockchain events and is READ-ONLY from our perspective.
-   * We do NOT set this field - we READ it from contract and record what we see.
-   *
-   * Contract State Transitions (on-chain only):
-   * - Active → Drawing (when triggerDraw() called)
-   * - Drawing → Completed (when VRF callback succeeds and winners paid)
-   * - Active → Cancelled (when cancelRaffle() called)
-   * - Drawing → Cancelled (emergency cancel after 12h if VRF fails)
-   */
-  contractState?: 'active' | 'drawing' | 'completed' | 'cancelled';
-
-  /**
-   * Backend display status - COMPUTED FIELD
-   * Used for frontend display logic and admin pre-scheduling.
-   * This is a COMPUTED value, not stored directly.
-   *
-   * - scheduled: Backend-only state (before raffle created on-chain)
-   * - active: Contract is Active + current time >= startTime
-   * - ending: Contract is Active + less than 5min until endTime (urgency UI)
-   * - drawing: Contract is Drawing (VRF in progress)
-   * - completed: Contract is Completed (winners paid)
-   * - cancelled: Contract is Cancelled (refunds available)
-   *
-   * Display Status Computation Logic:
-   * ```typescript
-   * if (!contractState) return 'scheduled'; // Not on-chain yet
-   * if (contractState === 'active' && Date.now() < startTime) return 'scheduled';
-   * if (contractState === 'active' && endTime - Date.now() < 5min) return 'ending';
-   * return contractState; // 'active', 'drawing', 'completed', or 'cancelled'
-   * ```
-   *
-   * DEPRECATED: This field will be removed once all code uses contractState + computation.
-   * For now, kept for backward compatibility during migration.
+   * Status Transitions:
+   * - scheduled → active (when startTime is reached)
+   * - active → ending (when less than 5min until endTime)
+   * - ending → drawing (when admin triggers draw)
+   * - drawing → completed (when winners are selected)
+   * - active/ending → cancelled (admin cancels)
    */
   status: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 
@@ -193,41 +154,19 @@ export interface RaffleItem {
   endTime: string;
 
   /**
-   * ISO 8601 timestamp when VRF draw was initiated (optional)
-   * Set when admin triggers draw or automated scheduler runs
-   * Used to track draw latency
+   * ISO 8601 timestamp when draw was initiated (optional)
+   * Set when admin triggers draw
+   * Used to track how long the draw process takes
    */
   drawTime?: string;
 
   /**
-   * Chainlink VRF request ID (optional)
-   * Unique identifier for the random number request
-   * Example: "0x1234...abcd" (bytes32 hex string)
-   * Used to track VRF fulfillment
+   * Random seed used for winner selection (optional)
+   * Stored as hex string for transparency and verification
+   * Example: "0x1a2b3c4d..." (from block hash or crypto.randomBytes)
+   * Anyone can verify winners by re-running selection with this seed
    */
-  vrfRequestId?: string;
-
-  /**
-   * Random word returned by Chainlink VRF (optional)
-   * Example: "12345678901234567890" (uint256 as string)
-   * Used to deterministically select winners
-   * Stored for transparency and verification
-   */
-  vrfRandomWord?: string;
-
-  /**
-   * Smart contract address managing this raffle
-   * Example: "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb"
-   * Used for on-chain verification and interaction
-   */
-  contractAddress: string;
-
-  /**
-   * Transaction hash of raffle creation (optional)
-   * Example: "0xabcd...1234"
-   * Links to Polygonscan for transparency
-   */
-  transactionHash?: string;
+  randomSeed?: string;
 
   /**
    * ISO 8601 timestamp of when raffle was created
@@ -253,15 +192,8 @@ export interface RaffleItem {
  * - prizePool, protocolFee, winnerPayout: Start at 0, grow with entries
  * - createdAt, updatedAt: Set to current time
  *
- * Optional blockchain fields (set when raffle is created on-chain):
- * - contractRaffleId: On-chain raffle ID from RaffleCreated event
- * - contractAddress: Smart contract address managing this raffle
- * - transactionHash: Transaction hash of raffle creation
- * - contractState: Initial on-chain state (usually 'active')
- *
  * Example Usage:
  * ```typescript
- * // After creating on blockchain
  * await raffleRepo.create({
  *   type: 'daily',
  *   title: 'Daily Raffle - Jan 29',
@@ -270,15 +202,11 @@ export interface RaffleItem {
  *   maxEntriesPerUser: 50,
  *   winnerCount: 1,
  *   startTime: '2025-01-29T00:00:00Z',
- *   endTime: '2025-01-29T23:59:59Z',
- *   contractRaffleId: '1',
- *   contractAddress: '0x...',
- *   transactionHash: '0x...',
- *   contractState: 'active'
+ *   endTime: '2025-01-29T23:59:59Z'
  * });
  * ```
  */
 export type CreateRaffleInput = Pick<
   RaffleItem,
   'type' | 'title' | 'description' | 'entryPrice' | 'maxEntriesPerUser' | 'winnerCount' | 'startTime' | 'endTime'
-> & Partial<Pick<RaffleItem, 'contractRaffleId' | 'contractAddress' | 'transactionHash' | 'contractState'>>;
+>;

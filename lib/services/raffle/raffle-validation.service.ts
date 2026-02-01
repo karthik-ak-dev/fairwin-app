@@ -19,33 +19,32 @@ import {
 const RAFFLE_TYPES = ['daily', 'weekly', 'mega', 'flash', 'monthly'] as const;
 const RAFFLE_STATUSES = ['scheduled', 'active', 'ending', 'drawing', 'completed', 'cancelled'] as const;
 
-// Maximum platform fee percent (as per contract: 5%)
-const MAX_PLATFORM_FEE_PERCENT = 5;
+// Maximum platform fee percent (10% in our Web2 model)
+const MAX_PLATFORM_FEE_PERCENT = 10;
 
-// Minimum and maximum entry prices (in USDC cents)
-const MIN_ENTRY_PRICE = 100; // $1.00
-const MAX_ENTRY_PRICE = 100000; // $1,000.00
+// Minimum and maximum entry prices (in USDC smallest unit - 6 decimals)
+const MIN_ENTRY_PRICE = 1000000; // $1.00 USDC
+const MAX_ENTRY_PRICE = 100000000000; // $100,000.00 USDC
 
 // Minimum and maximum winner counts
 const MIN_WINNER_COUNT = 1;
-const MAX_WINNER_COUNT = 100; // As per contract
+const MAX_WINNER_COUNT = 100;
 
 /**
  * Validate raffle is active and accepting entries
  *
- * Uses contractState as source of truth. Raffle must be in 'active' state on-chain.
+ * Business Rules:
+ * - Raffle must be in 'active' status
+ * - Current time must be between startTime and endTime
  *
- * @throws RaffleNotActiveError if raffle contractState is not active
+ * @throws RaffleNotActiveError if raffle is not accepting entries
  */
 export function validateRaffleActive(raffle: Raffle): void {
-  // Use contractState as source of truth (blockchain state)
-  const state = raffle.contractState || raffle.status;
-
-  if (state !== 'active') {
-    throw new RaffleNotActiveError(raffle.raffleId, state);
+  if (raffle.status !== 'active') {
+    throw new RaffleNotActiveError(raffle.raffleId, raffle.status);
   }
 
-  // Check time boundaries as additional validation
+  // Check time boundaries
   const now = Date.now();
   const startTime = new Date(raffle.startTime).getTime();
   const endTime = new Date(raffle.endTime).getTime();
@@ -62,33 +61,28 @@ export function validateRaffleActive(raffle: Raffle): void {
 /**
  * Validate raffle can be drawn
  *
- * Uses contractState as source of truth.
- *
  * Business Rules:
- * - Raffle must be in 'active' contractState (blockchain state)
+ * - Raffle must be in 'active' status
  * - Raffle end time must have passed
  * - Must have at least 1 entry
  *
  * @throws RaffleNotDrawableError if raffle cannot be drawn
  */
 export function validateRaffleDrawable(raffle: Raffle, entryCount: number): void {
-  // Use contractState as source of truth (blockchain state)
-  const state = raffle.contractState || raffle.status;
-
   // Check if already drawn or completed
-  if (state === 'drawing' || state === 'completed') {
-    throw new RaffleNotDrawableError(`Already drawn (contractState: ${state})`);
+  if (raffle.status === 'drawing' || raffle.status === 'completed') {
+    throw new RaffleNotDrawableError(`Already drawn (status: ${raffle.status})`);
   }
 
   // Check if cancelled
-  if (state === 'cancelled') {
+  if (raffle.status === 'cancelled') {
     throw new RaffleNotDrawableError(`Raffle is cancelled`);
   }
 
-  // Check contractState - must be active
-  if (state !== 'active') {
+  // Check status - must be active
+  if (raffle.status !== 'active') {
     throw new RaffleNotDrawableError(
-      `Invalid contractState: ${state} (must be active)`
+      `Invalid status: ${raffle.status} (must be active)`
     );
   }
 
@@ -145,18 +139,18 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
     throw new InvalidRaffleConfigError('title', 'Cannot exceed 200 characters');
   }
 
-  // Validate entry price
+  // Validate entry price (in USDC smallest unit)
   if (config.entryPrice < MIN_ENTRY_PRICE) {
     throw new InvalidRaffleConfigError(
       'entryPrice',
-      `Must be at least ${MIN_ENTRY_PRICE} cents ($${MIN_ENTRY_PRICE / 100})`
+      `Must be at least ${MIN_ENTRY_PRICE} (1 USDC)`
     );
   }
 
   if (config.entryPrice > MAX_ENTRY_PRICE) {
     throw new InvalidRaffleConfigError(
       'entryPrice',
-      `Cannot exceed ${MAX_ENTRY_PRICE} cents ($${MAX_ENTRY_PRICE / 100})`
+      `Cannot exceed ${MAX_ENTRY_PRICE} (100,000 USDC)`
     );
   }
 
@@ -197,7 +191,7 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
     if (config.winnerCount > MAX_WINNER_COUNT) {
       throw new InvalidRaffleConfigError(
         'winnerCount',
-        `Cannot exceed ${MAX_WINNER_COUNT} (contract limit)`
+        `Cannot exceed ${MAX_WINNER_COUNT}`
       );
     }
   }
@@ -211,7 +205,7 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
     if (config.platformFeePercent > MAX_PLATFORM_FEE_PERCENT) {
       throw new InvalidRaffleConfigError(
         'platformFeePercent',
-        `Cannot exceed ${MAX_PLATFORM_FEE_PERCENT}% (contract limit)`
+        `Cannot exceed ${MAX_PLATFORM_FEE_PERCENT}%`
       );
     }
   }
@@ -220,22 +214,17 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
 /**
  * Validate raffle update parameters
  *
- * Uses contractState as source of truth for validation.
- *
  * @throws ValidationError if update params are invalid
  */
 export function validateRaffleUpdate(
   raffle: Raffle,
   updates: UpdateRaffleParams
 ): void {
-  // Use contractState as source of truth (blockchain state)
-  const state = raffle.contractState || raffle.status;
-
-  // Cannot update if raffle is completed or cancelled on-chain
-  if (state === 'completed' || state === 'cancelled') {
+  // Cannot update if raffle is completed or cancelled
+  if (raffle.status === 'completed' || raffle.status === 'cancelled') {
     throw new ValidationError(
-      'contractState',
-      `Cannot update raffle in ${state} contractState`
+      'status',
+      `Cannot update raffle in ${raffle.status} status`
     );
   }
 
@@ -254,7 +243,7 @@ export function validateRaffleUpdate(
     if (updates.entryPrice < MIN_ENTRY_PRICE || updates.entryPrice > MAX_ENTRY_PRICE) {
       throw new ValidationError(
         'entryPrice',
-        `Must be between ${MIN_ENTRY_PRICE} and ${MAX_ENTRY_PRICE} cents`
+        `Must be between ${MIN_ENTRY_PRICE} and ${MAX_ENTRY_PRICE}`
       );
     }
 
@@ -272,9 +261,6 @@ export function validateRaffleUpdate(
     if (updates.maxEntriesPerUser < 1) {
       throw new ValidationError('maxEntriesPerUser', 'Must be at least 1');
     }
-
-    // Cannot decrease below current max user entries
-    // (Would need to query all entries to validate - skip for now)
   }
 
   // Validate time updates
@@ -324,16 +310,12 @@ export function validateRaffleStatus(
 /**
  * Validate status transition is allowed
  *
- * NOTE: This validates display status transitions only.
- * contractState is the source of truth and is set by blockchain events.
- * Display status is computed from contractState + time logic.
- *
  * Valid transitions:
  * - scheduled -> active (when start time reached)
  * - active -> ending (when close to end time)
  * - ending -> drawing (when draw triggered)
  * - drawing -> completed (when winners selected)
- * - any -> cancelled (when cancelled on-chain)
+ * - any -> cancelled (when admin cancels)
  *
  * @throws InvalidStatusTransitionError if transition is not allowed
  */
@@ -388,7 +370,7 @@ export function validatePositiveNumber(value: number, fieldName: string): void {
  * @throws ValidationError if hash is invalid
  */
 export function validateTransactionHash(hash: string): void {
-  // Ethereum transaction hash: 0x followed by 64 hex characters
+  // Polygon transaction hash: 0x followed by 64 hex characters
   const txHashRegex = /^0x[a-fA-F0-9]{64}$/;
 
   if (!txHashRegex.test(hash)) {

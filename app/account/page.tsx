@@ -3,14 +3,14 @@
 import { useAccount, useDisconnect } from 'wagmi';
 import Header from '@/shared/components/layout/Header';
 import Footer from '@/shared/components/layout/Footer';
-import AccountHeader from '@/features/account/components/AccountHeader';
-import AccountStats from '@/features/account/components/AccountStats';
-import ActiveEntries from '@/features/account/components/ActiveEntries';
-import EntryHistoryList from '@/features/account/components/EntryHistoryList';
-import WinsList from '@/features/account/components/WinsList';
+import AccountHeader from '@/components/account/AccountHeader';
+import AccountStats from '@/components/account/AccountStats';
+import ActiveEntries from '@/components/account/ActiveEntries';
+import EntryHistoryList from '@/components/account/EntryHistoryList';
+import WinsList from '@/components/account/WinsList';
 import ConnectButton from '@/shared/components/web3/ConnectButton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/components/ui';
-import { useUserStats } from '@/features/account/hooks/useUserStats';
+import { useUserStats } from '@/lib/hooks/account/useUserStats';
 
 export default function AccountPage() {
   const { address, isConnected } = useAccount();

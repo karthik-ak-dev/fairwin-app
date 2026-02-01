@@ -63,7 +63,7 @@ export class UserRepository {
     }));
   }
 
-  async recordWin(walletAddress: string, prize: number): Promise<void> {
+  async recordWin(walletAddress: string, _raffleId: string, prize: number): Promise<void> {
     const user = await this.getOrCreate(walletAddress);
     const newRafflesWon = user.rafflesWon + 1;
     const newWinRate = user.rafflesEntered > 0 ? newRafflesWon / user.rafflesEntered : 0;

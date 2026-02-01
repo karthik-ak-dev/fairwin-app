@@ -21,8 +21,7 @@ export class EntryRepository {
   }
 
   /**
-   * Get all entries for a raffle
-   * Uses: raffleId-createdAt-index GSI
+   * Get all entries for a raffle (paginated)
    */
   async getByRaffle(raffleId: string, limit = 50, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
@@ -32,15 +31,14 @@ export class EntryRepository {
       ExpressionAttributeNames: { '#raffleId': 'raffleId' },
       ExpressionAttributeValues: { ':raffleId': raffleId },
       Limit: limit,
-      ScanIndexForward: false, // Most recent first
+      ScanIndexForward: false,
       ...(startKey && { ExclusiveStartKey: startKey }),
     }));
     return { items: (Items as EntryItem[]) ?? [], lastKey: LastEvaluatedKey };
   }
 
   /**
-   * Get all entries for a user across all raffles
-   * Uses: walletAddress-createdAt-index GSI
+   * Get all entries for a user (paginated)
    */
   async getByUser(walletAddress: string, limit = 50, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
@@ -50,7 +48,7 @@ export class EntryRepository {
       ExpressionAttributeNames: { '#walletAddress': 'walletAddress' },
       ExpressionAttributeValues: { ':addr': walletAddress },
       Limit: limit,
-      ScanIndexForward: false, // Most recent first
+      ScanIndexForward: false,
       ...(startKey && { ExclusiveStartKey: startKey }),
     }));
     return { items: (Items as EntryItem[]) ?? [], lastKey: LastEvaluatedKey };
@@ -58,7 +56,6 @@ export class EntryRepository {
 
   /**
    * Get user's entries for a specific raffle
-   * Note: Requires filtering since we don't have a compound GSI
    */
   async getUserEntriesForRaffle(raffleId: string, walletAddress: string): Promise<EntryItem[]> {
     const { Items } = await db.send(new QueryCommand({
@@ -79,38 +76,8 @@ export class EntryRepository {
   }
 
   /**
-   * Update entry (generic update)
-   */
-  async update(entryId: string, updates: Partial<EntryItem>): Promise<void> {
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    Object.entries(updates).forEach(([key, value], index) => {
-      const placeholder = `#attr${index}`;
-      const valuePlaceholder = `:val${index}`;
-      updateExpressions.push(`${placeholder} = ${valuePlaceholder}`);
-      expressionAttributeNames[placeholder] = key;
-      expressionAttributeValues[valuePlaceholder] = value;
-    });
-
-    // Always update updatedAt
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
-
-    await db.send(new UpdateCommand({
-      TableName: TABLE.ENTRIES,
-      Key: { entryId },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
-    }));
-  }
-
-  /**
    * Find entry by transaction hash (for deduplication)
-   * Note: Uses Scan - optimize with GSI if needed
+   * Note: Uses Scan - consider adding GSI if heavily used
    */
   async findByTransactionHash(transactionHash: string): Promise<EntryItem | null> {
     const { Items } = await db.send(new ScanCommand({
@@ -123,14 +90,7 @@ export class EntryRepository {
   }
 
   /**
-   * Update entry source field (for marking platform entries as 'BOTH')
-   */
-  async updateSource(entryId: string, source: 'PLATFORM' | 'DIRECT_CONTRACT' | 'BOTH'): Promise<void> {
-    await this.update(entryId, { source });
-  }
-
-  /**
-   * Get all entries for a raffle (no pagination, for stats)
+   * Get all entries for a raffle (no pagination, for winner selection)
    */
   async findByRaffleId(raffleId: string): Promise<EntryItem[]> {
     const allItems: EntryItem[] = [];
@@ -176,21 +136,40 @@ export class EntryRepository {
   }
 
   /**
-   * Get total entries for a user in a specific raffle
+   * Update entry status or other fields
    */
-  async getUserEntriesInRaffle(walletAddress: string, raffleId: string): Promise<number> {
-    const entries = await this.getUserEntriesForRaffle(raffleId, walletAddress);
-    return entries.reduce((sum, e) => sum + e.numEntries, 0);
+  async update(entryId: string, updates: Partial<EntryItem>): Promise<void> {
+    const updateExpressions: string[] = [];
+    const expressionAttributeNames: Record<string, string> = {};
+    const expressionAttributeValues: Record<string, any> = {};
+
+    Object.entries(updates).forEach(([key, value], index) => {
+      const placeholder = `#attr${index}`;
+      const valuePlaceholder = `:val${index}`;
+      updateExpressions.push(`${placeholder} = ${valuePlaceholder}`);
+      expressionAttributeNames[placeholder] = key;
+      expressionAttributeValues[valuePlaceholder] = value;
+    });
+
+    updateExpressions.push('#updatedAt = :updatedAt');
+    expressionAttributeNames['#updatedAt'] = 'updatedAt';
+    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+
+    await db.send(new UpdateCommand({
+      TableName: TABLE.ENTRIES,
+      Key: { entryId },
+      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
+      ExpressionAttributeNames: expressionAttributeNames,
+      ExpressionAttributeValues: expressionAttributeValues,
+    }));
   }
 
   /**
    * Mark multiple entries as refunded (batch operation)
    */
   async markAsRefunded(entryIds: string[]): Promise<void> {
-    // DynamoDB doesn't support batch updates, so we update one by one
-    // For better performance, could use Promise.all but keeping sequential for safety
-    for (const entryId of entryIds) {
-      await this.update(entryId, { status: 'refunded' });
-    }
+    await Promise.all(
+      entryIds.map(entryId => this.update(entryId, { status: 'refunded' }))
+    );
   }
 }

@@ -5,11 +5,11 @@
 // ============================================================================
 
 import { useAdmin } from '@/shared/hooks/useAdmin';
-import { useAdminStats } from '@/features/admin/hooks/useAdminStats';
-import DashboardStats from '@/features/admin/components/DashboardStats';
-import ActiveRafflesTable from '@/features/admin/components/ActiveRafflesTable';
-import RecentDrawsTable from '@/features/admin/components/RecentDrawsTable';
-import RevenueChart from '@/features/admin/components/RevenueChart';
+import { useAdminStats } from '@/lib/hooks/admin/useAdminStats';
+import DashboardStats from '@/components/admin/DashboardStats';
+import ActiveRafflesTable from '@/components/admin/ActiveRafflesTable';
+import RecentDrawsTable from '@/components/admin/RecentDrawsTable';
+import RevenueChart from '@/components/admin/RevenueChart';
 import ConnectButton from '@/shared/components/web3/ConnectButton';
 
 export default function AdminDashboardPage() {

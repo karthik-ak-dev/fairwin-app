@@ -11,11 +11,11 @@
  * GSI2: walletAddress-createdAt-index (walletAddress + createdAt) - Get all entries for a user
  *
  * Transaction Flow:
- * 1. User approves USDC spending on frontend
- * 2. User calls smart contract enterRaffle(raffleId, numEntries)
- * 3. Transaction confirmed on-chain
- * 4. Frontend calls API to record entry in database
- * 5. Entry status set to 'confirmed'
+ * 1. User transfers USDC directly to the platform wallet on Polygon
+ * 2. Transaction is confirmed on Polygon blockchain (typically 2-5 seconds)
+ * 3. Frontend calls API with the transaction hash
+ * 4. Backend verifies the USDC transfer on-chain by reading the transaction
+ * 5. Entry is recorded in database with status 'confirmed'
  *
  * Use Cases:
  * - Display raffle participants list
@@ -66,51 +66,28 @@ export interface EntryItem {
   totalPaid: number;
 
   /**
-   * Blockchain transaction hash proving payment
+   * Polygon transaction hash proving USDC payment
    * Example: "0xabcd1234...5678efab"
    * Used for:
-   * - On-chain verification
+   * - Backend verification (verify USDC transfer to platform wallet)
    * - Linking to block explorer (Polygonscan)
    * - Audit trail
    * - Dispute resolution
+   * - Prevents duplicate entries (transaction can only be used once)
    */
   transactionHash: string;
 
   /**
-   * Block number when transaction was mined
-   * Example: 12345678
-   * Used for:
-   * - Chronological ordering
-   * - Blockchain event syncing
-   * - Finality confirmation (wait N blocks)
-   */
-  blockNumber: number;
-
-  /**
-   * Current status of this entry transaction
+   * Current status of this entry
    *
-   * - confirmed: Transaction mined and verified on-chain (normal state)
-   * - pending: Transaction submitted but not yet mined (temporary)
-   * - failed: Transaction reverted or failed (rare, requires investigation)
+   * - confirmed: Payment verified on-chain (normal state)
+   * - pending: Transaction submitted but not yet confirmed (temporary)
+   * - failed: Transaction failed or was rejected (rare)
    * - refunded: Entry refunded due to raffle cancellation
    *
-   * Most entries should be 'confirmed' within seconds
+   * Most entries should be 'confirmed' within 15-30 seconds on Polygon
    */
   status: 'confirmed' | 'pending' | 'failed' | 'refunded';
-
-  /**
-   * Source of entry creation
-   *
-   * - PLATFORM: Created through platform API (user entered via frontend)
-   * - DIRECT_CONTRACT: Created from blockchain event sync (user called contract directly)
-   * - BOTH: Created via platform AND confirmed by blockchain event sync
-   *
-   * Used for:
-   * - Analytics: Track platform vs direct contract usage
-   * - Debugging: Identify entries that bypassed platform
-   * - Reconciliation: Ensure platform entries match blockchain events
-   */
-  source?: 'PLATFORM' | 'DIRECT_CONTRACT' | 'BOTH';
 
   /**
    * ISO 8601 timestamp of when entry was created
@@ -129,7 +106,6 @@ export interface EntryItem {
    * Example: "2025-01-29T14:35:00.000Z"
    *
    * Updated when:
-   * - Entry source changes (PLATFORM → BOTH)
    * - Entry status changes (confirmed → refunded)
    */
   updatedAt?: string;
@@ -140,7 +116,7 @@ export interface EntryItem {
  *
  * Only requires fields from transaction - other fields are generated:
  * - entryId: Generated as UUID
- * - status: Defaults to 'confirmed' (or 'pending' if async)
+ * - status: Defaults to 'confirmed' (after verification)
  * - createdAt: Set to current time
  *
  * Example Usage:
@@ -150,8 +126,7 @@ export interface EntryItem {
  *   walletAddress: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
  *   numEntries: 5,
  *   totalPaid: 5000000, // 5 USDC
- *   transactionHash: '0xabcd...1234',
- *   blockNumber: 12345678
+ *   transactionHash: '0xabcd...1234'
  * });
  * ```
  *
@@ -167,5 +142,5 @@ export interface EntryItem {
  */
 export type CreateEntryInput = Pick<
   EntryItem,
-  'raffleId' | 'walletAddress' | 'numEntries' | 'totalPaid' | 'transactionHash' | 'blockNumber'
+  'raffleId' | 'walletAddress' | 'numEntries' | 'totalPaid' | 'transactionHash'
 >;

@@ -103,41 +103,6 @@ export class StatsRepository {
     }));
   }
 
-
-  /**
-   * Get last synced block number (for event sync)
-   */
-  async getLastSyncedBlock(): Promise<number> {
-    const stats = await this.get();
-    return stats?.lastSyncedBlock || 0;
-  }
-
-  /**
-   * Update last synced block (for event sync)
-   */
-  async updateLastSyncedBlock(blockNumber: number, error?: string): Promise<void> {
-    const updateExpression = error
-      ? 'SET lastSyncedBlock = :block, lastSyncedAt = :timestamp, lastSyncError = :error, updatedAt = :updatedAt'
-      : 'SET lastSyncedBlock = :block, lastSyncedAt = :timestamp, updatedAt = :updatedAt REMOVE lastSyncError';
-
-    const expressionAttributeValues: Record<string, any> = {
-      ':block': blockNumber,
-      ':timestamp': new Date().toISOString(),
-      ':updatedAt': new Date().toISOString(),
-    };
-
-    if (error) {
-      expressionAttributeValues[':error'] = error;
-    }
-
-    await db.send(new UpdateCommand({
-      TableName: TABLE.PLATFORM_STATS,
-      Key: STATS_KEY,
-      UpdateExpression: updateExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-    }));
-  }
-
   /**
    * Record new entry (increment entry count and revenue)
    * Used by shared business logic

@@ -2,7 +2,7 @@
 
 import Header from '@/shared/components/layout/Header';
 import Footer from '@/shared/components/layout/Footer';
-import RaffleDetail from '@/features/raffle/components/RaffleDetail';
+import RaffleDetail from '@/components/raffle/RaffleDetail';
 import { use } from 'react';
 
 export default function RaffleDetailPage({ params }: { params: Promise<{ id: string }> }) {

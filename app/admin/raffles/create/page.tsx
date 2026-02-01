@@ -5,7 +5,7 @@
 // ============================================================================
 
 import Link from 'next/link';
-import CreateRaffleForm from '@/features/admin/components/CreateRaffleForm';
+import CreateRaffleForm from '@/components/admin/CreateRaffleForm';
 
 export default function CreateRafflePage() {
   return (

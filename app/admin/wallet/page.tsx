@@ -5,9 +5,9 @@
 // ============================================================================
 
 import { useAdmin } from '@/shared/hooks/useAdmin';
-import WalletHero from '@/features/admin/components/WalletHero';
-import WithdrawForm from '@/features/admin/components/WithdrawForm';
-import FundGasForm from '@/features/admin/components/FundGasForm';
+import WalletHero from '@/components/admin/WalletHero';
+import WithdrawForm from '@/components/admin/WithdrawForm';
+import FundGasForm from '@/components/admin/FundGasForm';
 import { Skeleton } from '@/shared/components/ui';
 
 export default function WalletPage() {

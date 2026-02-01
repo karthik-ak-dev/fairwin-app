@@ -14,14 +14,13 @@ import { requireAuth } from '@/lib/api/admin-auth';
  * Security Layers:
  * 1. JWT token verification (proves wallet ownership via signature)
  * 2. Token address must match walletAddress in body
- * 3. Transaction verification on blockchain (prevents fake entries)
+ * 3. USDC transfer verification on blockchain (prevents fake entries)
  *
  * Body:
  * - walletAddress: User's wallet address
  * - numEntries: Number of entries to create
- * - totalPaid: Total amount paid in USDC cents
- * - transactionHash: Blockchain transaction hash
- * - blockNumber: Block number (optional, will be verified from blockchain)
+ * - totalPaid: Total amount paid in USDC (smallest unit, 6 decimals)
+ * - transactionHash: USDC transfer transaction hash
  */
 export async function POST(
   request: NextRequest,
@@ -31,7 +30,7 @@ export async function POST(
     const { id: raffleId } = await params;
     const body = await request.json();
 
-    const { walletAddress, numEntries, totalPaid, transactionHash, blockNumber } = body;
+    const { walletAddress, numEntries, totalPaid, transactionHash } = body;
 
     if (!walletAddress || !numEntries || !totalPaid || !transactionHash) {
       return badRequest('Missing required fields: walletAddress, numEntries, totalPaid, transactionHash');
@@ -45,14 +44,13 @@ export async function POST(
       return unauthorized('Authenticated wallet does not match request wallet address');
     }
 
-    // SECURITY LAYER 3: Transaction verification happens in createEntry service
+    // SECURITY LAYER 3: USDC transfer verification happens in createEntry service
     const result = await createEntry({
       raffleId,
       walletAddress,
       numEntries,
       totalPaid,
       transactionHash,
-      blockNumber: blockNumber || 0, // Will be replaced by verified block number
     });
 
     return created({ entry: result });

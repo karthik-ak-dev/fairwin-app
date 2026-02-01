@@ -1,15 +1,22 @@
 /**
- * Raffle Draw Service
+ * Raffle Draw Service - Simplified for Backend Winner Selection
  *
- * Handles draw initiation only.
- * Winner selection happens ON-CHAIN via Chainlink VRF.
- * Winners are recorded via blockchain event listeners.
+ * Handles instant winner selection without blockchain VRF.
+ * Winners are selected immediately using crypto-secure randomness.
+ *
+ * Flow:
+ * 1. Validate raffle can be drawn
+ * 2. Get all entries for raffle
+ * 3. Generate random seed (block hash or crypto.random)
+ * 4. Select winners deterministically using seed
+ * 5. Create winner records with payoutStatus='pending'
+ * 6. Update raffle status to 'completed'
+ * 7. Create audit log
+ *
+ * NO VRF, NO blockchain writes, NO event listeners
  */
 
-import { raffleRepo } from '@/lib/db/repositories';
-import { entryRepo } from '@/lib/db/repositories';
-import { winnerRepo } from '@/lib/db/repositories';
-import { blockchain } from '@/lib/constants';
+import { raffleRepo, entryRepo, winnerRepo, userRepo, statsRepo } from '@/lib/db/repositories';
 import type { DrawInitiationResult, WinnerSelectionResult } from '../types';
 import {
   RaffleNotFoundError,
@@ -19,10 +26,16 @@ import {
 import {
   validateRaffleDrawable,
 } from './raffle-validation.service';
-import { requestRandomness } from './raffle-blockchain.service';
+import {
+  selectWinnersWithBlockHash,
+  selectWinnersWithCrypto,
+  type SelectedWinner,
+} from './raffle-winner-selection.service';
+import { auditWinnerSelection } from '../audit/audit-trail.service';
+import { env } from '@/lib/env';
 
 /**
- * Initiate raffle draw with VRF request
+ * Initiate raffle draw with instant winner selection
  *
  * Business Rules:
  * - Raffle must be in active or ending status
@@ -32,19 +45,26 @@ import { requestRandomness } from './raffle-blockchain.service';
  *
  * Flow:
  * 1. Validate raffle state
- * 2. Change status to 'drawing'
- * 3. Request randomness from Chainlink VRF (triggers on-chain draw)
- * 4. Store VRF request ID
- * 5. Contract will select winners and pay them automatically
- * 6. Event listener will record winners when WinnersSelected event fires
+ * 2. Get all entries
+ * 3. Change status to 'drawing'
+ * 4. Generate random seed and select winners
+ * 5. Create winner records
+ * 6. Update user stats
+ * 7. Change status to 'completed'
+ * 8. Create audit log
  *
+ * @param raffleId Raffle ID to draw
+ * @param adminWallet Admin wallet triggering the draw
+ * @param useBlockHash Use block hash for seed (verifiable) vs crypto random (faster)
+ * @returns Draw result with winners
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws RaffleNotDrawableError if raffle cannot be drawn
  * @throws RaffleAlreadyDrawnError if raffle already drawn
  */
 export async function initiateRaffleDraw(
   raffleId: string,
-  chainId: number = blockchain.DEFAULT_CHAIN_ID
+  adminWallet: string,
+  useBlockHash: boolean = true
 ): Promise<DrawInitiationResult> {
   // Get raffle
   const raffle = await raffleRepo.getById(raffleId);
@@ -57,7 +77,7 @@ export async function initiateRaffleDraw(
     throw new RaffleAlreadyDrawnError(raffleId);
   }
 
-  // Get entry count
+  // Get all entries
   const entriesResult = await entryRepo.getByRaffle(raffleId);
   const entries = entriesResult.items;
 
@@ -71,41 +91,105 @@ export async function initiateRaffleDraw(
   // Update status to drawing
   await raffleRepo.update(raffleId, {
     status: 'drawing',
+    drawTime: new Date().toISOString(),
   });
 
-  // Request randomness from VRF (triggers on-chain draw)
-  // Contract will:
-  // 1. Request random number from Chainlink VRF
-  // 2. Receive callback with random number
-  // 3. Select winners ON-CHAIN
-  // 4. Pay winners AUTOMATICALLY
-  // 5. Emit WinnersSelected event
-  const vrfResult = await requestRandomness(
-    raffleId,
-    chainId
-  );
+  console.log(`[DrawService] Starting draw for raffle ${raffleId} with ${entries.length} entries`);
 
-  // Store VRF request ID
+  // Select winners using chosen randomness method
+  const selectionResult = useBlockHash
+    ? await selectWinnersWithBlockHash(entries, raffle.winnerPayout, raffle.winnerCount, env.CHAIN_ID)
+    : selectWinnersWithCrypto(entries, raffle.winnerPayout, raffle.winnerCount);
+
+  console.log(`[DrawService] Selected ${selectionResult.winners.length} winners using ${useBlockHash ? 'block hash' : 'crypto random'}`);
+
+  // Create winner records in database
+  await createWinnerRecords(raffleId, selectionResult.winners);
+
+  // Update user stats for all winners
+  await updateWinnerStats(raffleId, selectionResult.winners);
+
+  // Update raffle to completed
   await raffleRepo.update(raffleId, {
-    vrfRequestId: vrfResult.requestId,
+    status: 'completed',
+    randomSeed: selectionResult.randomSeed,
   });
+
+  // Create audit log
+  await auditWinnerSelection({
+    raffleId,
+    adminWallet,
+    randomSeed: selectionResult.randomSeed,
+    blockNumber: selectionResult.blockNumber,
+    blockHash: selectionResult.blockHash,
+    winners: selectionResult.winners.map(w => ({
+      walletAddress: w.walletAddress,
+      ticketNumber: w.ticketNumber,
+      prize: w.prize,
+      tier: w.tier,
+    })),
+    totalTickets: selectionResult.totalTickets,
+    totalPrize: selectionResult.totalPrize,
+  });
+
+  console.log(`[DrawService] Draw completed for raffle ${raffleId}`);
 
   return {
     raffleId,
-    vrfRequestId: vrfResult.requestId,
-    status: 'drawing',
+    winners: selectionResult.winners,
+    randomSeed: selectionResult.randomSeed,
+    blockHash: selectionResult.blockHash,
+    status: 'completed',
     timestamp: Date.now(),
   };
 }
 
 /**
+ * Create winner records in database
+ */
+async function createWinnerRecords(raffleId: string, winners: SelectedWinner[]): Promise<void> {
+  for (const winner of winners) {
+    await winnerRepo.create({
+      raffleId,
+      walletAddress: winner.walletAddress,
+      ticketNumber: winner.ticketNumber,
+      totalTickets: winner.totalTickets,
+      prize: winner.prize,
+      tier: winner.tier,
+      payoutStatus: 'pending', // Admin will send payouts later
+    });
+  }
+
+  console.log(`[DrawService] Created ${winners.length} winner records`);
+}
+
+/**
+ * Update user stats for winners
+ */
+async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): Promise<void> {
+  // Get unique winners (same user might win multiple times)
+  const uniqueWinners = new Map<string, number>();
+  for (const winner of winners) {
+    const currentPrize = uniqueWinners.get(winner.walletAddress) || 0;
+    uniqueWinners.set(winner.walletAddress, currentPrize + winner.prize);
+  }
+
+  // Update stats for each unique winner
+  for (const [walletAddress, totalWon] of uniqueWinners) {
+    await userRepo.recordWin(walletAddress, raffleId, totalWon);
+  }
+
+  // Update platform stats
+  const totalPrize = winners.reduce((sum, w) => sum + w.prize, 0);
+  await statsRepo.recordPayout(totalPrize, winners.length);
+
+  console.log(`[DrawService] Updated stats for ${uniqueWinners.size} unique winners`);
+}
+
+/**
  * Get winners for a completed raffle
  *
- * This function READS winners that were already selected by the contract
- * and recorded by the event listener. It does NOT select winners.
- *
- * @deprecated This is now just a data retrieval function.
- * Winners are selected on-chain and recorded via WinnersSelected event listener.
+ * Returns winners that were selected during the draw
  */
 export async function getDrawResults(
   raffleId: string
@@ -116,13 +200,48 @@ export async function getDrawResults(
     throw new RaffleNotFoundError(raffleId);
   }
 
-  // Get winners that were recorded by event listener
+  // Get winners
   const winnersResult = await winnerRepo.getByRaffle(raffleId);
 
   return {
     raffleId,
     winners: winnersResult.items,
-    randomNumber: raffle.vrfRandomWord || '0',
+    randomSeed: raffle.randomSeed || '',
     timestamp: Date.now(),
   };
+}
+
+/**
+ * Check if raffle is ready to be drawn
+ */
+export async function isRaffleReadyForDraw(raffleId: string): Promise<{
+  ready: boolean;
+  reason?: string;
+}> {
+  const raffle = await raffleRepo.getById(raffleId);
+  if (!raffle) {
+    return { ready: false, reason: 'Raffle not found' };
+  }
+
+  if (raffle.status === 'completed') {
+    return { ready: false, reason: 'Raffle already drawn' };
+  }
+
+  if (raffle.status === 'cancelled') {
+    return { ready: false, reason: 'Raffle cancelled' };
+  }
+
+  const now = new Date().getTime();
+  const endTime = new Date(raffle.endTime).getTime();
+
+  if (now < endTime) {
+    return { ready: false, reason: 'Raffle has not ended yet' };
+  }
+
+  const entriesResult = await entryRepo.getByRaffle(raffleId);
+  if (entriesResult.items.length === 0) {
+    return { ready: false, reason: 'No entries in raffle' };
+  }
+
+  return { ready: true };
 }

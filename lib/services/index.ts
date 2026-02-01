@@ -1,23 +1,19 @@
 /**
  * Service Layer - Central Export Point
  *
- * Provides easy access to all services from a single import.
+ * Provides easy access to all backend services from a single import.
+ * Services handle business logic, database operations, and USDC verification.
  */
 
 // Raffle services
 export * as raffleEntry from './raffle/raffle-entry.service';
 export * as raffleDraw from './raffle/raffle-draw.service';
-// Removed: rafflePayout - Winners paid automatically by contract
+export * as raffleManagement from './raffle/raffle-management.service';
 export * as raffleQuery from './raffle/raffle-query.service';
 export * as raffleParticipant from './raffle/raffle-participant.service';
 export * as raffleValidation from './raffle/raffle-validation.service';
 export * as raffleStatus from './raffle/raffle-status.service';
-export * as raffleBlockchain from './raffle/raffle-blockchain.service';
-export * as raffleEventHandlers from './raffle/raffle-event-handlers';
-export * as raffleEventListener from './raffle/raffle-event-listener.service';
-export * as raffleEventSync from './raffle/raffle-event-sync.service';
-export * as raffleTransactionVerification from './raffle/raffle-transaction-verification.service';
-export * as raffleVrf from './raffle/raffle-vrf.service';
+export * as raffleWinnerSelection from './raffle/raffle-winner-selection.service';
 
 // User services
 export * as userProfile from './user/user-profile.service';
@@ -26,14 +22,13 @@ export * as userStats from './user/user-stats.service';
 
 // Admin services
 export * as adminStats from './admin/admin-stats.service';
-export * as adminWallet from './admin/admin-wallet.service';
-export * as adminFees from './admin/admin-fees.service';
-// Removed: adminPayout - Manual payout processing deleted
+export * as adminPayout from './admin/admin-payout.service';
 
-// Blockchain services (generic only)
-export * as contractRead from './blockchain/contract-read.service';
-export * as contractWrite from './blockchain/contract-write.service';
-export * as walletBalance from './blockchain/wallet-balance.service';
+// Blockchain services (read-only for USDC verification)
+export * as usdcTransferVerification from './blockchain/usdc-transfer-verification.service';
+
+// Audit services
+export * as auditTrail from './audit/audit-trail.service';
 
 // Shared utilities
 export * from './shared/cache.service';

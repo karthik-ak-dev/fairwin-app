@@ -1,28 +1,22 @@
 /**
  * Payout Model - Raffle Game Specific
  *
- * Represents a prize payment transaction that was automatically executed by the smart contract.
- * Created as a RECORD of on-chain payouts when WinnersSelected event is detected.
- *
- * IMPORTANT: Payouts are NOT processed by the backend.
- * - Smart contract automatically sends USDC to winners on-chain
- * - Backend listens to WinnersSelected event and creates records with status='paid'
- * - This is a read-only record of what happened on-chain
+ * Represents a prize payment transaction sent to a winner.
+ * Admin manually sends USDC to winners after reviewing the draw results.
  *
  * DynamoDB Table: FairWin-{Env}-Raffle-Payouts
  * Primary Key: payoutId (HASH)
  * GSI1: winnerId-createdAt-index (winnerId + createdAt) - Get all payouts for a winner
  * GSI2: status-createdAt-index (status + createdAt) - Query payouts by status
  *
- * Payout Flow (Automated by Contract):
- * 1. Admin triggers draw via contract
- * 2. Contract requests randomness from Chainlink VRF
- * 3. VRF responds with random number
- * 4. Contract selects winners and AUTOMATICALLY sends USDC to them
- * 5. Contract emits WinnersSelected event
- * 6. Backend event listener detects event
- * 7. Backend creates PayoutItem records with status='paid' (recording only)
- * 8. transactionHash captured from event for proof
+ * Payout Flow (Manual):
+ * 1. Admin triggers draw → Winners selected immediately
+ * 2. Backend creates WinnerItem records with payoutStatus='pending'
+ * 3. Admin reviews winners in admin panel
+ * 4. Admin clicks "Send Payouts"
+ * 5. Backend/Admin sends USDC transactions to each winner
+ * 6. Backend creates PayoutItem records with status='paid'
+ * 7. transactionHash stored for proof
  *
  * Use Cases:
  * - Historical record of all payouts
@@ -30,6 +24,7 @@
  * - Display winner payment status in UI
  * - Audit trail for financial reporting
  * - Link to blockchain transaction (Polygonscan)
+ * - Track pending vs completed payouts
  */
 export interface PayoutItem {
   /**
@@ -85,20 +80,22 @@ export interface PayoutItem {
   /**
    * Current status of this payout
    *
-   * - 'paid': Winner was paid by smart contract (only state used in current architecture)
+   * - pending: Payout queued but not yet sent
+   * - processing: Transaction submitted to blockchain
+   * - paid: USDC successfully sent to winner
+   * - failed: Transaction failed or was rejected
    *
-   * NOTE: 'pending' and 'failed' states exist for backwards compatibility but are unused.
-   * All payouts are created with status='paid' because the contract pays winners automatically.
-   * There is no backend payout processing - we only record what the contract did.
-   *
-   * The contract guarantees payment before emitting the WinnersSelected event,
-   * so when we create a PayoutItem, the winner has already been paid on-chain.
+   * Status Transitions:
+   * - pending → processing (when admin initiates payout)
+   * - processing → paid (when transaction confirms)
+   * - processing → failed (if transaction fails)
+   * - failed → processing (when retrying)
    */
-  status: 'pending' | 'paid' | 'failed';
+  status: 'pending' | 'processing' | 'paid' | 'failed';
 
   /**
-   * Blockchain transaction hash of successful payout (optional)
-   * Set only when status='paid'
+   * Blockchain transaction hash of payout (optional)
+   * Set when transaction is submitted to blockchain
    * Example: "0x1234abcd...5678efgh"
    *
    * Used for:
@@ -108,18 +105,22 @@ export interface PayoutItem {
    * - Audit trail
    * - Dispute resolution
    *
-   * Remains undefined if status='pending' or 'failed'
+   * Set when status='processing' or 'paid'
+   * Remains undefined if status='pending'
    */
   transactionHash?: string;
 
   /**
    * Error message if payout failed (optional)
+   * Contains reason why transaction failed
+   * Examples:
+   * - "Insufficient balance"
+   * - "Transaction reverted"
+   * - "Invalid recipient address"
+   * - "Gas estimation failed"
    *
-   * NOTE: Unused in current architecture - kept for backwards compatibility.
-   * Contract payouts cannot fail after WinnersSelected event is emitted.
-   * If a winner's address is invalid, the contract reverts before emitting the event.
-   *
-   * Always undefined since all payouts have status='paid'.
+   * Only set when status='failed'
+   * Used for debugging and retry logic
    */
   error?: string;
 
@@ -166,31 +167,32 @@ export interface PayoutItem {
 /**
  * Input type for creating a new payout record
  *
- * Called automatically when WinnersSelected blockchain event is detected.
- * Creates a RECORD of an already-completed on-chain payment.
+ * Created when winners are selected, initially with status='pending'.
+ * Updated to 'paid' when admin sends USDC transaction.
  *
  * Generated fields:
  * - payoutId: Generated as UUID
- * - status: Always set to 'paid' (contract already paid winner)
- * - transactionHash: Set from blockchain event
+ * - status: Defaults to 'pending' (admin hasn't sent yet)
+ * - transactionHash: Set later when payout is sent
  * - createdAt, updatedAt: Set to current time
- * - processedAt: Set to current time (payment already processed by contract)
+ * - processedAt: Set when status transitions to 'paid'
  *
  * Example Usage:
  * ```typescript
- * // In event-listener.service.ts when handling WinnersSelected event
+ * // After winner selection
  * await payoutRepo.create({
  *   winnerId: winner.winnerId,
  *   raffleId: winner.raffleId,
  *   walletAddress: winner.walletAddress,
- *   amount: winner.prize
+ *   amount: winner.prize,
+ *   status: 'pending'
  * });
  *
- * // Then immediately update to paid status with transaction hash
+ * // Later, when admin sends payout
  * await payoutRepo.updateStatus(
  *   payout.payoutId,
  *   'paid',
- *   eventTransactionHash
+ *   transactionHash
  * );
  * ```
  *
@@ -198,7 +200,7 @@ export interface PayoutItem {
  * - Sum of all payout.amount should equal total prizes distributed
  * - Each winner.winnerId should have exactly one payout
  * - payout.amount should always equal winner.prize
- * - All payouts should have status='paid' and a valid transactionHash
+ * - All completed payouts should have status='paid' and a valid transactionHash
  * - Transaction hash should be verifiable on Polygonscan
  */
 export type CreatePayoutInput = Pick<PayoutItem, 'winnerId' | 'raffleId' | 'walletAddress' | 'amount'> & {

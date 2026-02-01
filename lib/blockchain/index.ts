@@ -1,8 +1,8 @@
 /**
  * Blockchain Integration Layer
  *
- * Central export point for all blockchain-related functionality.
- * Provides contract addresses, ABIs, and client utilities.
+ * Read-only blockchain utilities for USDC payment verification on Polygon.
+ * Provides USDC token addresses and client utilities for reading transactions.
  */
 
 export * from './addresses';

@@ -68,7 +68,7 @@ export interface PlatformStatsItem {
 
   /**
    * Total number of winners across all raffles
-   * Incremented when winners are selected via VRF
+   * Incremented when winners are selected by backend
    * One raffle can have multiple winners (1st, 2nd, 3rd place, etc.)
    */
   totalWinners: number;
@@ -137,42 +137,6 @@ export interface PlatformStatsItem {
     // poker: number;
     // lottery: number;
   };
-
-  /**
-   * Last blockchain block number that was synced (optional)
-   * Used by event sync service to track progress
-   * Incremented after successful event sync
-   *
-   * Example: 12345678
-   *
-   * Usage:
-   * - Event sync fetches events from lastSyncedBlock+1 to latest
-   * - Prevents duplicate event processing
-   * - Enables recovery from sync failures
-   */
-  lastSyncedBlock?: number;
-
-  /**
-   * ISO 8601 timestamp of last successful event sync (optional)
-   * Example: "2025-01-31T10:30:00.000Z"
-   *
-   * Used for:
-   * - Monitoring sync health
-   * - Detecting sync lag (should be within 30 seconds)
-   * - Alerting if sync hasn't run recently
-   */
-  lastSyncedAt?: string;
-
-  /**
-   * Last error message from event sync (optional)
-   * Set when sync encounters errors but continues (best-effort)
-   * Cleared on next successful sync with no errors
-   *
-   * Example: "3 errors occurred during sync"
-   *
-   * If present, indicates partial sync success
-   */
-  lastSyncError?: string;
 
   /**
    * ISO 8601 timestamp of when platform stats were initialized

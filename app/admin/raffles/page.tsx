@@ -6,8 +6,8 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
-import { useAdminRaffles } from '@/features/admin/hooks/useAdminRaffles';
-import { useTriggerDraw } from '@/features/admin/hooks/useTriggerDraw';
+import { useAdminRaffles } from '@/lib/hooks/admin/useAdminRaffles';
+import { useTriggerDraw } from '@/lib/hooks/admin/useTriggerDraw';
 import { formatUSDC, formatNumber, formatTime } from '@/shared/utils/format';
 
 // ---------------------------------------------------------------------------

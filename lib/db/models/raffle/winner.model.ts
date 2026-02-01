@@ -1,29 +1,28 @@
 /**
  * Winner Model - Raffle Game Specific
  *
- * Represents a winning entry selected by Chainlink VRF after a raffle ends.
+ * Represents a winning entry selected after a raffle ends.
  * Each raffle can have multiple winners (1st place, 2nd place, 3rd place, etc.).
- * Winners are selected using provably fair, verifiable randomness from VRF.
+ * Winners are selected using cryptographically secure randomness.
  *
  * DynamoDB Table: FairWin-{Env}-Raffle-Winners
  * Primary Key: winnerId (HASH)
  * GSI1: raffleId-createdAt-index (raffleId + createdAt) - Get all winners for a raffle
  * GSI2: walletAddress-createdAt-index (walletAddress + createdAt) - Get all wins for a user
  *
- * VRF Winner Selection Process:
+ * Winner Selection Process:
  * 1. Raffle ends (current time > endTime)
- * 2. Admin or scheduler triggers draw
- * 3. Smart contract requests random number from Chainlink VRF
- * 4. VRF Coordinator returns verifiable random number
- * 5. Random number used to select winning ticket numbers
- * 6. Winner records created for each prize tier
- * 7. Payouts initiated
+ * 2. Admin triggers draw
+ * 3. Backend generates random seed (from block hash or crypto.randomBytes)
+ * 4. Seed used to deterministically select winning ticket numbers
+ * 5. Winner records created for each prize tier
+ * 6. Admin reviews and initiates payouts
  *
  * Use Cases:
  * - Display winners on raffle results page
  * - Show user's win history
  * - Calculate payout amounts
- * - Verify VRF fairness (ticket selection)
+ * - Verify fairness (ticket selection can be reproduced with stored seed)
  * - Winners leaderboard
  */
 export interface WinnerItem {
@@ -59,12 +58,13 @@ export interface WinnerItem {
   /**
    * The specific ticket number that won
    * Range: 1 to totalTickets
-   * Selected deterministically using VRF random number
+   * Selected deterministically using random seed
    *
    * Example: If totalTickets = 100, ticketNumber could be 42
    *
    * Selection algorithm:
-   * winningTicket = (vrfRandomNumber % totalTickets) + 1
+   * Uses seeded PRNG with stored randomSeed to pick winning tickets
+   * Anyone can verify by re-running selection with same seed
    *
    * This is THE winning ticket number that secured the prize
    */
@@ -117,19 +117,33 @@ export interface WinnerItem {
   tier: string;
 
   /**
-   * Blockchain transaction hash of payout (optional)
+   * Payout status for this winner
+   *
+   * - pending: Winner selected but payout not yet sent
+   * - paid: USDC sent to winner's wallet
+   * - failed: Payout attempt failed (retry needed)
+   *
+   * Transitions:
+   * - pending → paid (when admin sends USDC)
+   * - pending → failed (if transaction fails)
+   * - failed → paid (after successful retry)
+   */
+  payoutStatus: 'pending' | 'paid' | 'failed';
+
+  /**
+   * Polygon transaction hash of payout (optional)
    * Set when payout is processed and sent to winner
    * Example: "0xpay0ut...hash1234"
    *
    * Used for:
    * - Proof of payment
-   * - Link to block explorer
+   * - Link to block explorer (Polygonscan)
    * - Verify payout was sent
    * - Reconciliation
    *
-   * Remains undefined until payout is processed
+   * Remains undefined until payoutStatus = 'paid'
    */
-  transactionHash?: string;
+  payoutTransactionHash?: string;
 
   /**
    * ISO 8601 timestamp when winner was selected
@@ -149,17 +163,18 @@ export interface WinnerItem {
 /**
  * Input type for creating a new winner
  *
- * Called after VRF returns random number and winners are selected.
- * Only requires fields from VRF result - other fields are generated:
+ * Called after backend selects winners using random seed.
+ * Only requires fields from selection result - other fields are generated:
  * - winnerId: Generated as UUID
- * - transactionHash: Set later when payout is processed
+ * - payoutStatus: Defaults to 'pending'
+ * - payoutTransactionHash: Set later when payout is sent
  * - createdAt: Set to current time
  *
  * Example Usage:
  * ```typescript
- * // After VRF selects winners
- * const vrfRandom = 123456789;
- * const winningTicket = (vrfRandom % totalTickets) + 1;
+ * // After winner selection
+ * const randomSeed = '0x1a2b3c...'; // from block hash or crypto.randomBytes
+ * const winningTicket = selectWinningTicket(randomSeed, totalTickets);
  *
  * await winnerRepo.create({
  *   raffleId: 'raffle-123',
@@ -167,12 +182,12 @@ export interface WinnerItem {
  *   ticketNumber: winningTicket,
  *   totalTickets: 100,
  *   prize: 500000000, // 500 USDC
- *   tier: '1st'
+ *   tier: '1st',
+ *   payoutStatus: 'pending'
  * });
  * ```
  *
  * Side Effects (handled by repository/API):
- * - Create corresponding PayoutItem with status='pending'
  * - Increment user.totalWon by prize amount
  * - Increment user.rafflesWon by 1
  * - Update user.winRate
@@ -181,14 +196,15 @@ export interface WinnerItem {
  *
  * Verification:
  * Anyone can verify the winner selection is fair by:
- * 1. Get raffle.vrfRandomWord from blockchain
- * 2. Calculate: winningTicket = (vrfRandomWord % totalTickets) + 1
- * 3. Verify winner.ticketNumber matches calculation
- * 4. Check Chainlink VRF proof on-chain
+ * 1. Get raffle.randomSeed from database
+ * 2. Re-run selection algorithm with same seed
+ * 3. Verify winner.ticketNumber matches result
+ * 4. Check algorithm source code on GitHub (open source)
  */
 export type CreateWinnerInput = Pick<
   WinnerItem,
   'raffleId' | 'walletAddress' | 'ticketNumber' | 'totalTickets' | 'prize' | 'tier'
 > & {
-  transactionHash?: string;
+  payoutStatus?: 'pending' | 'paid' | 'failed';
+  payoutTransactionHash?: string;
 };

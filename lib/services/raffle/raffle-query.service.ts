@@ -2,7 +2,7 @@
  * Raffle Query Service
  *
  * Handles complex raffle queries and data enrichment.
- * Enriches all raffle data with displayStatus computed from contractState.
+ * Provides comprehensive raffle data with computed display status.
  */
 
 import { raffleRepo } from '@/lib/db/repositories';
@@ -149,9 +149,8 @@ export async function getRaffleStats(raffleId: string): Promise<RaffleStats> {
     totalEntries: raffle.totalEntries,
     totalParticipants: raffle.totalParticipants,
     prizePool: raffle.prizePool,
-    status: raffle.status, // Keep original status field
-    contractState: raffle.contractState, // Include blockchain state
-    displayStatus, // Add computed display status
+    status: raffle.status,
+    displayStatus,
     entryPrice: raffle.entryPrice,
     maxEntriesPerUser: raffle.maxEntriesPerUser,
     avgEntriesPerUser: Math.round(avgEntriesPerUser * 100) / 100,

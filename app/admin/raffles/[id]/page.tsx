@@ -7,13 +7,13 @@
 import { use } from 'react';
 import Link from 'next/link';
 import { useAdmin } from '@/shared/hooks/useAdmin';
-import { useRaffle } from '@/features/raffle/hooks/useRaffle';
+import { useRaffle } from '@/lib/hooks/raffle/useRaffle';
 import { RAFFLE_STATE_CONFIG } from '@/features/raffle/constants';
 import { formatUSDC, formatNumber, formatDate } from '@/shared/utils/format';
 import { Skeleton } from '@/shared/components/ui';
-import ParticipantsList from '@/features/raffle/components/ParticipantsList';
-import PastWinners from '@/features/raffle/components/PastWinners';
-import RaffleTimer from '@/features/raffle/components/RaffleTimer';
+import ParticipantsList from '@/components/raffle/ParticipantsList';
+import PastWinners from '@/components/raffle/PastWinners';
+import RaffleTimer from '@/components/raffle/RaffleTimer';
 
 export default function AdminRaffleDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);

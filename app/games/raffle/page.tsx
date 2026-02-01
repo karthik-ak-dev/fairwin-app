@@ -3,10 +3,10 @@
 import { useState, useMemo } from 'react';
 import Header from '@/shared/components/layout/Header';
 import Footer from '@/shared/components/layout/Footer';
-import FilterTabs from '@/features/raffle/components/FilterTabs';
-import RaffleList from '@/features/raffle/components/RaffleList';
+import FilterTabs from '@/components/raffle/FilterTabs';
+import RaffleList from '@/components/raffle/RaffleList';
 import type { RaffleType } from '@/features/raffle/types';
-import { useRaffles } from '@/features/raffle/hooks/useRaffles';
+import { useRaffles } from '@/lib/hooks/raffle/useRaffles';
 import { formatUSDC, formatNumber } from '@/shared/utils/format';
 import { Skeleton } from '@/shared/components/ui';
 

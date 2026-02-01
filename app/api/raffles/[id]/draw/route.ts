@@ -3,36 +3,46 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { initiateRaffleDraw } from '@/lib/services/raffle/raffle-draw.service';
-import { blockchain } from '@/lib/constants';
 
 /**
  * POST /api/raffles/[id]/draw
  *
- * Initiate raffle draw (admin only)
+ * Initiate raffle draw with instant winner selection (admin only)
  *
- * Triggers the VRF randomness request and updates raffle status to 'drawing'
+ * Selects winners immediately using crypto-secure randomness.
+ * NO VRF, NO waiting - instant results!
  *
  * Body (optional):
- * - chainId: Blockchain chain ID (default: Polygon Mainnet)
+ * - useBlockHash: Use Polygon block hash for seed (verifiable) vs crypto.random (faster)
+ *   Default: true (recommended for transparency)
  */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdmin(request);
+    // Verify admin authentication and get admin wallet
+    const adminWallet = await requireAdmin(request);
 
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
-    const chainId = body.chainId || blockchain.DEFAULT_CHAIN_ID;
+    const useBlockHash = body.useBlockHash !== undefined ? body.useBlockHash : true;
 
-    if (typeof chainId !== 'number') {
-      return badRequest('chainId must be a number');
+    if (typeof useBlockHash !== 'boolean') {
+      return badRequest('useBlockHash must be a boolean');
     }
 
-    const result = await initiateRaffleDraw(id, chainId);
+    // Initiate draw (instant winner selection)
+    const result = await initiateRaffleDraw(id, adminWallet, useBlockHash);
 
-    return success(result);
+    return success({
+      raffleId: result.raffleId,
+      status: result.status,
+      winners: result.winners,
+      randomSeed: result.randomSeed,
+      blockHash: result.blockHash,
+      timestamp: result.timestamp,
+    });
   } catch (error) {
     return handleError(error);
   }

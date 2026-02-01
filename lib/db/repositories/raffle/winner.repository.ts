@@ -11,6 +11,7 @@ export class WinnerRepository {
     const item: WinnerItem = {
       ...input,
       winnerId: crypto.randomUUID(),
+      payoutStatus: input.payoutStatus || 'pending',
       createdAt: new Date().toISOString(),
     };
     await db.send(new PutCommand({
@@ -57,17 +58,58 @@ export class WinnerRepository {
   }
 
   /**
-   * Update winner with payout transaction hash
+   * Get a single winner by ID
    */
-  async updatePayout(winnerId: string, txHash: string): Promise<void> {
+  async getById(winnerId: string): Promise<WinnerItem | null> {
+    const { Items } = await db.send(new QueryCommand({
+      TableName: TABLE.WINNERS,
+      KeyConditionExpression: '#winnerId = :winnerId',
+      ExpressionAttributeNames: { '#winnerId': 'winnerId' },
+      ExpressionAttributeValues: { ':winnerId': winnerId },
+      Limit: 1,
+    }));
+    return (Items?.[0] as WinnerItem) ?? null;
+  }
+
+  /**
+   * Get recent winners across all raffles
+   * Note: Uses Scan - consider adding GSI for production
+   */
+  async getRecent(limit = 100): Promise<WinnerItem[]> {
+    const { Items } = await db.send(new QueryCommand({
+      TableName: TABLE.WINNERS,
+      Limit: limit,
+      ScanIndexForward: false,
+    }));
+    return (Items as WinnerItem[]) ?? [];
+  }
+
+  /**
+   * Update payout status for a winner
+   */
+  async updatePayoutStatus(
+    winnerId: string,
+    status: WinnerItem['payoutStatus'],
+    transactionHash?: string
+  ): Promise<void> {
+    const updateExpression = transactionHash
+      ? 'SET payoutStatus = :status, payoutTransactionHash = :hash, updatedAt = :now'
+      : 'SET payoutStatus = :status, updatedAt = :now';
+
+    const expressionValues: Record<string, any> = {
+      ':status': status,
+      ':now': new Date().toISOString(),
+    };
+
+    if (transactionHash) {
+      expressionValues[':hash'] = transactionHash;
+    }
+
     await db.send(new UpdateCommand({
       TableName: TABLE.WINNERS,
       Key: { winnerId },
-      UpdateExpression: 'SET transactionHash = :txHash',
-      ExpressionAttributeValues: {
-        ':txHash': txHash,
-      },
+      UpdateExpression: updateExpression,
+      ExpressionAttributeValues: expressionValues,
     }));
   }
-
 }

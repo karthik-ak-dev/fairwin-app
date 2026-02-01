@@ -1,18 +1,17 @@
 /**
  * Raffle Status Computation Service
  *
- * Computes display status from on-chain contract state + time-based logic.
- * This separates SOURCE OF TRUTH (contractState from blockchain)
- * from COMPUTED DISPLAY STATE (status for frontend).
+ * Computes display status from raffle state + time-based logic.
+ * This provides user-friendly status indicators for the frontend.
  *
  * Key Principle:
- * - contractState = What the blockchain says (read-only, immutable)
- * - displayStatus = What we show users (computed from contractState + time)
+ * - status = Base raffle state (scheduled, active, drawing, completed, cancelled)
+ * - displayStatus = What we show users (computed from status + time)
  *
- * Why This Separation Matters:
- * - Admin can pre-schedule raffles before creating them on-chain
- * - Frontend shows "ending soon" urgency UI without contract changes
- * - Migration path: we keep old "status" field during transition
+ * Why This Matters:
+ * - Admin can pre-schedule raffles
+ * - Frontend shows "ending soon" urgency UI
+ * - Clear separation between backend state and UI presentation
  */
 
 import type { RaffleItem } from '@/lib/db/models';
@@ -21,43 +20,37 @@ import { auth } from '@/lib/constants';
 /**
  * Display status type - what users see in the UI
  *
- * - scheduled: Raffle created in backend but not on-chain yet (admin pre-scheduling)
+ * - scheduled: Raffle created but not started yet
  * - active: Raffle accepting entries
  * - ending: Less than 5 minutes until endTime (urgency indicator)
- * - drawing: VRF request in progress, awaiting random number
- * - completed: Winners selected and paid by contract
+ * - drawing: Backend selecting winners
+ * - completed: Winners selected, payouts pending/processed
  * - cancelled: Raffle cancelled, refunds available
  */
 export type DisplayStatus = 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 
 /**
- * Contract state type - what's on the blockchain
- * Must match FairWinRaffle.sol RaffleState enum exactly
- */
-export type ContractState = 'active' | 'drawing' | 'completed' | 'cancelled';
-
-/**
  * Compute display status from raffle data
  *
  * Logic Flow:
- * 1. If no contractState → 'scheduled' (not on-chain yet)
- * 2. If contractState exists, check time-based overrides:
- *    - If before startTime → 'scheduled' (show countdown)
- *    - If < 5min until endTime → 'ending' (urgency UI)
- * 3. Otherwise return contractState as-is
+ * 1. If status is terminal (completed/cancelled) → return as-is
+ * 2. If status is drawing → return 'drawing'
+ * 3. If before startTime → return 'scheduled'
+ * 4. If < 5min until endTime → return 'ending' (urgency UI)
+ * 5. Otherwise return status
  *
- * @param raffle Raffle item with contractState and time fields
+ * @param raffle Raffle item with status and time fields
  * @returns Display status for frontend
  *
  * @example
- * // Raffle not on-chain yet
- * computeDisplayStatus({ contractState: undefined, ... })
+ * // Raffle not started yet
+ * computeDisplayStatus({ status: 'scheduled', startTime: future, ... })
  * // Returns: 'scheduled'
  *
  * @example
- * // Raffle on-chain, 2 minutes until end
+ * // Raffle active, 2 minutes until end
  * computeDisplayStatus({
- *   contractState: 'active',
+ *   status: 'active',
  *   endTime: Date.now() + 2 * 60 * 1000,
  *   ...
  * })
@@ -65,54 +58,59 @@ export type ContractState = 'active' | 'drawing' | 'completed' | 'cancelled';
  *
  * @example
  * // Raffle completed
- * computeDisplayStatus({ contractState: 'completed', ... })
+ * computeDisplayStatus({ status: 'completed', ... })
  * // Returns: 'completed'
  */
-export function computeDisplayStatus(raffle: Pick<RaffleItem, 'contractState' | 'startTime' | 'endTime' | 'status'>): DisplayStatus {
-  // If no contract state, raffle exists only in backend (pre-scheduled)
-  if (!raffle.contractState) {
-    return 'scheduled';
+export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>): DisplayStatus {
+  // Terminal states - return as-is
+  if (raffle.status === 'completed' || raffle.status === 'cancelled') {
+    return raffle.status;
+  }
+
+  // Drawing state
+  if (raffle.status === 'drawing') {
+    return 'drawing';
   }
 
   const now = Date.now();
   const startTime = new Date(raffle.startTime).getTime();
   const endTime = new Date(raffle.endTime).getTime();
 
-  // Contract exists but before start time → show as scheduled
-  if (raffle.contractState === 'active' && now < startTime) {
+  // Before start time → show as scheduled
+  if (now < startTime) {
     return 'scheduled';
   }
 
   // Less than 5 minutes until end → show urgency
   const ENDING_THRESHOLD = auth.CHALLENGE_EXPIRATION_MS; // 5 minutes in milliseconds
-  if (raffle.contractState === 'active' && endTime - now <= ENDING_THRESHOLD && now < endTime) {
+  if (raffle.status === 'active' && endTime - now <= ENDING_THRESHOLD && now < endTime) {
     return 'ending';
   }
 
-  // Otherwise, display status matches contract state
-  return raffle.contractState;
+  // Otherwise, display status matches base status
+  return raffle.status;
 }
 
 /**
  * Check if raffle is accepting entries
  *
  * A raffle accepts entries when:
- * - Contract state is 'active'
+ * - Status is 'active'
  * - Current time is between startTime and endTime
  *
  * @param raffle Raffle item
  * @returns true if raffle is accepting entries
  *
  * @example
- * isAcceptingEntries({ contractState: 'active', startTime: past, endTime: future })
+ * isAcceptingEntries({ status: 'active', startTime: past, endTime: future })
  * // Returns: true
  *
  * @example
- * isAcceptingEntries({ contractState: 'drawing', ... })
- * // Returns: false (VRF in progress)
+ * isAcceptingEntries({ status: 'drawing', ... })
+ * // Returns: false (winners being selected)
  */
-export function isAcceptingEntries(raffle: Pick<RaffleItem, 'contractState' | 'startTime' | 'endTime'>): boolean {
-  if (raffle.contractState !== 'active') {
+export function isAcceptingEntries(raffle: Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>): boolean {
+  if (raffle.status !== 'active') {
     return false;
   }
 
@@ -127,7 +125,7 @@ export function isAcceptingEntries(raffle: Pick<RaffleItem, 'contractState' | 's
  * Check if raffle can be drawn
  *
  * A raffle can be drawn when:
- * - Contract state is 'active'
+ * - Status is 'active'
  * - Current time is past endTime
  * - Raffle hasn't been drawn yet
  *
@@ -135,15 +133,15 @@ export function isAcceptingEntries(raffle: Pick<RaffleItem, 'contractState' | 's
  * @returns true if raffle is ready for draw
  *
  * @example
- * canBeDrwan({ contractState: 'active', endTime: past })
+ * canBeDrawn({ status: 'active', endTime: past })
  * // Returns: true
  *
  * @example
- * canBeDrawn({ contractState: 'drawing', ... })
+ * canBeDrawn({ status: 'drawing', ... })
  * // Returns: false (already drawing)
  */
-export function canBeDrawn(raffle: Pick<RaffleItem, 'contractState' | 'endTime'>): boolean {
-  if (raffle.contractState !== 'active') {
+export function canBeDrawn(raffle: Pick<RaffleItem, 'status' | 'endTime'>): boolean {
+  if (raffle.status !== 'active') {
     return false;
   }
 
@@ -159,8 +157,8 @@ export function canBeDrawn(raffle: Pick<RaffleItem, 'contractState' | 'endTime'>
  * @param raffle Raffle item
  * @returns true if raffle is in final state
  */
-export function isFinalized(raffle: Pick<RaffleItem, 'contractState'>): boolean {
-  return raffle.contractState === 'completed' || raffle.contractState === 'cancelled';
+export function isFinalized(raffle: Pick<RaffleItem, 'status'>): boolean {
+  return raffle.status === 'completed' || raffle.status === 'cancelled';
 }
 
 /**
@@ -228,7 +226,7 @@ export function formatTimeRemaining(milliseconds: number): string {
  * const enriched = enrichWithDisplayStatus(raffle);
  * // Returns: { ...raffle, displayStatus: 'active' }
  */
-export function enrichWithDisplayStatus<T extends Pick<RaffleItem, 'contractState' | 'startTime' | 'endTime' | 'status'>>(
+export function enrichWithDisplayStatus<T extends Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>>(
   raffle: T
 ): T & { displayStatus: DisplayStatus } {
   return {
@@ -243,23 +241,8 @@ export function enrichWithDisplayStatus<T extends Pick<RaffleItem, 'contractStat
  * @param raffles Array of raffle items
  * @returns Array of raffles with displayStatus field
  */
-export function enrichManyWithDisplayStatus<T extends Pick<RaffleItem, 'contractState' | 'startTime' | 'endTime' | 'status'>>(
+export function enrichManyWithDisplayStatus<T extends Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>>(
   raffles: T[]
 ): Array<T & { displayStatus: DisplayStatus }> {
   return raffles.map(enrichWithDisplayStatus);
-}
-
-/**
- * Migration helper: Sync status field from contractState
- *
- * During migration, we need to keep status field in sync with contractState.
- * This function computes status from contractState for database updates.
- *
- * @param raffle Raffle item
- * @returns Status value for database
- *
- * @deprecated Remove after migration complete and status field removed
- */
-export function syncStatusFromContractState(raffle: Pick<RaffleItem, 'contractState' | 'startTime' | 'endTime' | 'status'>): RaffleItem['status'] {
-  return computeDisplayStatus(raffle);
 }

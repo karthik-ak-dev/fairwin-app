@@ -1,18 +1,23 @@
 /**
- * Raffle Entry Service - Refactored with Shared Business Logic
+ * Raffle Entry Service - Direct USDC Payments
  *
- * Handles all entry creation logic and validation.
- * Uses shared business logic to avoid duplication with event sync.
+ * Handles entry creation with USDC transfer verification.
+ *
+ * Flow:
+ * 1. User sends USDC to platform wallet
+ * 2. Frontend calls API with transaction hash
+ * 3. Backend verifies USDC transfer
+ * 4. Entry created in database
+ * 5. Stats updated
  *
  * Architecture:
- * - Platform API calls createEntry() → verifies transaction → processEntry()
- * - Event Sync calls processEntry() directly
- * - processEntry() is the single source of truth for entry creation logic
+ * - Single source of truth: Database
+ * - Verification: USDC transfer verification service
+ * - No event listeners needed
  */
 
 import { raffleRepo, entryRepo, userRepo, statsRepo } from '@/lib/db/repositories';
 import type { CreateEntryParams, CreateEntryResult, ValidationResult } from '../types';
-import type { EntryItem } from '@/lib/db/models';
 import {
   RaffleNotFoundError,
   InvalidEntryError,
@@ -24,68 +29,112 @@ import {
   validatePositiveNumber,
   validateTransactionHash,
 } from './raffle-validation.service';
-import { verifyEntryTransaction } from './raffle-transaction-verification.service';
+import { verifyUSDCTransfer, isTransactionUsed } from '../blockchain/usdc-transfer-verification.service';
+import { auditEntry } from '../audit/audit-trail.service';
 import { env } from '@/lib/env';
 
 /**
- * SHARED BUSINESS LOGIC: Process entry creation
+ * Create raffle entry with USDC transfer verification
  *
- * This is the single source of truth for entry processing logic.
- * Used by both:
- * - Platform API (after transaction verification)
- * - Event sync (from blockchain events)
+ * Business Rules:
+ * - Raffle must exist and be active/ending
+ * - User cannot exceed max entries per raffle
+ * - Transaction must be valid USDC transfer to platform wallet
+ * - Transaction can only be used once (no replay attacks)
  *
- * @param params Entry parameters
- * @returns Created entry
+ * Side Effects:
+ * - Creates entry record with status='confirmed'
+ * - Updates raffle stats (totalEntries, prizePool, totalParticipants)
+ * - Updates user stats (totalSpent, rafflesEntered, activeEntries)
+ * - Updates platform stats (totalEntries, totalRevenue, totalUsers)
+ * - Creates audit log for high-value entries
+ *
+ * @throws RaffleNotFoundError if raffle doesn't exist
+ * @throws RaffleNotActiveError if raffle is not accepting entries
+ * @throws MaxEntriesExceededError if user would exceed max entries
+ * @throws InvalidEntryError if entry parameters are invalid
  */
-export async function processEntry(params: {
-  raffleId: string;
-  walletAddress: string;
-  numEntries: number;
-  totalPaid: number;
-  transactionHash: string;
-  blockNumber: number;
-  source: 'PLATFORM' | 'DIRECT_CONTRACT';
-}): Promise<EntryItem> {
-  const { raffleId, walletAddress, numEntries, totalPaid, transactionHash, blockNumber, source } =
-    params;
+export async function createEntry(params: CreateEntryParams): Promise<CreateEntryResult> {
+  // Validate parameters
+  validateEntryParams(params);
 
-  // 1. Check for existing entry (deduplication)
-  const existingEntry = await entryRepo.findByTransactionHash(transactionHash);
-
-  if (existingEntry) {
-    // Entry exists - update source if needed
-    if (existingEntry.source === 'PLATFORM' && source === 'DIRECT_CONTRACT') {
-      await entryRepo.updateSource(existingEntry.entryId, 'BOTH');
-      console.log(`[EntryService] Entry ${existingEntry.entryId} updated to BOTH`);
-    }
-    return existingEntry;
+  // Get raffle
+  const raffle = await raffleRepo.getById(params.raffleId);
+  if (!raffle) {
+    throw new RaffleNotFoundError(params.raffleId);
   }
 
-  // 2. Create new entry
+  // Validate raffle is active
+  validateRaffleActive(raffle);
+
+  // Get user's current entry count for this raffle
+  const userEntryCount = await getUserEntryCount(params.raffleId, params.walletAddress);
+
+  // Validate max entries
+  validateMaxEntriesPerUser(userEntryCount, params.numEntries, raffle.maxEntriesPerUser);
+
+  // Verify entry cost matches
+  const expectedCost = calculateEntryCost(raffle.entryPrice, params.numEntries);
+  if (params.totalPaid !== expectedCost) {
+    throw new InvalidEntryError(
+      `Payment mismatch: expected ${expectedCost}, got ${params.totalPaid}`
+    );
+  }
+
+  // Check if transaction already used (prevent replay attacks)
+  const alreadyUsed = await isTransactionUsed(params.transactionHash, entryRepo);
+  if (alreadyUsed) {
+    throw new InvalidEntryError('Transaction has already been used for an entry');
+  }
+
+  // CRITICAL SECURITY: Verify USDC transfer
+  // This prevents fake entries by confirming the transaction actually happened
+  const verification = await verifyUSDCTransfer(
+    params.transactionHash,
+    params.walletAddress,
+    BigInt(params.totalPaid),
+    env.CHAIN_ID
+  );
+
+  console.log(`[EntryService] Verified USDC transfer: ${verification.amountFormatted} from ${verification.from}`);
+
+  // Create entry
   const entry = await entryRepo.create({
-    raffleId,
-    walletAddress: walletAddress.toLowerCase(),
-    numEntries,
-    totalPaid,
-    transactionHash,
-    blockNumber,
+    raffleId: params.raffleId,
+    walletAddress: params.walletAddress.toLowerCase(),
+    numEntries: params.numEntries,
+    totalPaid: params.totalPaid,
+    transactionHash: params.transactionHash,
   });
 
-  // Set source field
-  await entryRepo.updateSource(entry.entryId, source);
+  console.log(`[EntryService] Created entry ${entry.entryId}`);
 
-  console.log(`[EntryService] Created entry ${entry.entryId} with source=${source}`);
+  // Update all related entities (raffle, user, platform stats)
+  await updateRelatedEntitiesForEntry(params.raffleId, params.walletAddress, params.numEntries, params.totalPaid);
 
-  // 3. Update all related entities (raffle, user, platform stats)
-  await updateRelatedEntitiesForEntry(raffleId, walletAddress, numEntries, totalPaid);
+  // Audit high-value entries
+  await auditEntry({
+    raffleId: params.raffleId,
+    walletAddress: params.walletAddress,
+    numEntries: params.numEntries,
+    totalPaid: params.totalPaid,
+    transactionHash: params.transactionHash,
+  });
 
-  return entry;
+  // Return result
+  return {
+    entryId: entry.entryId,
+    raffleId: entry.raffleId,
+    walletAddress: entry.walletAddress,
+    numEntries: entry.numEntries,
+    totalPaid: entry.totalPaid,
+    timestamp: new Date(entry.createdAt).getTime(),
+    transactionHash: entry.transactionHash,
+  };
 }
 
 /**
  * Update raffle stats, user stats, and platform stats
- * Extracted to avoid duplication between platform API and event sync
  */
 async function updateRelatedEntitiesForEntry(
   raffleId: string,
@@ -125,90 +174,6 @@ async function updateRelatedEntitiesForEntry(
 
   // 3. Update PlatformStats
   await statsRepo.recordEntry(totalPaid, isNewUser);
-}
-
-/**
- * Platform API: Create entry with full validation and transaction verification
- *
- * Business Rules:
- * - Raffle must exist and be active/ending
- * - User cannot exceed max entries per raffle
- * - Entry must have valid transaction hash and block number
- * - Transaction must be verified on blockchain
- * - All repository updates must succeed atomically
- *
- * Side Effects:
- * - Creates entry record with source='PLATFORM'
- * - Updates raffle stats (totalEntries, prizePool, totalParticipants)
- * - Updates user stats (totalSpent, rafflesEntered, activeEntries)
- * - Updates platform stats (totalEntries, totalRevenue, totalUsers)
- *
- * @throws RaffleNotFoundError if raffle doesn't exist
- * @throws RaffleNotActiveError if raffle is not accepting entries
- * @throws MaxEntriesExceededError if user would exceed max entries
- * @throws InvalidEntryError if entry parameters are invalid
- */
-export async function createEntry(params: CreateEntryParams): Promise<CreateEntryResult> {
-  // Validate parameters
-  validateEntryParams(params);
-
-  // Get raffle
-  const raffle = await raffleRepo.getById(params.raffleId);
-  if (!raffle) {
-    throw new RaffleNotFoundError(params.raffleId);
-  }
-
-  // Validate raffle is active
-  validateRaffleActive(raffle);
-
-  // Get user's current entry count for this raffle
-  const userEntryCount = await getUserEntryCount(params.raffleId, params.walletAddress);
-
-  // Validate max entries
-  validateMaxEntriesPerUser(userEntryCount, params.numEntries, raffle.maxEntriesPerUser);
-
-  // Verify entry cost matches
-  const expectedCost = calculateEntryCost(raffle.entryPrice, params.numEntries);
-  if (params.totalPaid !== expectedCost) {
-    throw new InvalidEntryError(
-      `Payment mismatch: expected ${expectedCost}, got ${params.totalPaid}`
-    );
-  }
-
-  // CRITICAL SECURITY: Verify transaction on blockchain
-  // This prevents fake entries by confirming the transaction actually happened
-  const verification = await verifyEntryTransaction(
-    params.transactionHash,
-    params.walletAddress,
-    params.raffleId,
-    params.numEntries,
-    env.CHAIN_ID
-  );
-
-  // Use verified block number from blockchain (more trustworthy than client-provided)
-  const verifiedBlockNumber = verification.blockNumber;
-
-  // Process entry using shared business logic
-  const entry = await processEntry({
-    raffleId: params.raffleId,
-    walletAddress: params.walletAddress,
-    numEntries: params.numEntries,
-    totalPaid: params.totalPaid,
-    transactionHash: params.transactionHash,
-    blockNumber: verifiedBlockNumber,
-    source: 'PLATFORM', // Platform API always marks as PLATFORM
-  });
-
-  // Return result
-  return {
-    entryId: entry.entryId,
-    raffleId: entry.raffleId,
-    walletAddress: entry.walletAddress,
-    numEntries: entry.numEntries,
-    totalPaid: entry.totalPaid,
-    timestamp: new Date(entry.createdAt).getTime(),
-    transactionHash: entry.transactionHash,
-  };
 }
 
 /**
@@ -317,10 +282,6 @@ function validateEntryParams(params: CreateEntryParams): void {
   validatePositiveNumber(params.numEntries, 'numEntries');
   validatePositiveNumber(params.totalPaid, 'totalPaid');
   validateTransactionHash(params.transactionHash);
-
-  if (!Number.isInteger(params.blockNumber) || params.blockNumber <= 0) {
-    throw new InvalidEntryError('Block number must be a positive integer');
-  }
 
   if (params.numEntries > 10000) {
     throw new InvalidEntryError('Cannot create more than 10,000 entries at once');

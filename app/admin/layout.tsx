@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import Sidebar from '@/features/admin/components/Sidebar';
+import Sidebar from '@/components/admin/Sidebar';
 
 export const metadata = {
   title: 'FairWin Admin',

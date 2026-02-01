@@ -1,87 +1,72 @@
 /**
- * Blockchain Client - Contract Interaction Layer
+ * Blockchain Client - USDC Interaction Layer
  *
- * Provides React hooks for interacting with FairWin smart contracts.
- * Uses viem + wagmi for type-safe, efficient contract calls.
+ * Provides read-only blockchain clients and utilities for USDC token interactions.
+ * Used for verifying USDC transfer transactions on Polygon blockchain.
  */
 
 'use client';
 
-import { getContract, type Address } from 'viem';
-import { usePublicClient, useWalletClient } from 'wagmi';
-import { getContractAddress } from './addresses';
-import { blockchain } from '@/lib/constants';
-import FairWinRaffleABI from './contract-interfaces/FairWinRaffle.json';
+import { createPublicClient, http, type PublicClient, type Address } from 'viem';
+import { polygon, polygonAmoy } from 'viem/chains';
+import { getUSDCAddress } from './addresses';
+import { env } from '@/lib/env';
 
 /**
- * FairWin Raffle Contract ABI
- * Application Binary Interface - defines how to interact with the contract
+ * Get viem public client for reading blockchain data
+ *
+ * @param chainId - Chain ID (137 = Polygon Mainnet, 80002 = Polygon Amoy Testnet)
+ * @returns Public client instance
  */
-export const FAIRWIN_ABI = FairWinRaffleABI;
+export function getPublicClient(chainId: number = env.CHAIN_ID): PublicClient {
+  const chain = chainId === 137 ? polygon : polygonAmoy;
 
-/**
- * Hook to interact with FairWin Raffle contract
- *
- * @param chainId - Chain ID to use (defaults to Polygon Mainnet)
- * @returns Contract instances and addresses
- *
- * @example
- * const { readContract, writeContract, raffleAddress } = useFairWinContract();
- *
- * // Read from contract (free, no wallet needed)
- * const raffle = await readContract.read.raffles([raffleId]);
- *
- * // Write to contract (costs gas, requires connected wallet)
- * await writeContract.write.enterRaffle([raffleId, numEntries]);
- */
-export function useFairWinContract(chainId: number = blockchain.DEFAULT_CHAIN_ID) {
-  const publicClient = usePublicClient({ chainId });
-  const { data: walletClient } = useWalletClient({ chainId });
-  const addresses = getContractAddress(chainId);
-
-  /**
-   * Read-only contract instance
-   * Use for querying contract state (free, no gas cost)
-   */
-  const readContract = publicClient
-    ? getContract({
-        address: addresses.raffle,
-        abi: FAIRWIN_ABI,
-        client: publicClient,
-      })
-    : null;
-
-  /**
-   * Write contract instance
-   * Use for transactions that modify state (costs gas, requires wallet)
-   */
-  const writeContract = walletClient
-    ? getContract({
-        address: addresses.raffle,
-        abi: FAIRWIN_ABI,
-        client: walletClient,
-      })
-    : null;
-
-  return {
-    readContract,
-    writeContract,
-    raffleAddress: addresses.raffle,
-    usdcAddress: addresses.usdc,
-    chainId,
-  };
+  return createPublicClient({
+    chain,
+    transport: http(env.RPC_URL),
+  });
 }
+
+/**
+ * ERC20 Transfer ABI
+ *
+ * Minimal ABI for USDC transfer verification.
+ * Only includes the transfer function used for raffle entries.
+ */
+export const ERC20_TRANSFER_ABI = [
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'transfer',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+] as const;
 
 /**
  * ERC20 ABI (for USDC interactions)
  *
  * Standard functions needed to interact with USDC token:
- * - approve: Allow contract to spend your USDC
- * - allowance: Check how much contract can spend
+ * - transfer: Send USDC to another address
  * - balanceOf: Check USDC balance
  * - decimals: Get token decimals (USDC = 6)
+ * - approve: Allow another address to spend your USDC (for future use)
+ * - allowance: Check spending allowance (for future use)
  */
 export const ERC20_ABI = [
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'transfer',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
   {
     inputs: [
       { name: 'spender', type: 'address' },
@@ -117,3 +102,13 @@ export const ERC20_ABI = [
     type: 'function',
   },
 ] as const;
+
+/**
+ * Get USDC contract address for a chain
+ *
+ * @param chainId - Chain ID
+ * @returns USDC contract address
+ */
+export function getUSDCContractAddress(chainId: number = env.CHAIN_ID): Address {
+  return getUSDCAddress(chainId);
+}

@@ -4,11 +4,10 @@
 // Admin — Settings Page
 // ============================================================================
 
-import ContractConfig from '@/features/admin/components/ContractConfig';
-import VRFConfig from '@/features/admin/components/VRFConfig';
-import PoolLimits from '@/features/admin/components/PoolLimits';
-import OperationsConfig from '@/features/admin/components/OperationsConfig';
-import DangerZone from '@/features/admin/components/DangerZone';
+import ContractConfig from '@/components/admin/ContractConfig';
+import PoolLimits from '@/components/admin/PoolLimits';
+import OperationsConfig from '@/components/admin/OperationsConfig';
+import DangerZone from '@/components/admin/DangerZone';
 
 export default function SettingsPage() {
   return (
@@ -18,7 +17,6 @@ export default function SettingsPage() {
 
       {/* Sections */}
       <ContractConfig />
-      <VRFConfig />
       <PoolLimits />
       <OperationsConfig />
       <DangerZone />

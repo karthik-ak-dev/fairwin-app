@@ -1,18 +1,12 @@
 /**
- * Contract Addresses and Chain Configuration
+ * USDC Contract Addresses and Chain Configuration
  *
- * Centralized management of deployed contract addresses across different chains.
- * All addresses should be verified on official block explorers before use.
+ * Contains USDC token addresses for payment verification on Polygon.
+ * All addresses are verified on official block explorers (Polygonscan).
  */
 
 import { type Address } from 'viem';
 import { env } from '@/lib/env';
-
-/**
- * Main FairWin Raffle contract address
- * Set via environment variable for security and flexibility
- */
-export const FAIRWIN_RAFFLE_ADDRESS = env.CONTRACT_ADDRESS as Address;
 
 /**
  * USDC Token Contract Addresses
@@ -32,40 +26,29 @@ export const USDC_ADDRESS = env.USDC_CONTRACT as Address;
 export const CHAIN_ID = env.CHAIN_ID;
 
 /**
- * Chain-specific contract addresses
+ * Chain-specific USDC addresses
  *
- * Maps chain ID to deployed contract addresses
- * Makes it easy to support multiple networks
+ * Maps chain ID to USDC contract address
  */
-export const CONTRACT_ADDRESSES: Record<number, { raffle: Address; usdc: Address; link: Address }> = {
+export const USDC_ADDRESSES: Record<number, Address> = {
   // Polygon Mainnet
-  137: {
-    raffle: FAIRWIN_RAFFLE_ADDRESS,
-    usdc: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as Address, // Official USDC
-    link: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39' as Address, // Chainlink LINK on Polygon
-  },
+  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359' as Address, // Official USDC
   // Polygon Amoy Testnet
-  80002: {
-    raffle: FAIRWIN_RAFFLE_ADDRESS,
-    usdc: '0x41E94Eb71898E8A2eF47C1B6a4c8B1A0fAdf3660' as Address, // Testnet USDC
-    link: '0x0Fd9e8d3aF1aaee056EB9e802c3A762a667b1904' as Address, // LINK on Amoy Testnet
-  },
+  80002: '0x41E94Eb71898E8A2eF47C1B6a4c8B1A0fAdf3660' as Address, // Testnet USDC
 };
 
 /**
- * Get contract addresses for a specific chain
+ * Get USDC contract address for a specific chain
  *
- * @param chainId - The chain ID to get addresses for
- * @returns Object containing raffle, USDC, and LINK contract addresses
+ * @param chainId - The chain ID to get USDC address for
+ * @returns USDC contract address
  *
  * @example
- * const addresses = getContractAddress(137); // Polygon Mainnet
- * console.log(addresses.raffle); // FairWin Raffle contract address
- * console.log(addresses.usdc);   // USDC contract address
- * console.log(addresses.link);   // LINK contract address
+ * const usdc = getUSDCAddress(137); // Polygon Mainnet
+ * console.log(usdc); // 0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359
  */
-export function getContractAddress(chainId: number): { raffle: Address; usdc: Address; link: Address } {
-  return CONTRACT_ADDRESSES[chainId] || CONTRACT_ADDRESSES[137]; // Default to Polygon Mainnet
+export function getUSDCAddress(chainId: number): Address {
+  return USDC_ADDRESSES[chainId] || USDC_ADDRESSES[137]; // Default to Polygon Mainnet
 }
 
 /**

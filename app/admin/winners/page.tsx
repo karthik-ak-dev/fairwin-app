@@ -7,7 +7,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAdmin } from '@/shared/hooks/useAdmin';
-import { getAdminWinners, getAdminStats } from '@/features/admin/api';
+import { getAdminWinners, getAdminStats } from '@/lib/api/admin';
 import { formatUSDC, formatAddress, formatTimeAgo } from '@/shared/utils/format';
 import { Skeleton } from '@/shared/components/ui';
 import type { PayoutItem } from '@/lib/db/models';

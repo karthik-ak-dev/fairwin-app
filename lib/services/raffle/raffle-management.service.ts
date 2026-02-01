@@ -2,72 +2,49 @@
  * Raffle Management Service
  *
  * Handles raffle creation, updates, and status transitions.
+ * DATABASE-ONLY: No blockchain interactions for MVP.
  */
 
 import { raffleRepo, statsRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
 import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
-import { blockchain } from '@/lib/constants';
 import { RaffleNotFoundError } from '../errors';
 import {
   validateRaffleConfig,
   validateRaffleUpdate,
   validateStatusTransition,
 } from './raffle-validation.service';
-import { getContractAddress } from '@/lib/blockchain';
-import {
-  createRaffleOnChain,
-  cancelRaffleOnChain,
-} from './raffle-blockchain.service';
 
 /**
  * Create a new raffle
  *
- * BLOCKCHAIN-FIRST APPROACH:
- * 1. Create raffle on blockchain FIRST
- * 2. Get contractRaffleId from blockchain event
- * 3. Save to database with contractRaffleId
- *
- * This ensures database cannot contain raffles that don't exist on-chain.
+ * DATABASE-ONLY APPROACH:
+ * Creates raffle directly in database (no blockchain interaction).
  *
  * Business Rules:
  * - Validates all raffle configuration parameters
- * - Creates raffle on blockchain first
- * - Records contractRaffleId for event synchronization
+ * - Creates raffle in database only
  * - Increments platform raffle count
  * - Sets initial status to 'scheduled' or 'active' based on start time
  *
  * @param params Raffle creation parameters
- * @param chainId Blockchain chain ID (default: Polygon Mainnet)
  * @throws InvalidRaffleConfigError if config is invalid
- * @throws ContractWriteError if blockchain creation fails
  */
 export async function createRaffle(
-  params: CreateRaffleParams,
-  chainId: number = blockchain.DEFAULT_CHAIN_ID
+  params: CreateRaffleParams
 ): Promise<RaffleItem> {
   // Validate configuration
   validateRaffleConfig(params);
-
-  // Calculate duration in seconds
-  const durationSeconds = Math.floor((params.endTime - params.startTime) / 1000);
-
-  // STEP 1: Create raffle on blockchain FIRST
-  const blockchainResult = await createRaffleOnChain(
-    BigInt(params.entryPrice),
-    BigInt(durationSeconds),
-    BigInt(params.maxEntriesPerUser),
-    chainId
-  );
-
-  // Get contract address for storage
-  const addresses = getContractAddress(chainId);
 
   // Convert timestamps to ISO strings
   const startTime = new Date(params.startTime).toISOString();
   const endTime = new Date(params.endTime).toISOString();
 
-  // STEP 2: Save to database with contractRaffleId
+  // Determine initial status based on start time
+  const now = Date.now();
+  const initialStatus = now >= params.startTime ? 'active' : 'scheduled';
+
+  // Create raffle in database only
   const raffle = await raffleRepo.create({
     type: params.type,
     title: params.title,
@@ -77,22 +54,13 @@ export async function createRaffle(
     winnerCount: params.winnerCount || 1,
     startTime,
     endTime,
-    contractRaffleId: blockchainResult.contractRaffleId,
-    contractAddress: addresses.raffle,
-    transactionHash: blockchainResult.transactionHash,
-    contractState: 'active', // Raffle is active on-chain after creation
+    status: initialStatus,
   });
-
-  // Determine if should be immediately active based on start time
-  const now = Date.now();
-  if (now >= params.startTime) {
-    await raffleRepo.update(raffle.raffleId, { status: 'active' });
-  }
 
   // Update platform stats
   await statsRepo.incrementRaffleCount();
 
-  // Return updated raffle
+  // Return created raffle
   const created = await raffleRepo.getById(raffle.raffleId);
   return created!;
 }
@@ -145,27 +113,20 @@ export async function updateRaffle(
 /**
  * Cancel a raffle
  *
- * BLOCKCHAIN-FIRST APPROACH:
- * 1. Cancel raffle on blockchain FIRST
- * 2. Verify RaffleCancelled event was emitted
- * 3. Update database status to 'cancelled'
- *
- * This ensures database cannot show raffles as cancelled when they're still active on-chain.
+ * DATABASE-ONLY APPROACH:
+ * Updates raffle status to 'cancelled' in database.
  *
  * Business Rules:
  * - Can only cancel raffles that haven't been drawn
- * - Cancels on blockchain first, then updates database
- * - Users can claim refunds after cancellation
+ * - Updates database status to 'cancelled'
+ * - Users can claim refunds after cancellation (manual admin process)
  *
  * @param raffleId Database raffle ID
- * @param chainId Blockchain chain ID (default: Polygon Mainnet)
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws InvalidStatusTransitionError if raffle cannot be cancelled
- * @throws ContractWriteError if blockchain cancellation fails
  */
 export async function cancelRaffle(
-  raffleId: string,
-  chainId: number = blockchain.DEFAULT_CHAIN_ID
+  raffleId: string
 ): Promise<RaffleItem> {
   const raffle = await raffleRepo.getById(raffleId);
   if (!raffle) {
@@ -175,25 +136,9 @@ export async function cancelRaffle(
   // Validate can cancel
   validateStatusTransition(raffle.status, 'cancelled');
 
-  // Ensure raffle has contractRaffleId
-  if (!raffle.contractRaffleId) {
-    throw new Error(
-      `Cannot cancel raffle ${raffleId}: missing contractRaffleId. ` +
-      'Raffle may not have been created on blockchain yet.'
-    );
-  }
-
-  // STEP 1: Cancel raffle on blockchain FIRST
-  const blockchainResult = await cancelRaffleOnChain(
-    raffle.contractRaffleId,
-    chainId
-  );
-
-  // STEP 2: Update database status to 'cancelled'
+  // Update database status to 'cancelled'
   await raffleRepo.update(raffleId, {
     status: 'cancelled',
-    contractState: 'cancelled',
-    transactionHash: blockchainResult.transactionHash,
   });
 
   const updated = await raffleRepo.getById(raffleId);
