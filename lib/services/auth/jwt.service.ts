@@ -15,9 +15,7 @@
 
 import { SignJWT, jwtVerify } from 'jose';
 import { JWT_EXPIRATION, JWT_EXPIRATION_SECONDS } from '@/lib/constants/auth.constants';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-in-production';
-const JWT_ISSUER = 'fairwin';
+import { serverEnv } from '@/lib/env';
 
 interface TokenPayload {
   address: string;
@@ -37,14 +35,14 @@ interface VerifiedToken extends TokenPayload {
  * @returns Signed JWT token string
  */
 export async function generateToken(address: string, isAdmin: boolean = false): Promise<string> {
-  const secret = new TextEncoder().encode(JWT_SECRET);
+  const secret = new TextEncoder().encode(serverEnv.JWT_SECRET);
 
   const token = await new SignJWT({
     address: address.toLowerCase(),
     isAdmin,
   })
     .setProtectedHeader({ alg: 'HS256' })
-    .setIssuer(JWT_ISSUER)
+    .setIssuer(serverEnv.JWT_ISSUER)
     .setSubject(address.toLowerCase())
     .setIssuedAt()
     .setExpirationTime(JWT_EXPIRATION)
@@ -61,11 +59,11 @@ export async function generateToken(address: string, isAdmin: boolean = false): 
  * @throws Error if token is invalid or expired
  */
 export async function verifyToken(token: string): Promise<VerifiedToken> {
-  const secret = new TextEncoder().encode(JWT_SECRET);
+  const secret = new TextEncoder().encode(serverEnv.JWT_SECRET);
 
   try {
     const { payload } = await jwtVerify(token, secret, {
-      issuer: JWT_ISSUER,
+      issuer: serverEnv.JWT_ISSUER,
     });
 
     return {

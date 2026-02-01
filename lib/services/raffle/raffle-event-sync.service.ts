@@ -25,6 +25,7 @@ import {
   handleWinnersSelectedEvent,
   handleRaffleCancelledEvent,
 } from './raffle-event-handlers';
+import { env } from '@/lib/env';
 
 export interface SyncResult {
   success: boolean;
@@ -49,7 +50,7 @@ export interface SyncResult {
  * Main sync function - syncs all events from last synced block
  */
 export async function syncBlockchainEvents(
-  chainId: number = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '137')
+  chainId: number = env.CHAIN_ID
 ): Promise<SyncResult> {
   const startTime = Date.now();
   const errors: Array<{ event: string; error: string }> = [];

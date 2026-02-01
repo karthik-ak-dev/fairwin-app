@@ -6,15 +6,24 @@
 
 import { getAllBalances, hasSufficientBalance } from '../blockchain/wallet-balance.service';
 import type { WalletBalances } from '../types';
+import { env, serverEnv } from '@/lib/env';
 
-// Admin wallet address from environment
-const ADMIN_WALLET_ADDRESS = process.env.ADMIN_WALLET_ADDRESS || process.env.NEXT_PUBLIC_ADMIN_WALLET_ADDRESS || '';
+/**
+ * Get admin wallet address (tries server env first, falls back to client env)
+ */
+function getAdminAddress(): string {
+  try {
+    return serverEnv.ADMIN_WALLET_ADDRESS;
+  } catch {
+    return env.ADMIN_WALLET_ADDRESS || '';
+  }
+}
 
 /**
  * Get admin wallet address
  */
 export function getAdminWalletAddress(): string {
-  return ADMIN_WALLET_ADDRESS;
+  return getAdminAddress();
 }
 
 /**
@@ -25,8 +34,9 @@ export function getAdminWalletAddress(): string {
  * - USDC balance (for payouts)
  * - LINK balance (for VRF requests)
  */
-export async function getAdminWalletBalances(chainId: number = 137): Promise<WalletBalances> {
-  if (!ADMIN_WALLET_ADDRESS) {
+export async function getAdminWalletBalances(chainId: number = env.CHAIN_ID): Promise<WalletBalances> {
+  const adminAddress = getAdminAddress();
+  if (!adminAddress) {
     // Return zero balances if admin wallet not configured
     return {
       address: '',
@@ -43,7 +53,7 @@ export async function getAdminWalletBalances(chainId: number = 137): Promise<Wal
     };
   }
 
-  return getAllBalances(ADMIN_WALLET_ADDRESS, chainId);
+  return getAllBalances(adminAddress, chainId);
 }
 
 /**
@@ -58,9 +68,10 @@ export async function getAdminWalletBalances(chainId: number = 137): Promise<Wal
 export async function validateSufficientBalance(
   operation: 'vrf' | 'gas',
   amount?: bigint,
-  chainId: number = 137
+  chainId: number = env.CHAIN_ID
 ): Promise<boolean> {
-  if (!ADMIN_WALLET_ADDRESS) {
+  const adminAddress = getAdminAddress();
+  if (!adminAddress) {
     return false;
   }
 
@@ -85,7 +96,7 @@ export async function validateSufficientBalance(
       return false;
   }
 
-  return hasSufficientBalance(ADMIN_WALLET_ADDRESS, token, requiredAmount, chainId);
+  return hasSufficientBalance(adminAddress, token, requiredAmount, chainId);
 }
 
 /**
@@ -93,10 +104,11 @@ export async function validateSufficientBalance(
  *
  * Returns array of warnings for balances below recommended thresholds
  */
-export async function getLowBalanceWarnings(chainId: number = 137): Promise<string[]> {
+export async function getLowBalanceWarnings(chainId: number = env.CHAIN_ID): Promise<string[]> {
   const warnings: string[] = [];
 
-  if (!ADMIN_WALLET_ADDRESS) {
+  const adminAddress = getAdminAddress();
+  if (!adminAddress) {
     warnings.push('Admin wallet address not configured');
     return warnings;
   }
@@ -135,7 +147,7 @@ export async function getLowBalanceWarnings(chainId: number = 137): Promise<stri
  */
 export async function estimateGasCost(
   operation: 'payout' | 'vrf' | 'draw',
-  chainId: number = 137
+  chainId: number = env.CHAIN_ID
 ): Promise<{ gasEstimate: bigint; costInMatic: bigint }> {
   // Base gas estimates for different operations
   const gasEstimates: Record<string, bigint> = {
@@ -161,5 +173,5 @@ export async function estimateGasCost(
  * Check if admin wallet is configured
  */
 export function isAdminWalletConfigured(): boolean {
-  return ADMIN_WALLET_ADDRESS.length > 0;
+  return getAdminAddress().length > 0;
 }

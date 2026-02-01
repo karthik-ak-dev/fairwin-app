@@ -29,11 +29,13 @@ export const serverEnv = {
   get VRF_KEY_HASH() { return optionalEnv('VRF_KEY_HASH', '0xcc294a196eeeb44da2888d17c0625cc88d70d9760a69d58d853ba6581a9ab0cd'); },
   get SOCKET_API_KEY() { return optionalEnv('SOCKET_API_KEY'); },
   get SECRETS_OPERATOR_KEY_NAME() { return optionalEnv('SECRETS_OPERATOR_KEY_NAME', 'fairwin/operator-private-key'); },
+  get JWT_SECRET() { return requireEnv('JWT_SECRET'); },
+  get JWT_ISSUER() { return optionalEnv('JWT_ISSUER', 'fairwin'); },
 } as const;
 
 /** Call at server startup to surface missing vars early */
 export function validateServerEnv(): void {
-  const required = ['ADMIN_WALLET_ADDRESS'];
+  const required = ['ADMIN_WALLET_ADDRESS', 'JWT_SECRET'];
   const missing = required.filter((k) => !process.env[k]);
   if (missing.length) {
     console.warn(`⚠️  Missing server env vars: ${missing.join(', ')}`);

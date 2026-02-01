@@ -25,6 +25,7 @@ import {
   validateTransactionHash,
 } from './raffle-validation.service';
 import { verifyEntryTransaction } from './raffle-transaction-verification.service';
+import { env } from '@/lib/env';
 
 /**
  * SHARED BUSINESS LOGIC: Process entry creation
@@ -176,13 +177,12 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
 
   // CRITICAL SECURITY: Verify transaction on blockchain
   // This prevents fake entries by confirming the transaction actually happened
-  const chainId = parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '137', 10);
   const verification = await verifyEntryTransaction(
     params.transactionHash,
     params.walletAddress,
     params.raffleId,
     params.numEntries,
-    chainId
+    env.CHAIN_ID
   );
 
   // Use verified block number from blockchain (more trustworthy than client-provided)
