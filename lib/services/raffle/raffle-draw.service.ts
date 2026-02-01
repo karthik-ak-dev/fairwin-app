@@ -120,8 +120,6 @@ export async function initiateRaffleDraw(
     raffleId,
     adminWallet,
     randomSeed: selectionResult.randomSeed,
-    blockNumber: selectionResult.blockNumber,
-    blockHash: selectionResult.blockHash,
     winners: selectionResult.winners.map(w => ({
       walletAddress: w.walletAddress,
       ticketNumber: w.ticketNumber,
@@ -175,7 +173,7 @@ async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): P
   }
 
   // Update stats for each unique winner
-  for (const [walletAddress, totalWon] of uniqueWinners) {
+  for (const [walletAddress, totalWon] of Array.from(uniqueWinners.entries())) {
     await userRepo.recordWin(walletAddress, raffleId, totalWon);
   }
 

@@ -8,7 +8,7 @@ import { validateEntryEligibility } from '@/lib/services/raffle/raffle-entry.ser
  *
  * Validate entry eligibility before transaction
  *
- * Useful for frontends to check if a user can enter before submitting blockchain transaction
+ * Useful for frontends to check if a user can enter before submitting USDC payment
  *
  * Body:
  * - walletAddress: User's wallet address

@@ -62,14 +62,14 @@ export const blockchain = {
 
 export const pagination = {
   /** Default page size for general listings */
-  DEFAULT_LIMIT: 20,
+  DEFAULT_LIMIT: 20 as number,
 
   /** Default page size for user-facing lists (entries, wins, participants) */
-  USER_LIST_LIMIT: 50,
+  USER_LIST_LIMIT: 50 as number,
 
   /** Maximum allowed page size */
-  MAX_LIMIT: 100,
-} as const;
+  MAX_LIMIT: 100 as number,
+};
 
 // =============================================================================
 // Raffle Constants

@@ -18,7 +18,6 @@ export * as raffleWinnerSelection from './raffle/raffle-winner-selection.service
 // User services
 export * as userProfile from './user/user-profile.service';
 export * as userEntry from './user/user-entry.service';
-export * as userStats from './user/user-stats.service';
 
 // Admin services
 export * as adminStats from './admin/admin-stats.service';

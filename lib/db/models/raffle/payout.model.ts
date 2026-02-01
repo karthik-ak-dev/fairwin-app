@@ -207,4 +207,5 @@ export type CreatePayoutInput = Pick<PayoutItem, 'winnerId' | 'raffleId' | 'wall
   status?: 'pending' | 'processing' | 'paid' | 'failed';
   transactionHash?: string;
   processedAt?: string;
+  error?: string;
 };

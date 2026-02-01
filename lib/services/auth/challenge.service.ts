@@ -98,17 +98,3 @@ function cleanupExpiredChallenges(): void {
   }
 }
 
-/**
- * Get stored challenge for debugging/testing
- */
-export function getStoredChallenge(address: string): string | null {
-  const stored = challengeStore.get(address.toLowerCase());
-  return stored?.challenge || null;
-}
-
-/**
- * Clear all challenges (useful for testing)
- */
-export function clearAllChallenges(): void {
-  challengeStore.clear();
-}

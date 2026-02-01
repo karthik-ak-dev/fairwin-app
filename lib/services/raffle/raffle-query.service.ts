@@ -41,7 +41,8 @@ export async function getRaffleWithDetails(
   }
 
   // Get recent entries
-  const entriesResult = await entryRepo.getByRaffle(raffleId, 10);
+  const recentEntriesLimit = 10;
+  const entriesResult = await entryRepo.getByRaffle(raffleId, recentEntriesLimit);
   const recentEntries = entriesResult.items;
 
   // Get winners if completed
@@ -89,7 +90,8 @@ export async function getRaffleWithDetails(
  * List raffles with optional filtering and pagination
  */
 export async function listRaffles(params: ListRafflesParams = {}): Promise<PaginatedRaffles> {
-  const { status, type, limit = pagination.DEFAULT_LIMIT, cursor } = params;
+  const { status, type, cursor } = params;
+  const limit: number = params.limit ?? pagination.DEFAULT_LIMIT;
 
   // Decode cursor if provided
   let startKey;
@@ -99,14 +101,15 @@ export async function listRaffles(params: ListRafflesParams = {}): Promise<Pagin
   }
 
   let result;
+  const queryLimit: number = limit;
 
   if (status) {
-    result = await raffleRepo.getByStatus(status, limit, startKey);
+    result = await raffleRepo.getByStatus(status, queryLimit, startKey);
   } else if (type) {
-    result = await raffleRepo.getByType(type, limit, startKey);
+    result = await raffleRepo.getByType(type, queryLimit, startKey);
   } else {
     // Get all active raffles by default
-    result = await raffleRepo.getByStatus('active', limit, startKey);
+    result = await raffleRepo.getByStatus('active', queryLimit, startKey);
   }
 
   // Enrich all raffles with displayStatus

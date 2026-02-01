@@ -22,7 +22,6 @@ export interface CreateEntryParams {
   numEntries: number;
   totalPaid: number;
   transactionHash: string;
-  blockNumber: number;
 }
 
 export interface CreateEntryResult {
@@ -46,17 +45,28 @@ export interface ValidationResult {
 // Raffle Draw Types
 // ============================================================================
 
+export interface SelectedWinner {
+  walletAddress: string;
+  ticketNumber: number;
+  totalTickets: number;
+  prize: number;
+  tier: string;
+  position: number;
+}
+
 export interface DrawInitiationResult {
   raffleId: string;
-  status: 'drawing';
-  vrfRequestId?: string;
+  winners: SelectedWinner[];
+  randomSeed: string;
+  blockHash?: string;
+  status: 'completed';
   timestamp: number;
 }
 
 export interface WinnerSelectionResult {
   raffleId: string;
   winners: Winner[];
-  randomNumber: string;
+  randomSeed: string;
   timestamp: number;
 }
 
@@ -81,7 +91,6 @@ export interface RaffleStats {
   totalParticipants: number;
   prizePool: number;
   status: string;
-  contractState?: string;
   displayStatus?: string;
   entryPrice: number;
   maxEntriesPerUser: number;

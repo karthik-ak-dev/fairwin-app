@@ -119,8 +119,14 @@ export async function sendPayoutToWinner(
   console.log(`[PayoutService] Sending ${winner.prize / 1_000_000} USDC to ${winner.walletAddress}`);
 
   try {
-    // Update status to processing
-    await winnerRepo.updatePayoutStatus(winnerId, 'processing');
+    // Create processing payout record
+    const processingPayout = await payoutRepo.create({
+      winnerId,
+      raffleId: winner.raffleId,
+      walletAddress: winner.walletAddress,
+      amount: winner.prize,
+      status: 'processing',
+    });
 
     // Get wallet client
     const walletClient = await getWalletClient(chainId);

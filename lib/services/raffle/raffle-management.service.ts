@@ -40,11 +40,8 @@ export async function createRaffle(
   const startTime = new Date(params.startTime).toISOString();
   const endTime = new Date(params.endTime).toISOString();
 
-  // Determine initial status based on start time
-  const now = Date.now();
-  const initialStatus = now >= params.startTime ? 'active' : 'scheduled';
-
-  // Create raffle in database only
+  // Create raffle in database
+  // Note: status is set to 'scheduled' by default in repository
   const raffle = await raffleRepo.create({
     type: params.type,
     title: params.title,
@@ -54,7 +51,6 @@ export async function createRaffle(
     winnerCount: params.winnerCount || 1,
     startTime,
     endTime,
-    status: initialStatus,
   });
 
   // Update platform stats

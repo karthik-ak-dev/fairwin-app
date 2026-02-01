@@ -86,8 +86,6 @@ export async function auditWinnerSelection(params: {
   raffleId: string;
   adminWallet: string;
   randomSeed: string;
-  blockNumber?: bigint;
-  blockHash?: string;
   winners: Array<{
     walletAddress: string;
     ticketNumber: number;
@@ -103,12 +101,10 @@ export async function auditWinnerSelection(params: {
     raffleId: params.raffleId,
     metadata: {
       randomSeed: params.randomSeed,
-      blockNumber: params.blockNumber?.toString(),
-      blockHash: params.blockHash,
       winners: params.winners,
       totalTickets: params.totalTickets,
       totalPrize: params.totalPrize,
-      selectionMethod: params.blockHash ? 'BLOCK_HASH' : 'CRYPTO_RANDOM',
+      selectionMethod: 'CRYPTO_RANDOM',
     },
   });
 }

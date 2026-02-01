@@ -35,21 +35,3 @@ export async function verifyWalletSignature(
   }
 }
 
-/**
- * Verify signature and ensure it matches expected address
- *
- * More strict version that throws on mismatch
- *
- * @throws Error if signature is invalid or doesn't match address
- */
-export async function verifyWalletSignatureStrict(
-  address: string,
-  message: string,
-  signature: string
-): Promise<void> {
-  const isValid = await verifyWalletSignature(address, message, signature);
-
-  if (!isValid) {
-    throw new Error('Invalid signature for the provided address');
-  }
-}

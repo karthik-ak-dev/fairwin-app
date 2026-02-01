@@ -17,6 +17,8 @@
 import { createPublicClient, http, decodeFunctionData, type Address } from 'viem';
 import { polygon, polygonAmoy } from 'viem/chains';
 import { env } from '@/lib/env';
+import { formatUSDC } from '@/shared/utils/format';
+import { isValidTransactionHash, patterns } from '@/lib/constants';
 
 // ERC20 Transfer ABI - only what we need
 const ERC20_TRANSFER_ABI = [
@@ -181,16 +183,6 @@ export async function verifyUSDCTransfer(
 }
 
 /**
- * Format USDC amount from smallest unit to human-readable
- * @param amount Amount in smallest unit (6 decimals)
- * @returns Formatted string (e.g., "10.50 USDC")
- */
-export function formatUSDC(amount: bigint): string {
-  const usdcAmount = Number(amount) / 1_000_000; // 6 decimals
-  return `${usdcAmount.toFixed(2)} USDC`;
-}
-
-/**
  * Parse USDC amount from human-readable to smallest unit
  * @param amount Amount as string (e.g., "10.5" or "10")
  * @returns Amount in smallest unit (6 decimals)
@@ -213,15 +205,8 @@ export async function isTransactionUsed(
 }
 
 /**
- * Validate transaction hash format
- */
-export function isValidTransactionHash(hash: string): boolean {
-  return /^0x[a-fA-F0-9]{64}$/.test(hash);
-}
-
-/**
  * Validate wallet address format
  */
 export function isValidAddress(address: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
+  return patterns.WALLET_ADDRESS.test(address);
 }
