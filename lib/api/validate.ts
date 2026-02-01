@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isValidWalletAddress, isPositiveNumber, isValidRaffleType, raffle } from '@/lib/constants';
 
 export function badRequest(message: string) {
   return NextResponse.json({ error: message }, { status: 400 });
@@ -12,16 +13,8 @@ export function serverError(message = 'Internal server error') {
   return NextResponse.json({ error: message }, { status: 500 });
 }
 
-export function isValidAddress(addr: string): boolean {
-  return /^0x[a-fA-F0-9]{40}$/.test(addr);
-}
+// Re-export from constants for backward compatibility
+export { isValidWalletAddress as isValidAddress, isPositiveNumber, isValidRaffleType };
 
-export function isPositiveNumber(n: unknown): n is number {
-  return typeof n === 'number' && n > 0 && isFinite(n);
-}
-
-export const RAFFLE_TYPES = ['daily', 'weekly', 'mega', 'flash', 'monthly'] as const;
-
-export function isValidRaffleType(type: string): boolean {
-  return (RAFFLE_TYPES as readonly string[]).includes(type);
-}
+// Re-export raffle types for backward compatibility
+export const RAFFLE_TYPES = raffle.TYPES;

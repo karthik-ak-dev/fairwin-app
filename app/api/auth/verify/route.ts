@@ -4,7 +4,8 @@ import { success } from '@/lib/api/responses';
 import { verifyChallenge } from '@/lib/services/auth/challenge.service';
 import { verifyWalletSignature } from '@/lib/services/auth/signature.service';
 import { generateToken, getExpirationSeconds } from '@/lib/services/auth/jwt.service';
-import { isValidWalletAddress, AUTH_ERROR_MESSAGES } from '@/lib/constants/auth.constants';
+import { isValidWalletAddress, errors } from '@/lib/constants';
+import { serverEnv } from '@/lib/env';
 
 /**
  * POST /api/auth/verify
@@ -34,23 +35,23 @@ export async function POST(request: NextRequest) {
 
     // Validate address format
     if (!isValidWalletAddress(address)) {
-      return badRequest(AUTH_ERROR_MESSAGES.INVALID_ADDRESS);
+      return badRequest(errors.auth.INVALID_ADDRESS);
     }
 
     // Verify challenge is valid and not expired
     const isChallengeValid = verifyChallenge(address, challenge);
     if (!isChallengeValid) {
-      return badRequest(AUTH_ERROR_MESSAGES.EXPIRED_CHALLENGE);
+      return badRequest(errors.auth.EXPIRED_CHALLENGE);
     }
 
     // Verify signature
     const isSignatureValid = await verifyWalletSignature(address, challenge, signature);
     if (!isSignatureValid) {
-      return badRequest(AUTH_ERROR_MESSAGES.INVALID_SIGNATURE);
+      return badRequest(errors.auth.INVALID_SIGNATURE);
     }
 
     // Check if user is admin
-    const adminAddress = process.env.ADMIN_WALLET_ADDRESS;
+    const adminAddress = serverEnv.ADMIN_WALLET_ADDRESS;
     const isAdmin = !!adminAddress && address.toLowerCase() === adminAddress.toLowerCase();
 
     // Generate JWT token

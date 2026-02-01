@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { getTokenBalances } from '@/lib/services/blockchain/contract-read.service';
+import { env, serverEnv } from '@/lib/env';
 
 /**
  * GET /api/admin/wallet
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     await requireAdmin(request);
 
-    const adminAddress = process.env.ADMIN_WALLET_ADDRESS || '';
+    const adminAddress = serverEnv.ADMIN_WALLET_ADDRESS;
 
     if (!adminAddress) {
       return success({
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = request.nextUrl;
-    const chainId = parseInt(searchParams.get('chainId') || '137', 10);
+    const chainId = parseInt(searchParams.get('chainId') || String(env.CHAIN_ID), 10);
 
     // Fetch token balances from blockchain
     const balances = await getTokenBalances(adminAddress, chainId);

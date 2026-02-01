@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { syncBlockchainEvents } from '@/lib/services/raffle/raffle-event-sync.service';
+import { serverEnv } from '@/lib/env';
 
 /**
  * POST /api/cron/sync-blockchain-events
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
   try {
     // 1. Authenticate request from EventBridge
     const apiKey = request.headers.get('x-api-key');
-    const expectedKey = process.env.EVENTBRIDGE_API_KEY;
+    const expectedKey = serverEnv.EVENTBRIDGE_API_KEY;
 
     if (!expectedKey) {
       console.error('[EventSync API] EVENTBRIDGE_API_KEY not configured');

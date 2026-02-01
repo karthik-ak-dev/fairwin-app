@@ -33,6 +33,7 @@ export const serverEnv = {
   get SECRETS_OPERATOR_KEY_NAME() { return optionalEnv('SECRETS_OPERATOR_KEY_NAME', 'fairwin/operator-private-key'); },
   get JWT_SECRET() { return requireEnv('JWT_SECRET'); },
   get JWT_ISSUER() { return optionalEnv('JWT_ISSUER', 'fairwin'); },
+  get EVENTBRIDGE_API_KEY() { return optionalEnv('EVENTBRIDGE_API_KEY'); },
   get DYNAMODB_TABLE_RAFFLES() { return optionalEnv('DYNAMODB_TABLE_RAFFLES', 'FairWin-Stage-Raffle-Raffles'); },
   get DYNAMODB_TABLE_ENTRIES() { return optionalEnv('DYNAMODB_TABLE_ENTRIES', 'FairWin-Stage-Raffle-Entries'); },
   get DYNAMODB_TABLE_USERS() { return optionalEnv('DYNAMODB_TABLE_USERS', 'FairWin-Stage-Users'); },

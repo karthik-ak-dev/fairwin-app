@@ -12,7 +12,7 @@
  */
 
 import { randomBytes } from 'crypto';
-import { CHALLENGE_EXPIRATION_MS } from '@/lib/constants/auth.constants';
+import { auth } from '@/lib/constants';
 
 // Store challenges in memory (for MVP - use Redis in production)
 const challengeStore = new Map<string, { challenge: string; timestamp: number }>();
@@ -74,7 +74,7 @@ export function verifyChallenge(address: string, challenge: string): boolean {
 
   // Check if challenge is expired
   const age = Date.now() - stored.timestamp;
-  if (age > CHALLENGE_EXPIRATION_MS) {
+  if (age > auth.CHALLENGE_EXPIRATION_MS) {
     challengeStore.delete(address.toLowerCase());
     return false; // Challenge expired
   }
@@ -92,7 +92,7 @@ function cleanupExpiredChallenges(): void {
   const now = Date.now();
 
   for (const [address, data] of Array.from(challengeStore.entries())) {
-    if (now - data.timestamp > CHALLENGE_EXPIRATION_MS) {
+    if (now - data.timestamp > auth.CHALLENGE_EXPIRATION_MS) {
       challengeStore.delete(address);
     }
   }

@@ -14,7 +14,7 @@
  */
 
 import { SignJWT, jwtVerify } from 'jose';
-import { JWT_EXPIRATION, JWT_EXPIRATION_SECONDS } from '@/lib/constants/auth.constants';
+import { auth } from '@/lib/constants';
 import { serverEnv } from '@/lib/env';
 
 interface TokenPayload {
@@ -45,7 +45,7 @@ export async function generateToken(address: string, isAdmin: boolean = false): 
     .setIssuer(serverEnv.JWT_ISSUER)
     .setSubject(address.toLowerCase())
     .setIssuedAt()
-    .setExpirationTime(JWT_EXPIRATION)
+    .setExpirationTime(auth.JWT_EXPIRATION)
     .sign(secret);
 
   return token;
@@ -95,5 +95,5 @@ export function extractTokenFromHeader(authHeader: string | null): string | null
  * Get expiration time in seconds
  */
 export function getExpirationSeconds(): number {
-  return JWT_EXPIRATION_SECONDS;
+  return auth.JWT_EXPIRATION_SECONDS;
 }
