@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { requireAdmin } from '@/lib/api/admin-auth';
+import { requireAdmin } from '@/lib/api/auth';
 import { handleError, unauthorized } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { getPlatformStats } from '@/lib/services/shared/platform-stats.service';

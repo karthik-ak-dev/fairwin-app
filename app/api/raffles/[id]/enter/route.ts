@@ -1,8 +1,8 @@
 import { NextRequest } from 'next/server';
-import { handleError, badRequest, unauthorized } from '@/lib/api/error-handler';
+import { handleError, badRequest } from '@/lib/api/error-handler';
 import { created } from '@/lib/api/responses';
 import { createEntry } from '@/lib/services/raffle/raffle-entry.service';
-import { requireAuth } from '@/lib/api/admin-auth';
+import { requireMatchingAuth } from '@/lib/api/auth';
 
 /**
  * POST /api/raffles/[id]/enter
@@ -36,13 +36,8 @@ export async function POST(
       return badRequest('Missing required fields: walletAddress, numEntries, totalPaid, transactionHash');
     }
 
-    // SECURITY LAYER 1: Verify JWT token
-    const authenticatedAddress = await requireAuth(request);
-
-    // SECURITY LAYER 2: Ensure token matches wallet address
-    if (authenticatedAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-      return unauthorized('Authenticated wallet does not match request wallet address');
-    }
+    // SECURITY LAYER 1 & 2: Verify JWT token and ensure it matches wallet address
+    await requireMatchingAuth(request, walletAddress);
 
     // SECURITY LAYER 3: USDC transfer verification happens in createEntry service
     const result = await createEntry({
@@ -55,9 +50,6 @@ export async function POST(
 
     return created({ entry: result });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('token')) {
-      return unauthorized(error.message);
-    }
     return handleError(error);
   }
 }

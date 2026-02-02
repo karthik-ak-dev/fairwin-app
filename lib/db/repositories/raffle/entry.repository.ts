@@ -2,6 +2,7 @@ import { PutCommand, QueryCommand, UpdateCommand, ScanCommand, GetCommand } from
 import { db, TABLE } from '../../client';
 import type { EntryItem, CreateEntryInput } from '../../models';
 import { EntryStatus } from '../../models';
+import { buildUpdateExpression } from '../../utils/dynamodb';
 
 export class EntryRepository {
   /**
@@ -147,28 +148,12 @@ export class EntryRepository {
    * Update entry fields
    */
   async update(entryId: string, updates: Partial<EntryItem>): Promise<void> {
-    const updateExpressions: string[] = [];
-    const expressionAttributeNames: Record<string, string> = {};
-    const expressionAttributeValues: Record<string, any> = {};
-
-    Object.entries(updates).forEach(([key, value], index) => {
-      const placeholder = `#attr${index}`;
-      const valuePlaceholder = `:val${index}`;
-      updateExpressions.push(`${placeholder} = ${valuePlaceholder}`);
-      expressionAttributeNames[placeholder] = key;
-      expressionAttributeValues[valuePlaceholder] = value;
-    });
-
-    updateExpressions.push('#updatedAt = :updatedAt');
-    expressionAttributeNames['#updatedAt'] = 'updatedAt';
-    expressionAttributeValues[':updatedAt'] = new Date().toISOString();
+    const updateExpression = buildUpdateExpression(updates);
 
     await db.send(new UpdateCommand({
       TableName: TABLE.ENTRIES,
       Key: { entryId },
-      UpdateExpression: `SET ${updateExpressions.join(', ')}`,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ExpressionAttributeValues: expressionAttributeValues,
+      ...updateExpression,
     }));
   }
 

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { requireAdmin } from '@/lib/api/admin-auth';
+import { requireAdmin } from '@/lib/api/auth';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { created } from '@/lib/api/responses';
 import { createRaffle } from '@/lib/services/raffle/raffle-management.service';

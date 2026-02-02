@@ -3,6 +3,7 @@ import { db, TABLE } from '../../client';
 import type { RaffleItem, CreateRaffleInput } from '../../models';
 import { RaffleStatus } from '../../models';
 import { pagination } from '@/lib/constants';
+import { buildUpdateExpression } from '../../utils/dynamodb';
 
 export class RaffleRepository {
   /**
@@ -78,23 +79,12 @@ export class RaffleRepository {
    * Update raffle fields and return the updated item
    */
   async update(raffleId: string, updates: Partial<RaffleItem>): Promise<RaffleItem> {
-    const entries = Object.entries({ ...updates, updatedAt: new Date().toISOString() });
-    const expressions: string[] = [];
-    const names: Record<string, string> = {};
-    const values: Record<string, any> = {};
-
-    entries.forEach(([key, val]) => {
-      expressions.push(`#${key} = :${key}`);
-      names[`#${key}`] = key;
-      values[`:${key}`] = val;
-    });
+    const updateExpression = buildUpdateExpression(updates);
 
     const { Attributes } = await db.send(new UpdateCommand({
       TableName: TABLE.RAFFLES,
       Key: { raffleId },
-      UpdateExpression: `SET ${expressions.join(', ')}`,
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
+      ...updateExpression,
       ReturnValues: 'ALL_NEW',
     }));
 

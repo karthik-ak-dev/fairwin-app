@@ -90,6 +90,10 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
 
   console.log(`[EntryService] Verified USDC transfer: ${verification.amountFormatted} from ${verification.from}`);
 
+  // Check if user has entered this raffle before (BEFORE creating new entry)
+  const userEntries = await entryRepo.getUserEntriesForRaffle(params.walletAddress, params.raffleId);
+  const hasEnteredBefore = userEntries.length > 0;
+
   // Create entry
   const entry = await entryRepo.create({
     raffleId: params.raffleId,
@@ -100,10 +104,6 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
   });
 
   console.log(`[EntryService] Created entry ${entry.entryId}`);
-
-  // Check if user has entered this raffle before (BEFORE creating new entry)
-  const userEntries = await entryRepo.getUserEntriesForRaffle(params.walletAddress, params.raffleId);
-  const hasEnteredBefore = userEntries.length > 0;
 
   // Update all related entities (raffle, user, platform stats)
   // Pass raffle to avoid re-fetching

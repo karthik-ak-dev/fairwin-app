@@ -1,6 +1,7 @@
 import { GetCommand, PutCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { UserItem } from '../../models';
+import { buildUpdateExpression } from '../../utils/dynamodb';
 
 export class UserRepository {
   async getByAddress(walletAddress: string): Promise<UserItem | null> {
@@ -43,23 +44,12 @@ export class UserRepository {
   }
 
   async update(walletAddress: string, updates: Partial<UserItem>): Promise<void> {
-    const entries = Object.entries({ ...updates, updatedAt: new Date().toISOString() });
-    const expressions: string[] = [];
-    const names: Record<string, string> = {};
-    const values: Record<string, any> = {};
-
-    entries.forEach(([key, val]) => {
-      expressions.push(`#${key} = :${key}`);
-      names[`#${key}`] = key;
-      values[`:${key}`] = val;
-    });
+    const updateExpression = buildUpdateExpression(updates);
 
     await db.send(new UpdateCommand({
       TableName: TABLE.USERS,
       Key: { walletAddress },
-      UpdateExpression: `SET ${expressions.join(', ')}`,
-      ExpressionAttributeNames: names,
-      ExpressionAttributeValues: values,
+      ...updateExpression,
     }));
   }
 

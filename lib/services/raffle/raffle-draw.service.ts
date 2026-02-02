@@ -468,11 +468,14 @@ async function createWinnerRecords(raffleId: string, winners: SelectedWinner[]):
  * Update user stats for winners (parallel execution for efficiency)
  */
 async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): Promise<void> {
-  // Get unique winners (same user might win multiple times)
+  // Get unique winners and calculate total prize in single loop
   const uniqueWinners = new Map<string, number>();
+  let totalPrize = 0;
+
   for (const winner of winners) {
     const currentPrize = uniqueWinners.get(winner.walletAddress) || 0;
     uniqueWinners.set(winner.walletAddress, currentPrize + winner.prize);
+    totalPrize += winner.prize;
   }
 
   // Update stats for all unique winners in parallel
@@ -481,7 +484,6 @@ async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): P
   );
 
   // Update platform stats in parallel with user updates
-  const totalPrize = winners.reduce((sum, w) => sum + w.prize, 0);
   const platformUpdatePromise = statsRepo.recordPayout(totalPrize, winners.length);
 
   await Promise.all([...userUpdatePromises, platformUpdatePromise]);
