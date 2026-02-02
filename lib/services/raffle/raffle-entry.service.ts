@@ -23,12 +23,12 @@ import {
   RaffleNotFoundError,
   InvalidEntryError,
 } from '../errors';
+import { validateRaffleActive } from './raffle-validation.service';
 import {
-  validateRaffleActive,
   validateWalletAddress,
   validatePositiveNumber,
   validateTransactionHash,
-} from './raffle-management.service';
+} from '../shared/validation.service';
 import { verifyUSDCTransfer, isTransactionUsed } from '@/lib/blockchain/usdc-verification.service';
 import { env } from '@/lib/env';
 import { raffle as raffleConstants } from '@/lib/constants';

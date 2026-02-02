@@ -33,12 +33,8 @@ import { raffleRepo, entryRepo, winnerRepo, userRepo, statsRepo } from '@/lib/db
 import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
 import type { EntryItem } from '@/lib/db/models';
 import type { DrawInitiationResult } from '../types';
-import {
-  RaffleNotFoundError,
-} from '../errors';
-import {
-  validateRaffleDrawable,
-} from './raffle-management.service';
+import { RaffleNotFoundError } from '../errors';
+import { validateRaffleDrawable } from './raffle-validation.service';
 import { env } from '@/lib/env';
 
 // ============================================================================

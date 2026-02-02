@@ -19,7 +19,6 @@ import type {
   EnrichedRaffle,
   ListRafflesParams,
   PaginatedRaffles,
-  RaffleStats,
 } from '../types';
 import { RaffleNotFoundError } from '../errors';
 import { decodeCursor } from '../shared/pagination.service';
