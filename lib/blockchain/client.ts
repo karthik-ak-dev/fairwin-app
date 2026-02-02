@@ -1,16 +1,42 @@
 /**
- * Blockchain Client - USDC Interaction Layer
+ * Blockchain Client - Centralized Blockchain Configuration
  *
- * Provides read-only blockchain clients and utilities for USDC token interactions.
- * Used for verifying USDC transfer transactions on Polygon blockchain.
+ * All blockchain-related constants, ABIs, and clients are centralized here.
+ * This is the single source of truth for:
+ * - USDC contract addresses
+ * - ERC20 ABIs
+ * - Blockchain clients (public and wallet)
+ * - Chain configuration
  */
 
 'use client';
 
-import { createPublicClient, http, type PublicClient, type Address } from 'viem';
+import { createPublicClient, createWalletClient, http, type PublicClient, type Address } from 'viem';
 import { polygon, polygonAmoy } from 'viem/chains';
-import { getUSDCAddress } from './addresses';
-import { env } from '@/lib/env';
+import { privateKeyToAccount } from 'viem/accounts';
+import { env, serverEnv } from '@/lib/env';
+
+/**
+ * USDC Token Contract Addresses
+ *
+ * Official USDC addresses for different chains:
+ * - Polygon Mainnet (137): Native USDC by Circle
+ * - Polygon Amoy Testnet (80002): Testnet USDC
+ */
+export const USDC_ADDRESSES: Record<number, Address> = {
+  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon Mainnet - Official USDC
+  80002: '0x41E94Eb71898E8A2eF47C1B6a4c8B1A0fAdf3660', // Polygon Amoy Testnet
+} as const;
+
+/**
+ * Get USDC contract address for a specific chain
+ *
+ * @param chainId - Chain ID (default: from env)
+ * @returns USDC contract address
+ */
+export function getUSDCAddress(chainId: number = env.CHAIN_ID): Address {
+  return USDC_ADDRESSES[chainId] || USDC_ADDRESSES[137]; // Default to Polygon Mainnet
+}
 
 /**
  * Get viem public client for reading blockchain data
@@ -28,23 +54,31 @@ export function getPublicClient(chainId: number = env.CHAIN_ID): PublicClient {
 }
 
 /**
- * ERC20 Transfer ABI
+ * Get viem wallet client for sending transactions (server-side only)
  *
- * Minimal ABI for USDC transfer verification.
- * Only includes the transfer function used for raffle entries.
+ * Uses operator private key from environment variables.
+ * Should only be used in backend services for payouts.
+ *
+ * @param chainId - Chain ID (default: from env)
+ * @returns Wallet client instance
  */
-export const ERC20_TRANSFER_ABI = [
-  {
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'transfer',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
+export function getWalletClient(chainId: number = env.CHAIN_ID) {
+  const chain = chainId === 137 ? polygon : polygonAmoy;
+
+  // Get private key from environment (in production, from AWS Secrets Manager)
+  const privateKey = process.env.OPERATOR_PRIVATE_KEY as `0x${string}`;
+  if (!privateKey) {
+    throw new Error('OPERATOR_PRIVATE_KEY not configured');
+  }
+
+  const account = privateKeyToAccount(privateKey);
+
+  return createWalletClient({
+    account,
+    chain,
+    transport: http(),
+  });
+}
 
 /**
  * ERC20 ABI (for USDC interactions)
@@ -104,11 +138,30 @@ export const ERC20_ABI = [
 ] as const;
 
 /**
- * Get USDC contract address for a chain
+ * Get Polygonscan transaction URL
  *
- * @param chainId - Chain ID
- * @returns USDC contract address
+ * @param hash - Transaction hash
+ * @param chainId - Chain ID (default: from env)
+ * @returns URL to view transaction on Polygonscan
  */
-export function getUSDCContractAddress(chainId: number = env.CHAIN_ID): Address {
-  return getUSDCAddress(chainId);
+export function getPolygonscanTxUrl(hash: string, chainId: number = env.CHAIN_ID): string {
+  const baseUrl = chainId === 137
+    ? env.POLYGONSCAN_URL
+    : 'https://amoy.polygonscan.com';
+  return `${baseUrl}/tx/${hash}`;
 }
+
+/**
+ * Get Polygonscan address URL
+ *
+ * @param address - Contract or wallet address
+ * @param chainId - Chain ID (default: from env)
+ * @returns URL to view address on Polygonscan
+ */
+export function getPolygonscanAddressUrl(address: string, chainId: number = env.CHAIN_ID): string {
+  const baseUrl = chainId === 137
+    ? env.POLYGONSCAN_URL
+    : 'https://amoy.polygonscan.com';
+  return `${baseUrl}/address/${address}`;
+}
+

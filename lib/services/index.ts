@@ -23,9 +23,6 @@ export * as userEntry from './user/user-entry.service';
 export * as adminStats from './admin/admin-stats.service';
 export * as adminPayout from './admin/admin-payout.service';
 
-// Blockchain services (read-only for USDC verification)
-export * as usdcTransferVerification from './blockchain/usdc-transfer-verification.service';
-
 // Shared utilities
 export * from './shared/cache.service';
 export * from './shared/pagination.service';

@@ -29,7 +29,7 @@ import {
   validatePositiveNumber,
   validateTransactionHash,
 } from './raffle-validation.service';
-import { verifyUSDCTransfer, isTransactionUsed } from '../blockchain/usdc-transfer-verification.service';
+import { verifyUSDCTransfer, isTransactionUsed } from '@/lib/blockchain/usdc-verification.service';
 import { env } from '@/lib/env';
 
 /**

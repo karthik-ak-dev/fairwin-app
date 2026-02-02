@@ -18,34 +18,11 @@
  * - Failed payouts can be retried
  */
 
-import { createWalletClient, http, type Address } from 'viem';
-import { polygon, polygonAmoy } from 'viem/chains';
-import { privateKeyToAccount } from 'viem/accounts';
+import type { Address } from 'viem';
 import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
 import { PayoutStatus } from '@/lib/db/models';
-import { env, serverEnv } from '@/lib/env';
-
-// ERC20 Transfer ABI
-const ERC20_TRANSFER_ABI = [
-  {
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'transfer',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
-
-/**
- * USDC contract addresses
- */
-const USDC_CONTRACTS = {
-  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon Mainnet
-  80002: '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582', // Polygon Amoy Testnet
-} as const;
+import { ERC20_ABI, getWalletClient, getUSDCAddress } from '@/lib/blockchain/client';
+import { env } from '@/lib/env';
 
 export interface PayoutResult {
   winnerId: string;
@@ -62,35 +39,6 @@ export interface BatchPayoutResult {
   successful: number;
   failed: number;
   payouts: PayoutResult[];
-}
-
-/**
- * Get wallet client for sending transactions
- * Uses operator private key from AWS Secrets Manager
- */
-async function getWalletClient(chainId: number) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
-
-  // Get private key from environment (in production, from AWS Secrets Manager)
-  const privateKey = process.env.OPERATOR_PRIVATE_KEY as `0x${string}`;
-  if (!privateKey) {
-    throw new Error('OPERATOR_PRIVATE_KEY not configured');
-  }
-
-  const account = privateKeyToAccount(privateKey);
-
-  return createWalletClient({
-    account,
-    chain,
-    transport: http(),
-  });
-}
-
-/**
- * Get USDC contract address for chain
- */
-function getUSDCAddress(chainId: number): Address {
-  return (USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS] || USDC_CONTRACTS[137]) as Address;
 }
 
 /**
@@ -127,13 +75,13 @@ export async function sendPayoutToWinner(
     });
 
     // Get wallet client
-    const walletClient = await getWalletClient(chainId);
+    const walletClient = getWalletClient(chainId);
     const usdcAddress = getUSDCAddress(chainId);
 
     // Send USDC transfer
     const hash = await walletClient.writeContract({
       address: usdcAddress,
-      abi: ERC20_TRANSFER_ABI,
+      abi: ERC20_ABI,
       functionName: 'transfer',
       args: [winner.walletAddress as Address, BigInt(winner.prize)],
     });

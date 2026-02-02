@@ -1,9 +1,12 @@
 /**
  * Blockchain Integration Layer
  *
- * Read-only blockchain utilities for USDC payment verification on Polygon.
- * Provides USDC token addresses and client utilities for reading transactions.
+ * All blockchain-related functionality:
+ * - USDC contract addresses and ABIs
+ * - Blockchain clients (public and wallet)
+ * - USDC transfer verification
+ * - Polygonscan utilities
  */
 
-export * from './addresses';
 export * from './client';
+export * from './usdc-verification.service';

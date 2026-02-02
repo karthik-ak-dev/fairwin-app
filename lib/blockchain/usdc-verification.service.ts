@@ -14,56 +14,16 @@
  * 7. Verify sender matches authenticated user
  */
 
-import { createPublicClient, http, decodeFunctionData, type Address } from 'viem';
-import { polygon, polygonAmoy } from 'viem/chains';
+import { decodeFunctionData, type Address } from 'viem';
+import { ERC20_ABI, getPublicClient, getUSDCAddress } from '@/lib/blockchain/client';
 import { env } from '@/lib/env';
 import { formatUSDC } from '@/shared/utils/format';
-
-// ERC20 Transfer ABI - only what we need
-const ERC20_TRANSFER_ABI = [
-  {
-    inputs: [
-      { name: 'to', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    name: 'transfer',
-    outputs: [{ name: '', type: 'bool' }],
-    stateMutability: 'nonpayable',
-    type: 'function',
-  },
-] as const;
 
 /**
  * Platform wallet address that receives USDC payments
  * Update this to your actual platform wallet address
  */
 export const PLATFORM_WALLET_ADDRESS = process.env.PLATFORM_WALLET_ADDRESS || env.ADMIN_WALLET_ADDRESS;
-
-/**
- * USDC contract addresses on Polygon
- */
-const USDC_CONTRACTS = {
-  137: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359', // Polygon Mainnet
-  80002: '0x41e94eb019c0762f9bfcf9fb1e58725bfb0e7582', // Polygon Amoy Testnet
-} as const;
-
-/**
- * Get public client for reading blockchain data
- */
-function getPublicClient(chainId: number) {
-  const chain = chainId === 137 ? polygon : polygonAmoy;
-  return createPublicClient({
-    chain,
-    transport: http(),
-  });
-}
-
-/**
- * Get USDC contract address for chain
- */
-function getUSDCAddress(chainId: number): Address {
-  return (USDC_CONTRACTS[chainId as keyof typeof USDC_CONTRACTS] || USDC_CONTRACTS[137]) as Address;
-}
 
 export interface USDCTransferVerification {
   verified: true;
@@ -132,7 +92,7 @@ export async function verifyUSDCTransfer(
   let decodedData;
   try {
     decodedData = decodeFunctionData({
-      abi: ERC20_TRANSFER_ABI,
+      abi: ERC20_ABI,
       data: transaction.input,
     });
   } catch (error) {
