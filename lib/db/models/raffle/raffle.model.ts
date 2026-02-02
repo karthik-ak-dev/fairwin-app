@@ -85,14 +85,6 @@ export interface RaffleItem {
   entryPrice: number;
 
   /**
-   * Maximum entries a single user can purchase
-   * Prevents whales from dominating the raffle
-   * Typical range: 10-100 entries
-   * 0 = unlimited (not recommended)
-   */
-  maxEntriesPerUser: number;
-
-  /**
    * Total number of entries purchased across all users
    * Incremented on each entry transaction
    * Used to calculate prize pool and determine winners
@@ -134,10 +126,37 @@ export interface RaffleItem {
   /**
    * Number of winners to be selected for this raffle
    * Determines how many participants will receive prizes
-   * Common values: 1 (single winner), 3 (top 3), 5 (top 5), 10 (top 10)
-   * Prize pool is divided among winners according to prize distribution
+   * Max 100 winners per raffle (capped)
+   * Prize pool is divided among winners according to prize tiers
    */
   winnerCount: number;
+
+  /**
+   * Platform fee percentage (0-100)
+   * Percentage of prize pool taken as platform fee
+   * Default: 5% (configured in constants)
+   * Example: 5 = 5% fee
+   */
+  platformFeePercent: number;
+
+  /**
+   * Prize tier configuration
+   * Defines how the prize pool is split among winner tiers
+   * Each tier specifies percentage, winner count, and name
+   * Must sum to 100% and match winnerCount
+   *
+   * Example (default 3-tier system):
+   * [
+   *   { name: "Tier 1", percentage: 40, winnerCount: 1 },
+   *   { name: "Tier 2", percentage: 30, winnerCount: 4 },
+   *   { name: "Tier 3", percentage: 30, winnerCount: 95 }
+   * ]
+   */
+  prizeTiers: Array<{
+    name: string;
+    percentage: number;
+    winnerCount: number;
+  }>;
 
   /**
    * ISO 8601 timestamp when raffle starts accepting entries
@@ -199,7 +218,6 @@ export interface RaffleItem {
  *   title: 'Daily Raffle - Jan 29',
  *   description: 'Win up to 1000 USDC!',
  *   entryPrice: 1000000, // 1 USDC
- *   maxEntriesPerUser: 50,
  *   winnerCount: 1,
  *   startTime: '2025-01-29T00:00:00Z',
  *   endTime: '2025-01-29T23:59:59Z'
@@ -208,5 +226,18 @@ export interface RaffleItem {
  */
 export type CreateRaffleInput = Pick<
   RaffleItem,
-  'type' | 'title' | 'description' | 'entryPrice' | 'maxEntriesPerUser' | 'winnerCount' | 'startTime' | 'endTime'
->;
+  | 'type'
+  | 'title'
+  | 'description'
+  | 'entryPrice'
+  | 'winnerCount'
+  | 'startTime'
+  | 'endTime'
+> & {
+  platformFeePercent?: number;
+  prizeTiers?: Array<{
+    name: string;
+    percentage: number;
+    winnerCount: number;
+  }>;
+};

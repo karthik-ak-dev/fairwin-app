@@ -7,7 +7,6 @@ interface RafflePreviewProps {
   entryPrice: number;
   duration: number;
   durationUnit: string;
-  maxEntriesPerUser: number;
   entryCap: number | null;
 }
 
@@ -16,7 +15,6 @@ export default function RafflePreview({
   entryPrice,
   duration,
   durationUnit,
-  maxEntriesPerUser,
   entryCap,
 }: RafflePreviewProps) {
   const typeLabels: Record<string, string> = {
@@ -65,10 +63,6 @@ export default function RafflePreview({
             <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
               <p className="text-[10px] uppercase tracking-wider text-[#666]">Duration</p>
               <p className="text-sm font-bold text-white mt-0.5">{durationLabel}</p>
-            </div>
-            <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
-              <p className="text-[10px] uppercase tracking-wider text-[#666]">Max / User</p>
-              <p className="text-sm font-bold text-white mt-0.5">{maxEntriesPerUser}</p>
             </div>
             <div className="rounded-lg bg-white/[0.03] border border-white/[0.06] p-3">
               <p className="text-[10px] uppercase tracking-wider text-[#666]">Entry Cap</p>

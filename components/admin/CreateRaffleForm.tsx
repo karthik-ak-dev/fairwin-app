@@ -17,7 +17,6 @@ export default function CreateRaffleForm() {
   const [entryPrice, setEntryPrice] = useState(5);
   const [duration, setDuration] = useState(24);
   const [durationUnit, setDurationUnit] = useState('hours');
-  const [maxEntriesPerUser, setMaxEntriesPerUser] = useState(10);
   const [entryCap, setEntryCap] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -25,7 +24,6 @@ export default function CreateRaffleForm() {
     const e: Record<string, string> = {};
     if (entryPrice <= 0) e.entryPrice = 'Entry price must be greater than 0';
     if (duration <= 0) e.duration = 'Duration must be greater than 0';
-    if (maxEntriesPerUser <= 0) e.maxEntriesPerUser = 'Must be at least 1';
     if (entryCap !== null && entryCap <= 0) e.entryCap = 'Entry cap must be positive';
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -51,7 +49,6 @@ export default function CreateRaffleForm() {
         title: `${typeLabels[type] || type}`,
         type,
         entryPrice,
-        maxEntriesPerUser,
         duration: durationSeconds,
         winnersCount: 3, // Default
       },
@@ -144,23 +141,6 @@ export default function CreateRaffleForm() {
             )}
           </div>
 
-          {/* Max Entries Per User */}
-          <div>
-            <label className="block text-xs font-medium text-[#aaa] mb-1.5">
-              Max Entries Per User
-            </label>
-            <input
-              type="number"
-              min={1}
-              value={maxEntriesPerUser}
-              onChange={(e) => setMaxEntriesPerUser(Number(e.target.value))}
-              className="w-full rounded-lg border border-white/[0.08] bg-[#0a0a0a] text-white px-3 py-2.5 text-sm focus:outline-none focus:border-[#00ff88]/40"
-            />
-            {errors.maxEntriesPerUser && (
-              <p className="text-xs text-red-400 mt-1">{errors.maxEntriesPerUser}</p>
-            )}
-          </div>
-
           {/* Entry Cap */}
           <div>
             <label className="block text-xs font-medium text-[#aaa] mb-1.5">
@@ -213,7 +193,6 @@ export default function CreateRaffleForm() {
           entryPrice={entryPrice}
           duration={duration}
           durationUnit={durationUnit}
-          maxEntriesPerUser={maxEntriesPerUser}
           entryCap={entryCap}
         />
       </div>

@@ -132,47 +132,68 @@ export function buildTicketPool(entries: EntryItem[]): Ticket[] {
   return tickets;
 }
 
+export interface PrizeTierConfig {
+  name: string;
+  percentage: number;
+  winnerCount: number;
+}
+
 /**
- * Calculate prize distribution for winners
+ * Calculate tiered prize distribution
  *
- * Default distribution (can be customized):
- * - 1 winner: 100% of prize pool
- * - 3 winners: 50%, 30%, 20%
- * - 5 winners: 40%, 25%, 20%, 10%, 5%
- * - 10+ winners: Top 10% split evenly
+ * Tiered Reward System:
+ * - Platform takes X% fee from total pool (configured, default 5%)
+ * - Remaining amount is distributed across prize tiers
+ * - Each tier gets a percentage of the distributable prize
+ * - Winners within a tier split the tier's allocation equally
+ *
+ * Example with default 3-tier system (100 USDC pool, 5% platform fee):
+ * - Platform fee: 5 USDC
+ * - Distributable: 95 USDC
+ *   - Tier 1 (40%): 38 USDC → 1 winner gets 38 USDC
+ *   - Tier 2 (30%): 28.5 USDC → 4 winners get 7.125 USDC each
+ *   - Tier 3 (30%): 28.5 USDC → Remaining winners split equally
+ *
+ * @param totalPrize Total prize pool after platform fee (distributable amount)
+ * @param prizeTiers Prize tier configuration
+ * @param actualWinnerCount Actual number of winners (may be less than tier total if few participants)
+ * @returns Array of prize amounts with tier info for each winner position
  */
 export function calculatePrizeDistribution(
   totalPrize: number,
-  numWinners: number
-): { amount: number; tier: string }[] {
-  if (numWinners === 1) {
-    return [{ amount: totalPrize, tier: 'Grand Prize' }];
+  prizeTiers: PrizeTierConfig[],
+  actualWinnerCount: number
+): { amount: number; tier: string; tierIndex: number }[] {
+  const distribution: { amount: number; tier: string; tierIndex: number }[] = [];
+  let remainingWinners = actualWinnerCount;
+
+  for (let tierIndex = 0; tierIndex < prizeTiers.length; tierIndex++) {
+    const tier = prizeTiers[tierIndex];
+
+    if (remainingWinners <= 0) break;
+
+    // Calculate tier allocation (percentage of total distributable prize)
+    const tierAllocation = Math.floor((totalPrize * tier.percentage) / 100);
+
+    // Determine how many winners in this tier
+    const winnersInTier = Math.min(tier.winnerCount, remainingWinners);
+
+    // Split tier allocation among winners
+    const prizePerWinner = Math.floor(tierAllocation / winnersInTier);
+
+    // Add each winner in this tier
+    for (let i = 0; i < winnersInTier; i++) {
+      distribution.push({
+        amount: prizePerWinner,
+        tier: `${tier.name} (${i + 1}/${winnersInTier})`,
+        tierIndex,
+      });
+    }
+
+    remainingWinners -= winnersInTier;
   }
 
-  if (numWinners === 3) {
-    return [
-      { amount: Math.floor(totalPrize * 0.5), tier: '1st Place' },
-      { amount: Math.floor(totalPrize * 0.3), tier: '2nd Place' },
-      { amount: Math.floor(totalPrize * 0.2), tier: '3rd Place' },
-    ];
-  }
-
-  if (numWinners === 5) {
-    return [
-      { amount: Math.floor(totalPrize * 0.4), tier: '1st Place' },
-      { amount: Math.floor(totalPrize * 0.25), tier: '2nd Place' },
-      { amount: Math.floor(totalPrize * 0.2), tier: '3rd Place' },
-      { amount: Math.floor(totalPrize * 0.1), tier: '4th Place' },
-      { amount: Math.floor(totalPrize * 0.05), tier: '5th Place' },
-    ];
-  }
-
-  // Many winners: split evenly
-  const prizePerWinner = Math.floor(totalPrize / numWinners);
-  return Array.from({ length: numWinners }, (_, i) => ({
-    amount: prizePerWinner,
-    tier: `Winner #${i + 1}`,
-  }));
+  return distribution;
 }
 
 /**
@@ -180,6 +201,7 @@ export function calculatePrizeDistribution(
  *
  * @param entries All entries for the raffle
  * @param prizePool Total USDC prize pool (after platform fee)
+ * @param prizeTiers Prize tier configuration
  * @param numWinners Number of winners to select
  * @param randomSeed Random seed (hex string)
  * @returns Array of selected winners with prizes
@@ -187,6 +209,7 @@ export function calculatePrizeDistribution(
 export function selectWinners(
   entries: EntryItem[],
   prizePool: number,
+  prizeTiers: PrizeTierConfig[],
   numWinners: number,
   randomSeed: string
 ): SelectedWinner[] {
@@ -218,7 +241,7 @@ export function selectWinners(
     .map((num) => tickets[num]);
 
   // Calculate prize distribution
-  const prizeDistribution = calculatePrizeDistribution(prizePool, numWinners);
+  const prizeDistribution = calculatePrizeDistribution(prizePool, prizeTiers, numWinners);
 
   // Map to winners with prizes
   const winners: SelectedWinner[] = winningTickets.map((ticket, index) => ({
@@ -241,11 +264,12 @@ export function selectWinners(
 export async function selectWinnersWithBlockHash(
   entries: EntryItem[],
   prizePool: number,
+  prizeTiers: PrizeTierConfig[],
   numWinners: number,
   chainId: number = env.CHAIN_ID
 ): Promise<WinnerSelectionResult> {
   const { seed, blockNumber, blockHash } = await generateBlockHashSeed(chainId);
-  const winners = selectWinners(entries, prizePool, numWinners, seed);
+  const winners = selectWinners(entries, prizePool, prizeTiers, numWinners, seed);
 
   return {
     winners,
@@ -263,10 +287,11 @@ export async function selectWinnersWithBlockHash(
 export function selectWinnersWithCrypto(
   entries: EntryItem[],
   prizePool: number,
+  prizeTiers: PrizeTierConfig[],
   numWinners: number
 ): WinnerSelectionResult {
   const seed = generateCryptoSeed();
-  const winners = selectWinners(entries, prizePool, numWinners, seed);
+  const winners = selectWinners(entries, prizePool, prizeTiers, numWinners, seed);
 
   return {
     winners,
@@ -283,11 +308,12 @@ export function selectWinnersWithCrypto(
 export function verifyWinnerSelection(
   entries: EntryItem[],
   prizePool: number,
+  prizeTiers: PrizeTierConfig[],
   numWinners: number,
   storedSeed: string,
   expectedWinners: SelectedWinner[]
 ): boolean {
-  const recomputedWinners = selectWinners(entries, prizePool, numWinners, storedSeed);
+  const recomputedWinners = selectWinners(entries, prizePool, prizeTiers, numWinners, storedSeed);
 
   // Check if winners match
   if (recomputedWinners.length !== expectedWinners.length) {

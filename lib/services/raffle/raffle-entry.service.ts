@@ -24,7 +24,6 @@ import {
 } from '../errors';
 import {
   validateRaffleActive,
-  validateMaxEntriesPerUser,
   validateWalletAddress,
   validatePositiveNumber,
   validateTransactionHash,
@@ -38,7 +37,6 @@ import { env } from '@/lib/env';
  *
  * Business Rules:
  * - Raffle must exist and be active/ending
- * - User cannot exceed max entries per raffle
  * - Transaction must be valid USDC transfer to platform wallet
  * - Transaction can only be used once (no replay attacks)
  *
@@ -51,7 +49,6 @@ import { env } from '@/lib/env';
  *
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws RaffleNotActiveError if raffle is not accepting entries
- * @throws MaxEntriesExceededError if user would exceed max entries
  * @throws InvalidEntryError if entry parameters are invalid
  */
 export async function createEntry(params: CreateEntryParams): Promise<CreateEntryResult> {
@@ -66,12 +63,6 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
 
   // Validate raffle is active
   validateRaffleActive(raffle);
-
-  // Get user's current entry count for this raffle
-  const userEntryCount = await getUserEntryCount(params.raffleId, params.walletAddress);
-
-  // Validate max entries
-  validateMaxEntriesPerUser(userEntryCount, params.numEntries, raffle.maxEntriesPerUser);
 
   // Verify entry cost matches
   const expectedCost = calculateEntryCost(raffle.entryPrice, params.numEntries);
@@ -212,18 +203,6 @@ export async function validateEntryEligibility(
 
     // Get user's current entries
     const currentEntries = await getUserEntryCount(raffleId, walletAddress);
-
-    // Check max entries
-    try {
-      validateMaxEntriesPerUser(currentEntries, numEntries, raffle.maxEntriesPerUser);
-    } catch (error) {
-      return {
-        valid: false,
-        error: error instanceof Error ? error.message : 'Max entries exceeded',
-        maxEntriesReached: true,
-        currentEntries,
-      };
-    }
 
     return {
       valid: true,

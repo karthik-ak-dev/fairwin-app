@@ -13,7 +13,9 @@ import {
   validateRaffleConfig,
   validateRaffleUpdate,
   validateStatusTransition,
+  validatePrizeTiers,
 } from './raffle-validation.service';
+import { raffle as raffleConstants } from '@/lib/constants';
 
 /**
  * Create a new raffle
@@ -23,9 +25,11 @@ import {
  *
  * Business Rules:
  * - Validates all raffle configuration parameters
- * - Creates raffle in database only
+ * - Creates raffle with tiered reward configuration
+ * - Applies platform fee percentage (default 5%)
+ * - Sets up prize tiers (default: 3-tier system with 40%/30%/30% split)
  * - Increments platform raffle count
- * - Sets initial status to 'scheduled' or 'active' based on start time
+ * - Sets initial status to 'scheduled'
  *
  * @param params Raffle creation parameters
  * @throws InvalidRaffleConfigError if config is invalid
@@ -33,22 +37,36 @@ import {
 export async function createRaffle(
   params: CreateRaffleParams
 ): Promise<RaffleItem> {
-  // Validate configuration
+  // Validate basic configuration
   validateRaffleConfig(params);
 
   // Convert timestamps to ISO strings
   const startTime = new Date(params.startTime).toISOString();
   const endTime = new Date(params.endTime).toISOString();
 
+  // Set defaults for optional fields
+  const description = params.description || '';
+  const platformFeePercent = params.platformFeePercent ?? raffleConstants.DEFAULTS.PLATFORM_FEE_PERCENT;
+  const winnerCount = params.winnerCount ?? raffleConstants.DEFAULTS.WINNER_COUNT;
+  const prizeTiers = params.prizeTiers ?? raffleConstants.PRIZE_TIERS.map(tier => ({
+    name: tier.name,
+    percentage: tier.percentage,
+    winnerCount: tier.winnerCount,
+  }));
+
+  // Validate prize tiers after defaults are applied
+  validatePrizeTiers(prizeTiers, winnerCount);
+
   // Create raffle in database
   // Note: status is set to 'scheduled' by default in repository
   const raffle = await raffleRepo.create({
     type: params.type,
     title: params.title,
-    description: params.description || '',
+    description,
     entryPrice: params.entryPrice,
-    maxEntriesPerUser: params.maxEntriesPerUser,
-    winnerCount: params.winnerCount || 1,
+    winnerCount,
+    platformFeePercent,
+    prizeTiers,
     startTime,
     endTime,
   });

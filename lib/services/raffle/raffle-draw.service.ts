@@ -96,10 +96,10 @@ export async function initiateRaffleDraw(
 
   console.log(`[DrawService] Starting draw for raffle ${raffleId} with ${entries.length} entries`);
 
-  // Select winners using chosen randomness method
+  // Select winners using chosen randomness method with prize tiers
   const selectionResult = useBlockHash
-    ? await selectWinnersWithBlockHash(entries, raffle.winnerPayout, raffle.winnerCount, env.CHAIN_ID)
-    : selectWinnersWithCrypto(entries, raffle.winnerPayout, raffle.winnerCount);
+    ? await selectWinnersWithBlockHash(entries, raffle.winnerPayout, raffle.prizeTiers, raffle.winnerCount, env.CHAIN_ID)
+    : selectWinnersWithCrypto(entries, raffle.winnerPayout, raffle.prizeTiers, raffle.winnerCount);
 
   console.log(`[DrawService] Selected ${selectionResult.winners.length} winners using ${useBlockHash ? 'block hash' : 'crypto random'}`);
 

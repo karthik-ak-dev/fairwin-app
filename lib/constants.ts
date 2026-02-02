@@ -91,10 +91,46 @@ export const raffle = {
 
   /** Default raffle configuration values */
   DEFAULTS: {
-    MAX_ENTRIES_PER_USER: 50,
     PLATFORM_FEE_PERCENT: 5,
-    WINNER_COUNT: 1,
+    WINNER_COUNT: 100,
   } as const,
+
+  /**
+   * Default tiered reward distribution
+   *
+   * Business Logic:
+   * - Platform takes 5% fee from total pool
+   * - Of remaining 95%:
+   *   - Tier 1 (40%): 1 lucky winner gets 40% of distributable prize
+   *   - Tier 2 (30%): Next 4 winners split 30% of distributable prize
+   *   - Tier 3 (30%): Remaining winners (up to 95) split 30% of distributable prize
+   *
+   * Max winners capped at 100 regardless of participants
+   *
+   * Example: 100 USDC total pool
+   * - Platform fee (5%): 5 USDC
+   * - Distributable prize (95%): 95 USDC
+   *   - Tier 1 winner: 38 USDC (40% of 95)
+   *   - Tier 2 winners (4): 7.125 USDC each (30% of 95 / 4)
+   *   - Tier 3 winners (95): 0.3 USDC each (30% of 95 / 95)
+   */
+  PRIZE_TIERS: [
+    {
+      name: 'Tier 1 - Grand Prize',
+      percentage: 40, // 40% of distributable prize (after platform fee)
+      winnerCount: 1,
+    },
+    {
+      name: 'Tier 2 - Top Winners',
+      percentage: 30, // 30% of distributable prize
+      winnerCount: 4,
+    },
+    {
+      name: 'Tier 3 - Lucky Winners',
+      percentage: 30, // 30% of distributable prize
+      winnerCount: 95, // Remaining up to max cap (100 total - 1 - 4 = 95)
+    },
+  ] as const,
 } as const;
 
 // =============================================================================
@@ -160,3 +196,9 @@ export function isPositiveNumber(n: unknown): n is number {
 
 export type RaffleType = typeof raffle.TYPES[number];
 export type RaffleStatus = typeof raffle.STATUS[keyof typeof raffle.STATUS];
+
+export interface PrizeTier {
+  name: string;
+  percentage: number;
+  winnerCount: number;
+}

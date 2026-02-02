@@ -155,7 +155,6 @@ export async function getRaffleStats(raffleId: string): Promise<RaffleStats> {
     status: raffle.status,
     displayStatus,
     entryPrice: raffle.entryPrice,
-    maxEntriesPerUser: raffle.maxEntriesPerUser,
     avgEntriesPerUser: Math.round(avgEntriesPerUser * 100) / 100,
   };
 }

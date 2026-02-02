@@ -93,7 +93,6 @@ export interface RaffleStats {
   status: string;
   displayStatus?: string;
   entryPrice: number;
-  maxEntriesPerUser: number;
   avgEntriesPerUser: number;
 }
 
@@ -306,23 +305,28 @@ export interface WalletBalances {
 // Raffle Creation Types
 // ============================================================================
 
+export interface PrizeTierConfig {
+  name: string;
+  percentage: number;
+  winnerCount: number;
+}
+
 export interface CreateRaffleParams {
   type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
   title: string;
   description?: string;
   entryPrice: number;
-  maxEntriesPerUser: number;
   startTime: number;
   endTime: number;
   winnerCount?: number;
   platformFeePercent?: number;
+  prizeTiers?: PrizeTierConfig[];
 }
 
 export interface UpdateRaffleParams {
   title?: string;
   description?: string;
   entryPrice?: number;
-  maxEntriesPerUser?: number;
   startTime?: number;
   endTime?: number;
   winnerCount?: number;

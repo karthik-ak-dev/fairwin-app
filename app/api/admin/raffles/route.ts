@@ -3,7 +3,6 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError, badRequest } from '@/lib/api/error-handler';
 import { created } from '@/lib/api/responses';
 import { createRaffle } from '@/lib/services/raffle/raffle-management.service';
-import { raffle } from '@/lib/constants';
 
 /**
  * POST /api/admin/raffles
@@ -17,10 +16,18 @@ import { raffle } from '@/lib/constants';
  * - title: Raffle title
  * - description: Raffle description (optional)
  * - entryPrice: Price per entry in USDC (smallest unit, 6 decimals)
- * - maxEntriesPerUser: Maximum entries per user (default from constants)
- * - winnerCount: Number of winners (default from constants)
+ * - winnerCount: Number of winners (default 100)
+ * - platformFeePercent: Platform fee percentage (default 5%)
+ * - prizeTiers: Prize tier configuration (optional, uses default 3-tier if not provided)
  * - startTime: Start timestamp (ISO 8601 string)
  * - endTime: End timestamp (ISO 8601 string)
+ *
+ * Prize Tiers Example:
+ * [
+ *   { name: "Tier 1 - Grand Prize", percentage: 40, winnerCount: 1 },
+ *   { name: "Tier 2 - Top Winners", percentage: 30, winnerCount: 4 },
+ *   { name: "Tier 3 - Lucky Winners", percentage: 30, winnerCount: 95 }
+ * ]
  */
 export async function POST(request: NextRequest) {
   try {
@@ -32,8 +39,9 @@ export async function POST(request: NextRequest) {
       title,
       description,
       entryPrice,
-      maxEntriesPerUser,
       winnerCount,
+      platformFeePercent,
+      prizeTiers,
       startTime,
       endTime,
     } = body;
@@ -43,14 +51,16 @@ export async function POST(request: NextRequest) {
       return badRequest('Missing required fields: type, title, entryPrice, startTime, endTime');
     }
 
-    // Create raffle in database only (no blockchain)
+    // Create raffle in database with tiered rewards
+    // Defaults are applied in the service layer
     const raffleData = await createRaffle({
       type,
       title,
-      description: description || '',
+      description,
       entryPrice,
-      maxEntriesPerUser: maxEntriesPerUser || raffle.DEFAULTS.MAX_ENTRIES_PER_USER,
-      winnerCount: winnerCount || raffle.DEFAULTS.WINNER_COUNT,
+      winnerCount,
+      platformFeePercent,
+      prizeTiers,
       startTime,
       endTime,
     });

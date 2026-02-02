@@ -9,7 +9,6 @@ interface CreateRaffleFormInput {
   title: string;
   type: string;
   entryPrice: number;
-  maxEntriesPerUser: number;
   duration: number;
   winnersCount: number;
   description?: string;
@@ -35,7 +34,6 @@ export function useCreateRaffle() {
         title: input.title,
         description: input.description ?? '',
         entryPrice: input.entryPrice,
-        maxEntriesPerUser: input.maxEntriesPerUser,
         winnerCount: input.winnersCount ?? 1,
         startTime,
         endTime,

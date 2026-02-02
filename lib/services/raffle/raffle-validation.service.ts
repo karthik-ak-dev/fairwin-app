@@ -10,7 +10,6 @@ import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
 import {
   RaffleNotActiveError,
   RaffleNotDrawableError,
-  MaxEntriesExceededError,
   InvalidRaffleConfigError,
   InvalidStatusTransitionError,
   ValidationError,
@@ -100,17 +99,68 @@ export function validateRaffleDrawable(raffle: Raffle, entryCount: number): void
 }
 
 /**
- * Validate entry count doesn't exceed max per user
+ * Validate prize tier configuration
  *
- * @throws MaxEntriesExceededError if limit would be exceeded
+ * Business Rules:
+ * - Tier percentages must sum to 100%
+ * - Tier winner counts must sum to total winnerCount
+ * - Each tier must have at least 1 winner
+ * - Each tier percentage must be positive
+ *
+ * @throws InvalidRaffleConfigError if tier config is invalid
  */
-export function validateMaxEntriesPerUser(
-  currentEntries: number,
-  newEntries: number,
-  maxEntries: number
+export function validatePrizeTiers(
+  prizeTiers: Array<{ name: string; percentage: number; winnerCount: number }>,
+  totalWinnerCount?: number
 ): void {
-  if (currentEntries + newEntries > maxEntries) {
-    throw new MaxEntriesExceededError(currentEntries, newEntries, maxEntries);
+  if (!prizeTiers || prizeTiers.length === 0) {
+    throw new InvalidRaffleConfigError('prizeTiers', 'Must have at least one prize tier');
+  }
+
+  // Validate each tier
+  for (let i = 0; i < prizeTiers.length; i++) {
+    const tier = prizeTiers[i];
+
+    if (!tier.name || tier.name.trim().length === 0) {
+      throw new InvalidRaffleConfigError(
+        `prizeTiers[${i}].name`,
+        'Tier name cannot be empty'
+      );
+    }
+
+    if (tier.percentage <= 0) {
+      throw new InvalidRaffleConfigError(
+        `prizeTiers[${i}].percentage`,
+        'Tier percentage must be positive'
+      );
+    }
+
+    if (tier.winnerCount < 1) {
+      throw new InvalidRaffleConfigError(
+        `prizeTiers[${i}].winnerCount`,
+        'Tier must have at least 1 winner'
+      );
+    }
+  }
+
+  // Validate percentages sum to 100
+  const totalPercentage = prizeTiers.reduce((sum, tier) => sum + tier.percentage, 0);
+  if (Math.abs(totalPercentage - 100) > 0.01) {
+    throw new InvalidRaffleConfigError(
+      'prizeTiers',
+      `Tier percentages must sum to 100% (currently ${totalPercentage}%)`
+    );
+  }
+
+  // Validate winner counts sum to total if provided
+  if (totalWinnerCount !== undefined) {
+    const totalTierWinners = prizeTiers.reduce((sum, tier) => sum + tier.winnerCount, 0);
+    if (totalTierWinners !== totalWinnerCount) {
+      throw new InvalidRaffleConfigError(
+        'prizeTiers',
+        `Tier winner counts must sum to total winnerCount (${totalTierWinners} vs ${totalWinnerCount})`
+      );
+    }
   }
 }
 
@@ -150,15 +200,6 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
       'entryPrice',
       `Cannot exceed ${MAX_ENTRY_PRICE} (100,000 USDC)`
     );
-  }
-
-  // Validate max entries per user
-  if (config.maxEntriesPerUser < 1) {
-    throw new InvalidRaffleConfigError('maxEntriesPerUser', 'Must be at least 1');
-  }
-
-  if (config.maxEntriesPerUser > 10000) {
-    throw new InvalidRaffleConfigError('maxEntriesPerUser', 'Cannot exceed 10,000');
   }
 
   // Validate time boundaries
@@ -207,6 +248,11 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
       );
     }
   }
+
+  // Validate prize tiers
+  if (config.prizeTiers) {
+    validatePrizeTiers(config.prizeTiers, config.winnerCount);
+  }
 }
 
 /**
@@ -251,13 +297,6 @@ export function validateRaffleUpdate(
         'entryPrice',
         'Cannot change entry price after entries have been made'
       );
-    }
-  }
-
-  // Validate max entries if provided
-  if (updates.maxEntriesPerUser !== undefined) {
-    if (updates.maxEntriesPerUser < 1) {
-      throw new ValidationError('maxEntriesPerUser', 'Must be at least 1');
     }
   }
 
