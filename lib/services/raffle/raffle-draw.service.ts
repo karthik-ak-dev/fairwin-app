@@ -35,12 +35,10 @@ import type { EntryItem } from '@/lib/db/models';
 import type { DrawInitiationResult } from '../types';
 import {
   RaffleNotFoundError,
-  NoEntriesForDrawError,
-  RaffleAlreadyDrawnError,
 } from '../errors';
 import {
   validateRaffleDrawable,
-} from './raffle-validation.service';
+} from './raffle-management.service';
 import { env } from '@/lib/env';
 
 // ============================================================================

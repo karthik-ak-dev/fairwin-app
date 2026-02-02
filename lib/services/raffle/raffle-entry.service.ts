@@ -31,6 +31,7 @@ import {
 } from './raffle-management.service';
 import { verifyUSDCTransfer, isTransactionUsed } from '@/lib/blockchain/usdc-verification.service';
 import { env } from '@/lib/env';
+import { raffle as raffleConstants } from '@/lib/constants';
 
 /**
  * Create raffle entry with USDC transfer verification
@@ -222,21 +223,6 @@ export function calculateEntryCost(entryPrice: number, numEntries: number): numb
 }
 
 /**
- * Get all entries for a raffle
- */
-export async function getRaffleEntries(raffleId: string) {
-  const result = await entryRepo.getByRaffle(raffleId);
-  return result.items;
-}
-
-/**
- * Get user's entries for a specific raffle
- */
-export async function getUserRaffleEntries(walletAddress: string, raffleId: string) {
-  return entryRepo.getUserEntriesForRaffle(walletAddress, raffleId);
-}
-
-/**
  * Validate entry creation parameters
  */
 function validateEntryParams(params: CreateEntryParams): void {
@@ -245,7 +231,7 @@ function validateEntryParams(params: CreateEntryParams): void {
   validatePositiveNumber(params.totalPaid, 'totalPaid');
   validateTransactionHash(params.transactionHash);
 
-  if (params.numEntries > 10000) {
-    throw new InvalidEntryError('Cannot create more than 10,000 entries at once');
+  if (params.numEntries > raffleConstants.LIMITS.MAX_ENTRIES_PER_TRANSACTION) {
+    throw new InvalidEntryError(`Cannot create more than ${raffleConstants.LIMITS.MAX_ENTRIES_PER_TRANSACTION} entries at once`);
   }
 }

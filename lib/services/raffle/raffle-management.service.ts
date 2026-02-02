@@ -23,21 +23,7 @@ import {
   ValidationError,
 } from '../errors';
 import { patterns, errors, raffle as raffleConstants } from '@/lib/constants';
-
-// ============================================================================
-// Validation Constants
-// ============================================================================
-
-// Maximum platform fee percent (10% in our Web2 model)
-const MAX_PLATFORM_FEE_PERCENT = 10;
-
-// Minimum and maximum entry prices (in USDC smallest unit - 6 decimals)
-const MIN_ENTRY_PRICE = 1000000; // $1.00 USDC
-const MAX_ENTRY_PRICE = 100000000000; // $100,000.00 USDC
-
-// Minimum and maximum winner counts
-const MIN_WINNER_COUNT = 1;
-const MAX_WINNER_COUNT = 100;
+import { processRaffleCancellation } from './raffle-payout.service';
 
 // ============================================================================
 // Validation Functions (exported for use by other services)
@@ -204,17 +190,17 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
   }
 
   // Validate entry price (in USDC smallest unit)
-  if (config.entryPrice < MIN_ENTRY_PRICE) {
+  if (config.entryPrice < raffleConstants.LIMITS.MIN_ENTRY_PRICE) {
     throw new InvalidRaffleConfigError(
       'entryPrice',
-      `Must be at least ${MIN_ENTRY_PRICE} (1 USDC)`
+      `Must be at least ${raffleConstants.LIMITS.MIN_ENTRY_PRICE} (1 USDC)`
     );
   }
 
-  if (config.entryPrice > MAX_ENTRY_PRICE) {
+  if (config.entryPrice > raffleConstants.LIMITS.MAX_ENTRY_PRICE) {
     throw new InvalidRaffleConfigError(
       'entryPrice',
-      `Cannot exceed ${MAX_ENTRY_PRICE} (100,000 USDC)`
+      `Cannot exceed ${raffleConstants.LIMITS.MAX_ENTRY_PRICE} (100,000 USDC)`
     );
   }
 
@@ -239,14 +225,14 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
 
   // Validate winner count
   if (config.winnerCount !== undefined) {
-    if (config.winnerCount < MIN_WINNER_COUNT) {
-      throw new InvalidRaffleConfigError('winnerCount', `Must be at least ${MIN_WINNER_COUNT}`);
+    if (config.winnerCount < raffleConstants.LIMITS.MIN_WINNER_COUNT) {
+      throw new InvalidRaffleConfigError('winnerCount', `Must be at least ${raffleConstants.LIMITS.MIN_WINNER_COUNT}`);
     }
 
-    if (config.winnerCount > MAX_WINNER_COUNT) {
+    if (config.winnerCount > raffleConstants.LIMITS.MAX_WINNER_COUNT) {
       throw new InvalidRaffleConfigError(
         'winnerCount',
-        `Cannot exceed ${MAX_WINNER_COUNT}`
+        `Cannot exceed ${raffleConstants.LIMITS.MAX_WINNER_COUNT}`
       );
     }
   }
@@ -257,10 +243,10 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
       throw new InvalidRaffleConfigError('platformFeePercent', 'Cannot be negative');
     }
 
-    if (config.platformFeePercent > MAX_PLATFORM_FEE_PERCENT) {
+    if (config.platformFeePercent > raffleConstants.LIMITS.MAX_PLATFORM_FEE_PERCENT) {
       throw new InvalidRaffleConfigError(
         'platformFeePercent',
-        `Cannot exceed ${MAX_PLATFORM_FEE_PERCENT}%`
+        `Cannot exceed ${raffleConstants.LIMITS.MAX_PLATFORM_FEE_PERCENT}%`
       );
     }
   }
@@ -300,10 +286,10 @@ export function validateRaffleUpdate(
 
   // Validate entry price if provided
   if (updates.entryPrice !== undefined) {
-    if (updates.entryPrice < MIN_ENTRY_PRICE || updates.entryPrice > MAX_ENTRY_PRICE) {
+    if (updates.entryPrice < raffleConstants.LIMITS.MIN_ENTRY_PRICE || updates.entryPrice > raffleConstants.LIMITS.MAX_ENTRY_PRICE) {
       throw new ValidationError(
         'entryPrice',
-        `Must be between ${MIN_ENTRY_PRICE} and ${MAX_ENTRY_PRICE}`
+        `Must be between ${raffleConstants.LIMITS.MIN_ENTRY_PRICE} and ${raffleConstants.LIMITS.MAX_ENTRY_PRICE}`
       );
     }
 
@@ -334,10 +320,10 @@ export function validateRaffleUpdate(
 
   // Validate winner count if provided
   if (updates.winnerCount !== undefined) {
-    if (updates.winnerCount < MIN_WINNER_COUNT || updates.winnerCount > MAX_WINNER_COUNT) {
+    if (updates.winnerCount < raffleConstants.LIMITS.MIN_WINNER_COUNT || updates.winnerCount > raffleConstants.LIMITS.MAX_WINNER_COUNT) {
       throw new ValidationError(
         'winnerCount',
-        `Must be between ${MIN_WINNER_COUNT} and ${MAX_WINNER_COUNT}`
+        `Must be between ${raffleConstants.LIMITS.MIN_WINNER_COUNT} and ${raffleConstants.LIMITS.MAX_WINNER_COUNT}`
       );
     }
   }
@@ -541,12 +527,13 @@ export async function updateRaffle(
  * Cancel a raffle
  *
  * DATABASE-ONLY APPROACH:
- * Updates raffle status to 'cancelled' in database.
+ * Updates raffle status to 'cancelled' in database and processes refunds.
  *
  * Business Rules:
  * - Can only cancel raffles that haven't been drawn
  * - Updates database status to 'cancelled'
- * - Users can claim refunds after cancellation (manual admin process)
+ * - Processes refunds for all entries
+ * - Updates user stats to reflect refunds
  *
  * @param raffleId Database raffle ID
  * @throws RaffleNotFoundError if raffle doesn't exist
@@ -563,10 +550,15 @@ export async function cancelRaffle(
   // Validate can cancel
   validateStatusTransition(raffle.status, RaffleStatus.CANCELLED);
 
-  // Update database status to 'cancelled' and return
-  return await raffleRepo.update(raffleId, {
+  // Update database status to 'cancelled'
+  const updatedRaffle = await raffleRepo.update(raffleId, {
     status: RaffleStatus.CANCELLED,
   });
+
+  // Process refunds for all entries
+  await processRaffleCancellation(raffleId);
+
+  return updatedRaffle;
 }
 
 /**

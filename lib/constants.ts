@@ -95,6 +95,22 @@ export const raffle = {
     WINNER_COUNT: 100,
   } as const,
 
+  /** Validation limits */
+  LIMITS: {
+    /** Maximum platform fee percent (10% in our Web2 model) */
+    MAX_PLATFORM_FEE_PERCENT: 10,
+    /** Minimum entry price (in USDC smallest unit - 6 decimals) */
+    MIN_ENTRY_PRICE: 1000000, // $1.00 USDC
+    /** Maximum entry price (in USDC smallest unit - 6 decimals) */
+    MAX_ENTRY_PRICE: 100000000000, // $100,000.00 USDC
+    /** Minimum winner count */
+    MIN_WINNER_COUNT: 1,
+    /** Maximum winner count */
+    MAX_WINNER_COUNT: 100,
+    /** Maximum entries per transaction */
+    MAX_ENTRIES_PER_TRANSACTION: 10000,
+  } as const,
+
   /**
    * Default tiered reward distribution
    *

@@ -21,8 +21,8 @@
  */
 
 import type { Address } from 'viem';
-import { winnerRepo, payoutRepo, raffleRepo, entryRepo, userRepo } from '@/lib/db/repositories';
-import { PayoutStatus, RaffleStatus } from '@/lib/db/models';
+import { winnerRepo, payoutRepo, entryRepo, userRepo } from '@/lib/db/repositories';
+import { PayoutStatus } from '@/lib/db/models';
 import { ERC20_ABI, getWalletClient, getUSDCAddress } from '@/lib/blockchain/client';
 import { env } from '@/lib/env';
 
@@ -278,25 +278,27 @@ export async function getPlatformPayoutBreakdown() {
 /**
  * Process raffle cancellation with refunds
  *
- * Called by admin when cancelling a raffle.
+ * Called by cancelRaffle in raffle-management.service.
  * Marks all entries as refunded and updates user stats.
  *
- * @param raffleId Raffle to cancel
+ * Note: Does NOT update raffle status - caller is responsible for that.
+ *
+ * @param raffleId Raffle to process cancellation for
  */
 export async function processRaffleCancellation(raffleId: string): Promise<void> {
-  // 1. Update raffle status to cancelled
-  await raffleRepo.update(raffleId, {
-    status: RaffleStatus.CANCELLED,
-  });
-
-  // 2. Get all entries
+  // 1. Get all entries
   const allEntries = await entryRepo.findByRaffleId(raffleId);
 
-  // 3. Mark all entries as refunded
+  if (allEntries.length === 0) {
+    console.log(`[PayoutService] No entries to refund for raffle ${raffleId}`);
+    return;
+  }
+
+  // 2. Mark all entries as refunded
   const entryIds = allEntries.map((e) => e.entryId);
   await entryRepo.markAsRefunded(entryIds);
 
-  // 4. Process refunds for each user
+  // 3. Process refunds for each user
   const refundsByUser = new Map<string, { numEntries: number; totalPaid: number }>();
 
   for (const entry of allEntries) {
@@ -310,12 +312,12 @@ export async function processRaffleCancellation(raffleId: string): Promise<void>
     });
   }
 
-  // Update user stats (decrement activeEntries, totalSpent)
+  // 4. Update user stats (decrement activeEntries, totalSpent)
   for (const [walletAddress, { numEntries, totalPaid }] of Array.from(refundsByUser.entries())) {
     await userRepo.processRefund(walletAddress, numEntries, totalPaid);
   }
 
   console.log(
-    `[PayoutService] Cancelled raffle ${raffleId}, refunded ${allEntries.length} entries`
+    `[PayoutService] Processed ${allEntries.length} entry refunds for raffle ${raffleId}`
   );
 }
