@@ -16,16 +16,7 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { auth } from '@/lib/constants';
 import { serverEnv } from '@/lib/env';
-
-interface TokenPayload {
-  address: string;
-  isAdmin?: boolean;
-}
-
-interface VerifiedToken extends TokenPayload {
-  iat: number;
-  exp: number;
-}
+import type { TokenPayload, VerifiedToken } from './types';
 
 /**
  * Generate a JWT token for a wallet address

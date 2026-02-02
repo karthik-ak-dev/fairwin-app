@@ -5,6 +5,11 @@
  * Services handle business logic, database operations, and USDC verification.
  */
 
+// Auth services
+export * as authChallenge from './auth/challenge.service';
+export * as authJwt from './auth/jwt.service';
+export * as authSignature from './auth/signature.service';
+
 // Raffle services
 export * as raffleEntry from './raffle/raffle-entry.service';
 export * as raffleDraw from './raffle/raffle-draw.service';
@@ -25,6 +30,7 @@ export * from './shared/pagination.service';
 export * from './errors';
 
 // Types - organized by domain
+export * from './auth/types';
 export * from './raffle/types';
 export * from './user/types';
 export * from './shared/types';
