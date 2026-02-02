@@ -211,10 +211,67 @@ export function isPositiveNumber(n: unknown): n is number {
 // =============================================================================
 
 export type RaffleType = typeof raffle.TYPES[number];
-export type RaffleStatus = typeof raffle.STATUS[keyof typeof raffle.STATUS];
 
 export interface PrizeTier {
   name: string;
   percentage: number;
   winnerCount: number;
 }
+
+// =============================================================================
+// UI Configuration Constants
+// =============================================================================
+
+/**
+ * UI configuration for raffle types
+ */
+export const RAFFLE_TYPES = [
+  { value: 'daily', label: 'Daily', emoji: '📅' },
+  { value: 'weekly', label: 'Weekly', emoji: '📆' },
+  { value: 'monthly', label: 'Monthly', emoji: '🗓️' },
+  { value: 'flash', label: 'Flash', emoji: '⚡' },
+  { value: 'mega', label: 'Mega', emoji: '💎' },
+] as const;
+
+/**
+ * UI configuration for each raffle status
+ * Maps to RaffleStatus enum values from models
+ */
+export const RAFFLE_STATE_CONFIG = {
+  scheduled: {
+    label: 'Scheduled',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/10',
+    borderColor: 'border-blue-500/20',
+  },
+  active: {
+    label: 'Active',
+    color: 'text-green-400',
+    bgColor: 'bg-green-500/10',
+    borderColor: 'border-green-500/20',
+  },
+  ending: {
+    label: 'Ending Soon',
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-500/10',
+    borderColor: 'border-orange-500/20',
+  },
+  drawing: {
+    label: 'Drawing',
+    color: 'text-purple-400',
+    bgColor: 'bg-purple-500/10',
+    borderColor: 'border-purple-500/20',
+  },
+  completed: {
+    label: 'Completed',
+    color: 'text-gray-400',
+    bgColor: 'bg-gray-500/10',
+    borderColor: 'border-gray-500/20',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    color: 'text-red-400',
+    bgColor: 'bg-red-500/10',
+    borderColor: 'border-red-500/20',
+  },
+} as const;

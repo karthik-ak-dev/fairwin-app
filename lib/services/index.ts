@@ -11,7 +11,6 @@ export * as raffleDraw from './raffle/raffle-draw.service';
 export * as raffleManagement from './raffle/raffle-management.service';
 export * as raffleQuery from './raffle/raffle-query.service';
 export * as rafflePayout from './raffle/raffle-payout.service';
-export * as raffleStats from './raffle/raffle-stats.service';
 
 // User services
 export * as userProfile from './user/user-profile.service';

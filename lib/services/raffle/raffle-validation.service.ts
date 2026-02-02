@@ -110,7 +110,7 @@ export function validateRaffleDrawable(raffle: RaffleItem, entryCount: number): 
  */
 export function validateRaffleStatus(
   raffle: RaffleItem,
-  allowedStatuses: RaffleItem['status'][]
+  allowedStatuses: RaffleStatus[]
 ): void {
   if (!allowedStatuses.includes(raffle.status)) {
     throw new InvalidStatusTransitionError(

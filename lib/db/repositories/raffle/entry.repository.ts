@@ -128,14 +128,16 @@ export class EntryRepository {
   }
 
   /**
-   * Find entry by transaction hash (for deduplication)
-   * Note: Uses Scan - consider adding GSI if heavily used
+   * Find entry by transaction hash
+   * Used to prevent replay attacks
    */
   async findByTransactionHash(transactionHash: string): Promise<EntryItem | null> {
-    const { Items } = await db.send(new ScanCommand({
+    const { Items } = await db.send(new QueryCommand({
       TableName: TABLE.ENTRIES,
-      FilterExpression: 'transactionHash = :txHash',
-      ExpressionAttributeValues: { ':txHash': transactionHash },
+      IndexName: 'transactionHash-index',
+      KeyConditionExpression: '#transactionHash = :hash',
+      ExpressionAttributeNames: { '#transactionHash': 'transactionHash' },
+      ExpressionAttributeValues: { ':hash': transactionHash },
       Limit: 1,
     }));
     return (Items?.[0] as EntryItem) ?? null;

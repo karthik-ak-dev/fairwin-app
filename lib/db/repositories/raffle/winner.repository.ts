@@ -103,24 +103,11 @@ export class WinnerRepository {
   }
 
   /**
-   * Get recent winners across all raffles
-   * Note: Uses Scan - consider adding GSI for production
-   */
-  async getRecent(limit = 100): Promise<WinnerItem[]> {
-    const { Items } = await db.send(new QueryCommand({
-      TableName: TABLE.WINNERS,
-      Limit: limit,
-      ScanIndexForward: false,
-    }));
-    return (Items as WinnerItem[]) ?? [];
-  }
-
-  /**
    * Update payout status for a winner
    */
   async updatePayoutStatus(
     winnerId: string,
-    status: WinnerItem['payoutStatus'],
+    status: PayoutStatus,
     transactionHash?: string
   ): Promise<void> {
     const updateExpression = transactionHash

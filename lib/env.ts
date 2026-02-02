@@ -36,6 +36,7 @@ export const serverEnv = {
   get DYNAMODB_TABLE_PAYOUTS() { return optionalEnv('DYNAMODB_TABLE_PAYOUTS', 'FairWin-Stage-Raffle-Payouts'); },
   get DYNAMODB_TABLE_PLATFORM_STATS() { return optionalEnv('DYNAMODB_TABLE_PLATFORM_STATS', 'FairWin-Stage-PlatformStats'); },
   get DYNAMODB_TABLE_AUDIT_LOG() { return optionalEnv('DYNAMODB_TABLE_AUDIT_LOG', 'FairWin-Stage-AuditLog'); },
+  get SOCKET_API_KEY() { return optionalEnv('SOCKET_API_KEY'); },
 } as const;
 
 /** Call at server startup to surface missing vars early */

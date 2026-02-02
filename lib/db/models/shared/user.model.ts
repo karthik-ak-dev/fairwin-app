@@ -82,3 +82,9 @@ export interface UserItem {
    */
   updatedAt: string;
 }
+
+/**
+ * UserProfile type alias - for backwards compatibility
+ * Same as UserItem but with friendlier name for frontend usage
+ */
+export type UserProfile = UserItem;

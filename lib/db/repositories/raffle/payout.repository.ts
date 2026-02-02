@@ -34,7 +34,7 @@ export class PayoutRepository {
    * Get all payouts by status (pending, paid, failed)
    * Uses: status-createdAt-index GSI
    */
-  async getByStatus(status: PayoutItem['status'], limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
+  async getByStatus(status: PayoutStatus, limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
     const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
       TableName: TABLE.PAYOUTS,
       IndexName: 'status-createdAt-index',
