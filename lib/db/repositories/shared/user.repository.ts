@@ -63,8 +63,19 @@ export class UserRepository {
     }));
   }
 
+  /**
+   * Record win for user (expects user already exists from authentication)
+   * @throws Error if user doesn't exist
+   */
   async recordWin(walletAddress: string, _raffleId: string, prize: number): Promise<void> {
-    const user = await this.getOrCreate(walletAddress);
+    const user = await this.getByAddress(walletAddress);
+
+    if (!user) {
+      throw new Error(
+        `User not found: ${walletAddress}. User must authenticate before winning raffles.`
+      );
+    }
+
     const newRafflesWon = user.rafflesWon + 1;
     const newWinRate = user.rafflesEntered > 0 ? newRafflesWon / user.rafflesEntered : 0;
 
@@ -95,8 +106,9 @@ export class UserRepository {
   }
 
   /**
-   * Record entry for user (create user if doesn't exist, update stats if exists)
+   * Record entry for user (expects user already exists from authentication)
    * Used by shared business logic
+   * @throws Error if user doesn't exist
    */
   async recordEntry(
     walletAddress: string,
@@ -108,37 +120,18 @@ export class UserRepository {
     const user = await this.getByAddress(walletAddress);
 
     if (!user) {
-      // Create new user
-      const now = new Date().toISOString();
-      const newUser: UserItem = {
-        walletAddress: walletAddress.toLowerCase(),
-        totalWon: 0,
-        totalSpent: totalPaid,
-        rafflesEntered: 1,
-        rafflesWon: 0,
-        winRate: 0,
-        activeEntries: numEntries,
-        lastActive: now,
-        createdAt: now,
-        updatedAt: now,
-      };
-      await db.send(new PutCommand({
-        TableName: TABLE.USERS,
-        Item: newUser,
-        ConditionExpression: 'attribute_not_exists(walletAddress)',
-      })).catch((err) => {
-        if (err.name === 'ConditionalCheckFailedException') return;
-        throw err;
-      });
-    } else {
-      // Update existing user
-      await this.update(walletAddress, {
-        totalSpent: user.totalSpent + totalPaid,
-        rafflesEntered: hasEnteredThisRaffleBefore ? user.rafflesEntered : user.rafflesEntered + 1,
-        activeEntries: user.activeEntries + numEntries,
-        lastActive: new Date().toISOString(),
-      });
+      throw new Error(
+        `User not found: ${walletAddress}. User must authenticate before entering raffles.`
+      );
     }
+
+    // Update user stats
+    await this.update(walletAddress, {
+      totalSpent: user.totalSpent + totalPaid,
+      rafflesEntered: hasEnteredThisRaffleBefore ? user.rafflesEntered : user.rafflesEntered + 1,
+      activeEntries: user.activeEntries + numEntries,
+      lastActive: new Date().toISOString(),
+    });
   }
 
   /**

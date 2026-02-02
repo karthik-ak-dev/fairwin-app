@@ -6,6 +6,7 @@ import { verifyWalletSignature } from '@/lib/services/auth/signature.service';
 import { generateToken, getExpirationSeconds } from '@/lib/services/auth/jwt.service';
 import { isValidWalletAddress, errors } from '@/lib/constants';
 import { serverEnv } from '@/lib/env';
+import { userRepo } from '@/lib/db/repositories';
 
 /**
  * POST /api/auth/verify
@@ -49,6 +50,9 @@ export async function POST(request: NextRequest) {
     if (!isSignatureValid) {
       return badRequest(errors.auth.INVALID_SIGNATURE);
     }
+
+    // Create user record if doesn't exist (on first login)
+    await userRepo.getOrCreate(address.toLowerCase());
 
     // Check if user is admin
     const adminAddress = serverEnv.ADMIN_WALLET_ADDRESS;

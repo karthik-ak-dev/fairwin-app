@@ -13,17 +13,6 @@ import { UserNotFoundError } from '../errors';
 import { validateWalletAddress } from '../raffle/raffle-validation.service';
 
 /**
- * Get or create user profile
- *
- * Creates a new user record if one doesn't exist for the wallet address
- */
-export async function getOrCreateUser(walletAddress: string): Promise<UserItem> {
-  validateWalletAddress(walletAddress);
-
-  return userRepo.getOrCreate(walletAddress);
-}
-
-/**
  * Get user profile
  *
  * @throws UserNotFoundError if user doesn't exist
@@ -44,11 +33,12 @@ export async function getUserProfile(walletAddress: string): Promise<UserItem> {
  * Get user statistics summary
  *
  * Includes profile + calculated stats (win rate, total won, etc.)
+ * @throws UserNotFoundError if user doesn't exist (user must be authenticated first)
  */
 export async function getUserSummary(walletAddress: string): Promise<UserSummary> {
   validateWalletAddress(walletAddress);
 
-  const user = await getOrCreateUser(walletAddress);
+  const user = await getUserProfile(walletAddress);
 
   // Get user's wins
   const winsResult = await winnerRepo.getByUser(walletAddress);

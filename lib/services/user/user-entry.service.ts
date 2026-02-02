@@ -6,7 +6,6 @@
 
 import { entryRepo } from '@/lib/db/repositories';
 import { raffleRepo } from '@/lib/db/repositories';
-import type { EntryItem } from '@/lib/db/models';
 import type { EnrichedEntry, EnrichedEntryList, PaginationParams } from '../types';
 import { validateWalletAddress } from '../raffle/raffle-validation.service';
 import { CacheService } from '../shared/cache.service';

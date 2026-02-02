@@ -206,8 +206,9 @@ export async function POST(req: Request) {
   // Update raffle stats
   await raffleRepository.incrementEntries(raffleId, numEntries, totalPaid, false);
 
-  // Update user stats
-  const user = await userRepository.getOrCreate(walletAddress);
+  // Update user stats (user must exist from authentication)
+  const user = await userRepository.getByAddress(walletAddress);
+  if (!user) throw new Error('User not found');
   await userRepository.incrementEntries(walletAddress, numEntries, totalPaid, 1);
 
   // Update platform stats
