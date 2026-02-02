@@ -4,9 +4,9 @@ import { success } from '@/lib/api/responses';
 import { verifyChallenge } from '@/lib/services/auth/challenge.service';
 import { verifyWalletSignature } from '@/lib/services/auth/signature.service';
 import { generateToken, getExpirationSeconds } from '@/lib/services/auth/jwt.service';
+import { createUserOnLogin } from '@/lib/services/user/user-profile.service';
 import { isValidWalletAddress, errors } from '@/lib/constants';
 import { serverEnv } from '@/lib/env';
-import { userRepo } from '@/lib/db/repositories';
 
 /**
  * POST /api/auth/verify
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user record if doesn't exist (on first login)
-    await userRepo.getOrCreate(address.toLowerCase());
+    await createUserOnLogin(address);
 
     // Check if user is admin
     const adminAddress = serverEnv.ADMIN_WALLET_ADDRESS;

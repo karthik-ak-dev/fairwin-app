@@ -13,6 +13,20 @@ import { UserNotFoundError } from '../errors';
 import { validateWalletAddress } from '../raffle/raffle-validation.service';
 
 /**
+ * Create user on first login
+ *
+ * Called during authentication to ensure user record exists.
+ * Idempotent - safe to call multiple times.
+ *
+ * @returns Created or existing user record
+ */
+export async function createUserOnLogin(walletAddress: string): Promise<UserItem> {
+  validateWalletAddress(walletAddress);
+
+  return userRepo.getOrCreate(walletAddress.toLowerCase());
+}
+
+/**
  * Get user profile
  *
  * @throws UserNotFoundError if user doesn't exist
