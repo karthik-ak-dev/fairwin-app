@@ -6,7 +6,7 @@ import {
   sendAllPayouts,
   sendPayoutToWinner,
   getPayoutStatus,
-} from '@/lib/services/admin/admin-payout.service';
+} from '@/lib/services/raffle/raffle-payout.service';
 
 /**
  * POST /api/admin/raffles/[id]/payout

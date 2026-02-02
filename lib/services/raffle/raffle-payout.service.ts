@@ -162,27 +162,36 @@ export async function sendAllPayouts(
     throw new Error(`No pending winners for raffle ${raffleId}`);
   }
 
-  console.log(`[PayoutService] Sending payouts to ${pendingWinners.length} winners for raffle ${raffleId}`);
+  console.log(`[PayoutService] Sending payouts to ${pendingWinners.length} winners for raffle ${raffleId} (parallel)`);
 
+  // Send all payouts in parallel using Promise.allSettled
+  // This allows independent transactions to execute concurrently
+  // Failed transactions won't block successful ones
+  const payoutPromises = pendingWinners.map(winner =>
+    sendPayoutToWinner(winner.winnerId, chainId)
+  );
+
+  const settledResults = await Promise.allSettled(payoutPromises);
+
+  // Process results
   const results: PayoutResult[] = [];
   let successful = 0;
   let failed = 0;
 
-  // Send payouts one by one
-  // Note: Could be optimized with batch transactions in production
-  for (const winner of pendingWinners) {
-    const result = await sendPayoutToWinner(winner.winnerId, chainId);
-    results.push(result);
-
-    if (result.status === PayoutStatus.PAID) {
-      successful++;
+  settledResults.forEach((result) => {
+    if (result.status === 'fulfilled') {
+      results.push(result.value);
+      if (result.value.status === PayoutStatus.PAID) {
+        successful++;
+      } else {
+        failed++;
+      }
     } else {
+      // Promise rejected - create a failed result
       failed++;
+      console.error('[PayoutService] Payout promise rejected:', result.reason);
     }
-
-    // Small delay to avoid rate limiting
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
+  });
 
   console.log(`[PayoutService] Batch payout complete: ${successful} successful, ${failed} failed`);
 

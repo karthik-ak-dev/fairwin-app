@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError, unauthorized } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
-import { getPlatformStats } from '@/lib/services/admin/admin-stats.service';
+import { getPlatformStats } from '@/lib/services/shared/platform-stats.service';
 
 /**
  * GET /api/admin/stats

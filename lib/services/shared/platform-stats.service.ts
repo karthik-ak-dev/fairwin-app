@@ -1,7 +1,8 @@
 /**
- * Admin Stats Service
+ * Platform Stats Service
  *
- * Handles platform-wide statistics and analytics for admin dashboard.
+ * Handles platform-wide statistics and analytics.
+ * Provides aggregate data across all raffles, users, and payouts.
  */
 
 import { statsRepo } from '@/lib/db/repositories';
@@ -65,33 +66,6 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     avgPoolSize,
     payoutStats,
   };
-}
-
-/**
- * Get raffle type breakdown
- *
- * Returns stats grouped by raffle type (daily, weekly, mega, flash, monthly)
- */
-export async function getRaffleTypeStats(): Promise<TypeStats[]> {
-  const types = raffle.TYPES;
-
-  const statsPromises = types.map(async (type) => {
-    const rafflesResult = await raffleRepo.getByType(type);
-    const raffles = rafflesResult.items;
-
-    const count = raffles.length;
-    const totalRevenue = raffles.reduce((sum, r) => sum + r.prizePool, 0);
-    const avgPoolSize = count > 0 ? Math.round(totalRevenue / count) : 0;
-
-    return {
-      type,
-      count,
-      totalRevenue,
-      avgPoolSize,
-    };
-  });
-
-  return Promise.all(statsPromises);
 }
 
 /**

@@ -14,16 +14,15 @@ export * as raffleParticipant from './raffle/raffle-participant.service';
 export * as raffleValidation from './raffle/raffle-validation.service';
 export * as raffleStatus from './raffle/raffle-status.service';
 export * as raffleWinnerSelection from './raffle/raffle-winner-selection.service';
+export * as rafflePayout from './raffle/raffle-payout.service';
+export * as raffleStats from './raffle/raffle-stats.service';
 
 // User services
 export * as userProfile from './user/user-profile.service';
 export * as userEntry from './user/user-entry.service';
 
-// Admin services
-export * as adminStats from './admin/admin-stats.service';
-export * as adminPayout from './admin/admin-payout.service';
-
 // Shared utilities
+export * as platformStats from './shared/platform-stats.service';
 export * from './shared/cache.service';
 export * from './shared/pagination.service';
 
