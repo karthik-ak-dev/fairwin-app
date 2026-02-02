@@ -138,6 +138,17 @@ export async function getRaffleWithDetails(
 }
 
 /**
+ * Get winners for a raffle
+ *
+ * @param raffleId - The raffle ID
+ * @returns Array of winners
+ */
+export async function getRaffleWinners(raffleId: string) {
+  const result = await winnerRepo.getByRaffle(raffleId);
+  return result.items;
+}
+
+/**
  * List raffles with optional filtering and pagination
  */
 export async function listRaffles(params: ListRafflesParams = {}): Promise<PaginatedRaffles> {

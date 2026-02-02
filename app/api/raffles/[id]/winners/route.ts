@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
-import { winnerRepo } from '@/lib/db/repositories';
+import { getRaffleWinners } from '@/lib/services/raffle/raffle-query.service';
 
 /**
  * GET /api/raffles/[id]/winners
@@ -14,9 +14,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const result = await winnerRepo.getByRaffle(id);
+    const winners = await getRaffleWinners(id);
 
-    return success({ winners: result.items });
+    return success({ winners });
   } catch (error) {
     return handleError(error);
   }
