@@ -21,7 +21,7 @@
  */
 
 import type { Address } from 'viem';
-import { winnerRepo, payoutRepo, entryRepo, userRepo } from '@/lib/db/repositories';
+import { winnerRepo, entryRepo, userRepo } from '@/lib/db/repositories';
 import { PayoutStatus, EntryStatus } from '@/lib/db/models';
 import { ERC20_ABI, getWalletClient, getUSDCAddress } from '@/lib/blockchain/client';
 import { env } from '@/lib/env';
@@ -51,14 +51,8 @@ export async function sendPayoutToWinner(
   console.log(`[PayoutService] Sending ${winner.prize / 1_000_000} USDC to ${winner.walletAddress}`);
 
   try {
-    // Create processing payout record
-    const processingPayout = await payoutRepo.create({
-      winnerId,
-      raffleId: winner.raffleId,
-      walletAddress: winner.walletAddress,
-      amount: winner.prize,
-      status: PayoutStatus.PROCESSING,
-    });
+    // Update winner status to processing
+    await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.PROCESSING);
 
     // Get wallet client
     const walletClient = getWalletClient(chainId);
@@ -78,19 +72,8 @@ export async function sendPayoutToWinner(
     // Note: In production, you might want to poll for receipt instead of waiting
     // to avoid blocking the API response
 
-    // Update winner record
+    // Update winner record to paid with transaction hash
     await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.PAID, hash);
-
-    // Create payout record
-    await payoutRepo.create({
-      winnerId,
-      raffleId: winner.raffleId,
-      walletAddress: winner.walletAddress,
-      amount: winner.prize,
-      status: PayoutStatus.PAID,
-      transactionHash: hash,
-      processedAt: new Date().toISOString(),
-    });
 
     console.log(`[PayoutService] Payout successful for winner ${winnerId}`);
 
@@ -104,19 +87,9 @@ export async function sendPayoutToWinner(
   } catch (error) {
     console.error(`[PayoutService] Payout failed for winner ${winnerId}:`, error);
 
-    // Update status to failed
+    // Update status to failed with error message
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.FAILED);
-
-    // Create failed payout record
-    await payoutRepo.create({
-      winnerId,
-      raffleId: winner.raffleId,
-      walletAddress: winner.walletAddress,
-      amount: winner.prize,
-      status: PayoutStatus.FAILED,
-      error: errorMessage,
-    });
+    await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.FAILED, undefined, errorMessage);
 
     return {
       winnerId,
@@ -232,29 +205,33 @@ export async function getPayoutStatus(raffleId: string) {
  * @returns Payout breakdown with totals and averages
  */
 export async function getPlatformPayoutBreakdown() {
-  const [pendingResult, paidResult, failedResult] = await Promise.all([
-    payoutRepo.getByStatus(PayoutStatus.PENDING),
-    payoutRepo.getByStatus(PayoutStatus.PAID),
-    payoutRepo.getByStatus(PayoutStatus.FAILED),
+  const [pendingResult, paidResult, failedResult, processingResult] = await Promise.all([
+    winnerRepo.getByPayoutStatus(PayoutStatus.PENDING),
+    winnerRepo.getByPayoutStatus(PayoutStatus.PAID),
+    winnerRepo.getByPayoutStatus(PayoutStatus.FAILED),
+    winnerRepo.getByPayoutStatus(PayoutStatus.PROCESSING),
   ]);
 
   const pending = pendingResult.items;
   const paid = paidResult.items;
   const failed = failedResult.items;
+  const processing = processingResult.items;
 
-  const totalPending = pending.reduce((sum, p) => sum + p.amount, 0);
-  const totalPaid = paid.reduce((sum, p) => sum + p.amount, 0);
-  const totalFailed = failed.reduce((sum, p) => sum + p.amount, 0);
+  const totalPending = pending.reduce((sum: number, w) => sum + w.prize, 0);
+  const totalPaid = paid.reduce((sum: number, w) => sum + w.prize, 0);
+  const totalFailed = failed.reduce((sum: number, w) => sum + w.prize, 0);
+  const totalProcessing = processing.reduce((sum: number, w) => sum + w.prize, 0);
 
-  const allPayouts = [...pending, ...paid, ...failed];
-  const avgAmount = allPayouts.length > 0
-    ? Math.round(allPayouts.reduce((sum, p) => sum + p.amount, 0) / allPayouts.length)
+  const allWinners = [...pending, ...paid, ...failed, ...processing];
+  const avgAmount = allWinners.length > 0
+    ? Math.round(allWinners.reduce((sum: number, w) => sum + w.prize, 0) / allWinners.length)
     : 0;
 
   return {
     pending: totalPending,
     paid: totalPaid,
     failed: totalFailed,
+    processing: totalProcessing,
     avgAmount,
   };
 }

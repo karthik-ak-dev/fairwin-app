@@ -9,11 +9,13 @@ export class WinnerRepository {
    * Create a new winner record
    */
   async create(input: CreateWinnerInput): Promise<WinnerItem> {
+    const now = new Date().toISOString();
     const item: WinnerItem = {
       ...input,
       winnerId: crypto.randomUUID(),
       payoutStatus: input.payoutStatus || PayoutStatus.PENDING,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     };
     await db.send(new PutCommand({
       TableName: TABLE.WINNERS,
@@ -73,11 +75,13 @@ export class WinnerRepository {
    * Batch create winner records (optimized for draw operations)
    */
   async batchCreate(inputs: CreateWinnerInput[]): Promise<WinnerItem[]> {
+    const now = new Date().toISOString();
     const items: WinnerItem[] = inputs.map(input => ({
       ...input,
       winnerId: crypto.randomUUID(),
       payoutStatus: input.payoutStatus || PayoutStatus.PENDING,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
+      updatedAt: now,
     }));
 
     // DynamoDB BatchWriteItem has 25 item limit, so chunk if needed
@@ -108,26 +112,55 @@ export class WinnerRepository {
   async updatePayoutStatus(
     winnerId: string,
     status: PayoutStatus,
-    transactionHash?: string
+    transactionHash?: string,
+    error?: string
   ): Promise<void> {
-    const updateExpression = transactionHash
-      ? 'SET payoutStatus = :status, payoutTransactionHash = :hash, updatedAt = :now'
-      : 'SET payoutStatus = :status, updatedAt = :now';
-
+    const now = new Date().toISOString();
+    const updateParts: string[] = ['payoutStatus = :status', 'updatedAt = :now'];
     const expressionValues: Record<string, any> = {
       ':status': status,
-      ':now': new Date().toISOString(),
+      ':now': now,
     };
 
     if (transactionHash) {
+      updateParts.push('payoutTransactionHash = :hash');
       expressionValues[':hash'] = transactionHash;
+    }
+
+    // Set processedAt when status becomes 'paid'
+    if (status === PayoutStatus.PAID) {
+      updateParts.push('payoutProcessedAt = :processedAt');
+      expressionValues[':processedAt'] = now;
+    }
+
+    if (error) {
+      updateParts.push('payoutError = :error');
+      expressionValues[':error'] = error;
     }
 
     await db.send(new UpdateCommand({
       TableName: TABLE.WINNERS,
       Key: { winnerId },
-      UpdateExpression: updateExpression,
+      UpdateExpression: `SET ${updateParts.join(', ')}`,
       ExpressionAttributeValues: expressionValues,
     }));
+  }
+
+  /**
+   * Get all winners by payout status (pending, paid, failed, processing)
+   * Uses: payoutStatus-createdAt-index GSI
+   */
+  async getByPayoutStatus(status: PayoutStatus, limit = pagination.USER_LIST_LIMIT, startKey?: Record<string, any>) {
+    const { Items, LastEvaluatedKey } = await db.send(new QueryCommand({
+      TableName: TABLE.WINNERS,
+      IndexName: 'payoutStatus-createdAt-index',
+      KeyConditionExpression: '#payoutStatus = :status',
+      ExpressionAttributeNames: { '#payoutStatus': 'payoutStatus' },
+      ExpressionAttributeValues: { ':status': status },
+      Limit: limit,
+      ScanIndexForward: false, // Most recent first
+      ...(startKey && { ExclusiveStartKey: startKey }),
+    }));
+    return { items: (Items as WinnerItem[]) ?? [], lastKey: LastEvaluatedKey };
   }
 }

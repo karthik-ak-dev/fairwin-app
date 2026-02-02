@@ -12,7 +12,6 @@ import type {
   RaffleItem,
   EntryItem,
   WinnerItem,
-  PayoutItem,
   RaffleStatus,
   RaffleType,
   PayoutStatus as PayoutStatusEnum,

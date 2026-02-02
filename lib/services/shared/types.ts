@@ -33,6 +33,7 @@ export interface PlatformStats {
     pending: number;
     paid: number;
     failed: number;
+    processing: number;
     avgAmount: number;
   };
 }

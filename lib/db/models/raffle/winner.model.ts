@@ -130,13 +130,15 @@ export interface WinnerItem {
    * Payout status for this winner
    *
    * - pending: Winner selected but payout not yet sent
+   * - processing: Transaction submitted to blockchain
    * - paid: USDC sent to winner's wallet
    * - failed: Payout attempt failed (retry needed)
    *
    * Transitions:
-   * - pending → paid (when admin sends USDC)
-   * - pending → failed (if transaction fails)
-   * - failed → paid (after successful retry)
+   * - pending → processing (when admin initiates payout)
+   * - processing → paid (when transaction confirms)
+   * - processing → failed (if transaction fails)
+   * - failed → processing (when retrying)
    */
   payoutStatus: PayoutStatus;
 
@@ -156,6 +158,34 @@ export interface WinnerItem {
   payoutTransactionHash?: string;
 
   /**
+   * ISO 8601 timestamp when payout was successfully processed (optional)
+   * Set only when status transitions to 'paid'
+   * Example: "2025-01-30T00:05:30.123Z"
+   *
+   * Used to calculate:
+   * - Payout processing time (payoutProcessedAt - createdAt)
+   * - Average payout latency
+   * - SLA compliance
+   *
+   * Remains undefined if payoutStatus='pending' or 'failed'
+   */
+  payoutProcessedAt?: string;
+
+  /**
+   * Error message if payout failed (optional)
+   * Contains reason why transaction failed
+   * Examples:
+   * - "Insufficient balance"
+   * - "Transaction reverted"
+   * - "Invalid recipient address"
+   * - "Gas estimation failed"
+   *
+   * Only set when payoutStatus='failed'
+   * Used for debugging and retry logic
+   */
+  payoutError?: string;
+
+  /**
    * ISO 8601 timestamp when winner was selected
    * Example: "2025-01-29T23:59:59.999Z"
    *
@@ -168,6 +198,17 @@ export interface WinnerItem {
    * - Leaderboards (most recent winners)
    */
   createdAt: string;
+
+  /**
+   * ISO 8601 timestamp of last winner/payout update
+   * Updated whenever payoutStatus, error, or transactionHash changes
+   *
+   * Useful for:
+   * - Monitoring stale pending payouts
+   * - Retry scheduling
+   * - Change tracking
+   */
+  updatedAt: string;
 }
 
 /**
@@ -178,7 +219,10 @@ export interface WinnerItem {
  * - winnerId: Generated as UUID
  * - payoutStatus: Defaults to 'pending'
  * - payoutTransactionHash: Set later when payout is sent
+ * - payoutProcessedAt: Set when payout completes
+ * - payoutError: Set if payout fails
  * - createdAt: Set to current time
+ * - updatedAt: Set to current time
  *
  * Example Usage:
  * ```typescript
@@ -217,4 +261,6 @@ export type CreateWinnerInput = Pick<
 > & {
   payoutStatus?: PayoutStatus;
   payoutTransactionHash?: string;
+  payoutProcessedAt?: string;
+  payoutError?: string;
 };

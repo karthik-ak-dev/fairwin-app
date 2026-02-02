@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin } from '@/lib/api/auth';
 import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
-import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
+import { winnerRepo } from '@/lib/db/repositories';
 import { PayoutStatus } from '@/lib/db/models';
 import { encodeCursor, decodeCursor } from '@/lib/services/shared/pagination.service';
 import { pagination } from '@/lib/constants';
@@ -10,11 +10,11 @@ import { pagination } from '@/lib/constants';
 /**
  * GET /api/admin/winners
  *
- * Get winners or payouts with filtering (admin only)
+ * Get winners with filtering by raffle or payout status (admin only)
  *
  * Query params:
  * - raffleId: Filter winners by raffle ID
- * - status: Filter payouts by status (pending, paid, failed)
+ * - payoutStatus: Filter winners by payout status (pending, paid, failed, processing)
  * - limit: Number of items per page (default from constants)
  * - cursor: Pagination cursor
  */
@@ -23,33 +23,29 @@ export async function GET(request: NextRequest) {
     await requireAdmin(request);
 
     const { searchParams } = request.nextUrl;
-    const status = searchParams.get('status');
+    const payoutStatus = searchParams.get('payoutStatus');
     const raffleId = searchParams.get('raffleId');
     const limit = parseInt(searchParams.get('limit') || String(pagination.USER_LIST_LIMIT), 10);
     const cursor = searchParams.get('cursor');
     const startKey = cursor ? JSON.parse(decodeCursor(cursor)) : undefined;
 
     let result;
-    let responseKey: string;
 
     if (raffleId) {
       // Query winners by raffle
       result = await winnerRepo.getByRaffle(raffleId, limit, startKey);
-      responseKey = 'winners';
-    } else if (status) {
-      // Query payouts by status
-      result = await payoutRepo.getByStatus(status as PayoutStatus, limit, startKey);
-      responseKey = 'payouts';
+    } else if (payoutStatus) {
+      // Query winners by payout status
+      result = await winnerRepo.getByPayoutStatus(payoutStatus as PayoutStatus, limit, startKey);
     } else {
       // Default: show pending payouts
-      result = await payoutRepo.getByStatus(PayoutStatus.PENDING, limit, startKey);
-      responseKey = 'payouts';
+      result = await winnerRepo.getByPayoutStatus(PayoutStatus.PENDING, limit, startKey);
     }
 
     const nextCursor = result.lastKey ? encodeCursor(JSON.stringify(result.lastKey)) : undefined;
 
     return success({
-      [responseKey]: result.items,
+      winners: result.items,
       pagination: {
         nextCursor,
         hasMore: !!result.lastKey,

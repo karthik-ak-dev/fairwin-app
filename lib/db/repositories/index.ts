@@ -18,7 +18,6 @@ export { StatsRepository } from './shared/platform-stats.repository';
 export { RaffleRepository } from './raffle/raffle.repository';
 export { EntryRepository } from './raffle/entry.repository';
 export { WinnerRepository } from './raffle/winner.repository';
-export { PayoutRepository } from './raffle/payout.repository';
 
 // ============================================
 // Singleton instances (convenience exports)
@@ -29,7 +28,6 @@ import { StatsRepository } from './shared/platform-stats.repository';
 import { RaffleRepository } from './raffle/raffle.repository';
 import { EntryRepository } from './raffle/entry.repository';
 import { WinnerRepository } from './raffle/winner.repository';
-import { PayoutRepository } from './raffle/payout.repository';
 
 // Shared repository instances
 export const userRepo = new UserRepository();
@@ -39,4 +37,3 @@ export const statsRepo = new StatsRepository();
 export const raffleRepo = new RaffleRepository();
 export const entryRepo = new EntryRepository();
 export const winnerRepo = new WinnerRepository();
-export const payoutRepo = new PayoutRepository();

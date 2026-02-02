@@ -33,7 +33,6 @@ export const serverEnv = {
   get DYNAMODB_TABLE_ENTRIES() { return optionalEnv('DYNAMODB_TABLE_ENTRIES', 'FairWin-Stage-Raffle-Entries'); },
   get DYNAMODB_TABLE_USERS() { return optionalEnv('DYNAMODB_TABLE_USERS', 'FairWin-Stage-Users'); },
   get DYNAMODB_TABLE_WINNERS() { return optionalEnv('DYNAMODB_TABLE_WINNERS', 'FairWin-Stage-Raffle-Winners'); },
-  get DYNAMODB_TABLE_PAYOUTS() { return optionalEnv('DYNAMODB_TABLE_PAYOUTS', 'FairWin-Stage-Raffle-Payouts'); },
   get DYNAMODB_TABLE_PLATFORM_STATS() { return optionalEnv('DYNAMODB_TABLE_PLATFORM_STATS', 'FairWin-Stage-PlatformStats'); },
   get DYNAMODB_TABLE_AUDIT_LOG() { return optionalEnv('DYNAMODB_TABLE_AUDIT_LOG', 'FairWin-Stage-AuditLog'); },
   get SOCKET_API_KEY() { return optionalEnv('SOCKET_API_KEY'); },

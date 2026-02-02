@@ -39,6 +39,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
         pending: 0,
         paid: 0,
         failed: 0,
+        processing: 0,
         avgAmount: 0,
       },
     };
