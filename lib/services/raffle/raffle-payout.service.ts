@@ -455,37 +455,3 @@ export async function processRaffleCancellation(
     refunds: results,
   };
 }
-
-/**
- * Get refund status for a raffle
- *
- * @param raffleId Raffle ID
- * @returns Refund summary
- */
-export async function getRefundStatus(raffleId: string) {
-  const allEntries = await entryRepo.getByRaffleId(raffleId);
-
-  const pending = allEntries.filter(e => e.status === EntryStatus.REFUND_PENDING);
-  const processing = allEntries.filter(e => e.status === EntryStatus.REFUND_PROCESSING);
-  const refunded = allEntries.filter(e => e.status === EntryStatus.REFUNDED);
-  const failed = allEntries.filter(e => e.status === EntryStatus.REFUND_FAILED);
-
-  const totalAmount = allEntries.reduce((sum, e) => sum + e.totalPaid, 0);
-  const refundedAmount = refunded.reduce((sum, e) => sum + e.totalPaid, 0);
-
-  return {
-    raffleId,
-    entries: allEntries,
-    summary: {
-      totalEntries: allEntries.length,
-      pending: pending.length,
-      processing: processing.length,
-      refunded: refunded.length,
-      failed: failed.length,
-      totalAmount,
-      refundedAmount,
-      remainingAmount: totalAmount - refundedAmount,
-      allRefunded: pending.length === 0 && processing.length === 0 && failed.length === 0,
-    },
-  };
-}
