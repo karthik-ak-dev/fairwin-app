@@ -119,37 +119,3 @@ export async function listRaffles(params: ListRafflesParams = {}): Promise<Pagin
     hasMore: !!result.lastKey,
   };
 }
-
-/**
- * Get raffle statistics
- */
-export async function getRaffleStats(raffleId: string): Promise<RaffleStats> {
-  const raffle = await raffleRepo.getById(raffleId);
-  if (!raffle) {
-    throw new RaffleNotFoundError(raffleId);
-  }
-
-  const entriesResult = await entryRepo.getByRaffle(raffleId);
-  const entries = entriesResult.items;
-
-  // Calculate unique participants
-  const uniqueParticipants = new Set(entries.map((e) => e.walletAddress)).size;
-
-  // Calculate average entries per user
-  const avgEntriesPerUser =
-    uniqueParticipants > 0 ? raffle.totalEntries / uniqueParticipants : 0;
-
-  // Compute display status
-  const displayStatus = computeDisplayStatus(raffle);
-
-  return {
-    raffleId,
-    totalEntries: raffle.totalEntries,
-    totalParticipants: raffle.totalParticipants,
-    prizePool: raffle.prizePool,
-    status: raffle.status,
-    displayStatus,
-    entryPrice: raffle.entryPrice,
-    avgEntriesPerUser: Math.round(avgEntriesPerUser * 100) / 100,
-  };
-}

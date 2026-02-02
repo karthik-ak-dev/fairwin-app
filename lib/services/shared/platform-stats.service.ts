@@ -6,11 +6,10 @@
  */
 
 import { statsRepo } from '@/lib/db/repositories';
-import { raffleRepo } from '@/lib/db/repositories';
-import { payoutRepo } from '@/lib/db/repositories';
-import { PayoutStatus } from '@/lib/db/models';
-import type { PlatformStats, TypeStats } from '../types';
-import { raffle } from '@/lib/constants';
+import { RaffleStatus } from '@/lib/db/models';
+import type { PlatformStats } from '../types';
+import { listRaffles } from '../raffle/raffle-query.service';
+import { getPlatformPayoutBreakdown } from '../raffle/raffle-payout.service';
 
 /**
  * Get comprehensive platform statistics
@@ -45,11 +44,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     };
   }
 
-  // Get active raffles count
-  const activeRaffles = await getActiveRafflesCount();
+  // Get active raffles count using existing raffle service
+  const activeRafflesResult = await listRaffles({ status: RaffleStatus.ACTIVE, limit: 1000 });
+  const activeRaffles = activeRafflesResult.raffles.length;
 
-  // Get payout breakdown
-  const payoutStats = await getPayoutBreakdown();
+  // Get payout breakdown using payout service
+  const payoutStats = await getPlatformPayoutBreakdown();
 
   // Calculate average pool size
   const avgPoolSize =
@@ -65,44 +65,5 @@ export async function getPlatformStats(): Promise<PlatformStats> {
     activeRaffles,
     avgPoolSize,
     payoutStats,
-  };
-}
-
-/**
- * Get active raffles count
- */
-async function getActiveRafflesCount(): Promise<number> {
-  const result = await raffleRepo.getByStatus('active');
-  return result.items.length;
-}
-
-/**
- * Get payout breakdown
- */
-async function getPayoutBreakdown() {
-  const [pendingResult, paidResult, failedResult] = await Promise.all([
-    payoutRepo.getByStatus(PayoutStatus.PENDING),
-    payoutRepo.getByStatus(PayoutStatus.PAID),
-    payoutRepo.getByStatus(PayoutStatus.FAILED),
-  ]);
-
-  const pending = pendingResult.items;
-  const paid = paidResult.items;
-  const failed = failedResult.items;
-
-  const totalPending = pending.reduce((sum, p) => sum + p.amount, 0);
-  const totalPaid = paid.reduce((sum, p) => sum + p.amount, 0);
-  const totalFailed = failed.reduce((sum, p) => sum + p.amount, 0);
-
-  const allPayouts = [...pending, ...paid, ...failed];
-  const avgAmount = allPayouts.length > 0
-    ? Math.round(allPayouts.reduce((sum, p) => sum + p.amount, 0) / allPayouts.length)
-    : 0;
-
-  return {
-    pending: totalPending,
-    paid: totalPaid,
-    failed: totalFailed,
-    avgAmount,
   };
 }

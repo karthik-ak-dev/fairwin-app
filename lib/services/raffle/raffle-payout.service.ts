@@ -236,3 +236,39 @@ export async function getPayoutStatus(raffleId: string) {
     },
   };
 }
+
+/**
+ * Get platform-wide payout breakdown
+ *
+ * Aggregates payout statistics across all raffles.
+ * Used by platform stats service.
+ *
+ * @returns Payout breakdown with totals and averages
+ */
+export async function getPlatformPayoutBreakdown() {
+  const [pendingResult, paidResult, failedResult] = await Promise.all([
+    payoutRepo.getByStatus(PayoutStatus.PENDING),
+    payoutRepo.getByStatus(PayoutStatus.PAID),
+    payoutRepo.getByStatus(PayoutStatus.FAILED),
+  ]);
+
+  const pending = pendingResult.items;
+  const paid = paidResult.items;
+  const failed = failedResult.items;
+
+  const totalPending = pending.reduce((sum, p) => sum + p.amount, 0);
+  const totalPaid = paid.reduce((sum, p) => sum + p.amount, 0);
+  const totalFailed = failed.reduce((sum, p) => sum + p.amount, 0);
+
+  const allPayouts = [...pending, ...paid, ...failed];
+  const avgAmount = allPayouts.length > 0
+    ? Math.round(allPayouts.reduce((sum, p) => sum + p.amount, 0) / allPayouts.length)
+    : 0;
+
+  return {
+    pending: totalPending,
+    paid: totalPaid,
+    failed: totalFailed,
+    avgAmount,
+  };
+}
