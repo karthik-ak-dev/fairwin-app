@@ -7,7 +7,7 @@
 import { entryRepo } from '@/lib/db/repositories';
 import { raffleRepo } from '@/lib/db/repositories';
 import type { EnrichedEntry, EnrichedEntryList, PaginationParams } from '../types';
-import { validateWalletAddress } from '../raffle/raffle-validation.service';
+import { validateWalletAddress } from '../raffle/raffle-management.service';
 import { CacheService } from '../shared/cache.service';
 import { encodeCursor, decodeCursor } from '../shared/pagination.service';
 import { pagination } from '@/lib/constants';

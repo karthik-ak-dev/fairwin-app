@@ -1,15 +1,17 @@
 /**
- * Admin Payout Service
+ * Raffle Payout & Admin Operations Service
  *
- * Handles manual USDC payouts to raffle winners.
- * Admin can send payouts one-by-one or in batch.
+ * Handles manual USDC payouts to raffle winners and raffle cancellations.
+ * This service combines:
+ * - Winner payout operations (individual and batch)
+ * - Raffle cancellation with refunds
+ * - Payout status tracking
  *
  * Flow:
  * 1. Get winners with payoutStatus='pending'
  * 2. Admin reviews and approves payouts
  * 3. Send USDC transfer transactions
  * 4. Update winner and payout records
- * 5. Create audit log
  *
  * Security:
  * - Only admin wallets can trigger payouts
@@ -19,8 +21,8 @@
  */
 
 import type { Address } from 'viem';
-import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
-import { PayoutStatus } from '@/lib/db/models';
+import { winnerRepo, payoutRepo, raffleRepo, entryRepo, userRepo } from '@/lib/db/repositories';
+import { PayoutStatus, RaffleStatus } from '@/lib/db/models';
 import { ERC20_ABI, getWalletClient, getUSDCAddress } from '@/lib/blockchain/client';
 import { env } from '@/lib/env';
 
@@ -271,4 +273,49 @@ export async function getPlatformPayoutBreakdown() {
     failed: totalFailed,
     avgAmount,
   };
+}
+
+/**
+ * Process raffle cancellation with refunds
+ *
+ * Called by admin when cancelling a raffle.
+ * Marks all entries as refunded and updates user stats.
+ *
+ * @param raffleId Raffle to cancel
+ */
+export async function processRaffleCancellation(raffleId: string): Promise<void> {
+  // 1. Update raffle status to cancelled
+  await raffleRepo.update(raffleId, {
+    status: RaffleStatus.CANCELLED,
+  });
+
+  // 2. Get all entries
+  const allEntries = await entryRepo.findByRaffleId(raffleId);
+
+  // 3. Mark all entries as refunded
+  const entryIds = allEntries.map((e) => e.entryId);
+  await entryRepo.markAsRefunded(entryIds);
+
+  // 4. Process refunds for each user
+  const refundsByUser = new Map<string, { numEntries: number; totalPaid: number }>();
+
+  for (const entry of allEntries) {
+    const current = refundsByUser.get(entry.walletAddress) || {
+      numEntries: 0,
+      totalPaid: 0,
+    };
+    refundsByUser.set(entry.walletAddress, {
+      numEntries: current.numEntries + entry.numEntries,
+      totalPaid: current.totalPaid + entry.totalPaid,
+    });
+  }
+
+  // Update user stats (decrement activeEntries, totalSpent)
+  for (const [walletAddress, { numEntries, totalPaid }] of Array.from(refundsByUser.entries())) {
+    await userRepo.processRefund(walletAddress, numEntries, totalPaid);
+  }
+
+  console.log(
+    `[PayoutService] Cancelled raffle ${raffleId}, refunded ${allEntries.length} entries`
+  );
 }

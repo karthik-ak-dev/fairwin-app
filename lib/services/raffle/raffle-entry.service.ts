@@ -28,7 +28,7 @@ import {
   validateWalletAddress,
   validatePositiveNumber,
   validateTransactionHash,
-} from './raffle-validation.service';
+} from './raffle-management.service';
 import { verifyUSDCTransfer, isTransactionUsed } from '@/lib/blockchain/usdc-verification.service';
 import { env } from '@/lib/env';
 

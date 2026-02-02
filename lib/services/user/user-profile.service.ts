@@ -10,7 +10,7 @@ import { entryRepo } from '@/lib/db/repositories';
 import type { UserItem } from '@/lib/db/models';
 import type { UserSummary } from '../types';
 import { UserNotFoundError } from '../errors';
-import { validateWalletAddress } from '../raffle/raffle-validation.service';
+import { validateWalletAddress } from '../raffle/raffle-management.service';
 
 /**
  * Create user on first login

@@ -10,10 +10,6 @@ export * as raffleEntry from './raffle/raffle-entry.service';
 export * as raffleDraw from './raffle/raffle-draw.service';
 export * as raffleManagement from './raffle/raffle-management.service';
 export * as raffleQuery from './raffle/raffle-query.service';
-export * as raffleParticipant from './raffle/raffle-participant.service';
-export * as raffleValidation from './raffle/raffle-validation.service';
-export * as raffleStatus from './raffle/raffle-status.service';
-export * as raffleWinnerSelection from './raffle/raffle-winner-selection.service';
 export * as rafflePayout from './raffle/raffle-payout.service';
 export * as raffleStats from './raffle/raffle-stats.service';
 
