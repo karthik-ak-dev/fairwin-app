@@ -7,13 +7,13 @@
 
 import { raffleRepo, statsRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
+import { RaffleStatus } from '@/lib/db/models';
 import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
 import { RaffleNotFoundError } from '../errors';
 import {
   validateRaffleConfig,
   validateRaffleUpdate,
   validateStatusTransition,
-  validatePrizeTiers,
 } from './raffle-validation.service';
 import { raffle as raffleConstants } from '@/lib/constants';
 
@@ -37,14 +37,7 @@ import { raffle as raffleConstants } from '@/lib/constants';
 export async function createRaffle(
   params: CreateRaffleParams
 ): Promise<RaffleItem> {
-  // Validate basic configuration
-  validateRaffleConfig(params);
-
-  // Convert timestamps to ISO strings
-  const startTime = new Date(params.startTime).toISOString();
-  const endTime = new Date(params.endTime).toISOString();
-
-  // Set defaults for optional fields
+  // Apply defaults for optional fields first
   const description = params.description || '';
   const platformFeePercent = params.platformFeePercent ?? raffleConstants.DEFAULTS.PLATFORM_FEE_PERCENT;
   const winnerCount = params.winnerCount ?? raffleConstants.DEFAULTS.WINNER_COUNT;
@@ -54,8 +47,21 @@ export async function createRaffle(
     winnerCount: tier.winnerCount,
   }));
 
-  // Validate prize tiers after defaults are applied
-  validatePrizeTiers(prizeTiers, winnerCount);
+  // Build complete config with defaults applied
+  const completeConfig: CreateRaffleParams = {
+    ...params,
+    description,
+    platformFeePercent,
+    winnerCount,
+    prizeTiers,
+  };
+
+  // Validate complete configuration once (validateRaffleConfig includes prize tier validation)
+  validateRaffleConfig(completeConfig);
+
+  // Convert timestamps to ISO strings
+  const startTime = new Date(params.startTime).toISOString();
+  const endTime = new Date(params.endTime).toISOString();
 
   // Create raffle in database
   // Note: status is set to 'scheduled' by default in repository
@@ -74,9 +80,8 @@ export async function createRaffle(
   // Update platform stats
   await statsRepo.incrementRaffleCount();
 
-  // Return created raffle
-  const created = await raffleRepo.getById(raffle.raffleId);
-  return created!;
+  // Return created raffle (already in memory)
+  return raffle;
 }
 
 /**
@@ -116,12 +121,8 @@ export async function updateRaffle(
     ...(endTime && { endTime: new Date(endTime).toISOString() }),
   };
 
-  // Apply updates
-  await raffleRepo.update(raffleId, repoUpdates);
-
-  // Return updated raffle
-  const updated = await raffleRepo.getById(raffleId);
-  return updated!;
+  // Apply updates and return the updated raffle
+  return await raffleRepo.update(raffleId, repoUpdates);
 }
 
 /**
@@ -148,15 +149,12 @@ export async function cancelRaffle(
   }
 
   // Validate can cancel
-  validateStatusTransition(raffle.status, 'cancelled');
+  validateStatusTransition(raffle.status, RaffleStatus.CANCELLED);
 
-  // Update database status to 'cancelled'
-  await raffleRepo.update(raffleId, {
-    status: 'cancelled',
+  // Update database status to 'cancelled' and return
+  return await raffleRepo.update(raffleId, {
+    status: RaffleStatus.CANCELLED,
   });
-
-  const updated = await raffleRepo.getById(raffleId);
-  return updated!;
 }
 
 /**
@@ -176,11 +174,8 @@ export async function activateRaffle(raffleId: string): Promise<RaffleItem> {
   }
 
   // Validate can activate
-  validateStatusTransition(raffle.status, 'active');
+  validateStatusTransition(raffle.status, RaffleStatus.ACTIVE);
 
-  // Update status
-  await raffleRepo.update(raffleId, { status: 'active' });
-
-  const updated = await raffleRepo.getById(raffleId);
-  return updated!;
+  // Update status and return
+  return await raffleRepo.update(raffleId, { status: RaffleStatus.ACTIVE });
 }

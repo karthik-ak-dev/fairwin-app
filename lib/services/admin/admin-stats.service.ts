@@ -7,6 +7,7 @@
 import { statsRepo } from '@/lib/db/repositories';
 import { raffleRepo } from '@/lib/db/repositories';
 import { payoutRepo } from '@/lib/db/repositories';
+import { PayoutStatus } from '@/lib/db/models';
 import type { PlatformStats, TypeStats } from '../types';
 import { raffle } from '@/lib/constants';
 
@@ -106,9 +107,9 @@ async function getActiveRafflesCount(): Promise<number> {
  */
 async function getPayoutBreakdown() {
   const [pendingResult, paidResult, failedResult] = await Promise.all([
-    payoutRepo.getByStatus('pending'),
-    payoutRepo.getByStatus('paid'),
-    payoutRepo.getByStatus('failed'),
+    payoutRepo.getByStatus(PayoutStatus.PENDING),
+    payoutRepo.getByStatus(PayoutStatus.PAID),
+    payoutRepo.getByStatus(PayoutStatus.FAILED),
   ]);
 
   const pending = pendingResult.items;

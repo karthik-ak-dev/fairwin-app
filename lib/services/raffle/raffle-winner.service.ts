@@ -15,6 +15,7 @@ import {
   entryRepo,
   userRepo,
 } from '@/lib/db/repositories';
+import { RaffleStatus } from '@/lib/db/models';
 
 
 /**
@@ -28,7 +29,7 @@ import {
 export async function processRaffleCancellation(raffleId: string): Promise<void> {
   // 1. Update raffle status to cancelled
   await raffleRepo.update(raffleId, {
-    status: 'cancelled',
+    status: RaffleStatus.CANCELLED,
   });
 
   // 2. Get all entries

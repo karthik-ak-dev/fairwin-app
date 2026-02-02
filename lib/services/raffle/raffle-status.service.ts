@@ -15,6 +15,7 @@
  */
 
 import type { RaffleItem } from '@/lib/db/models';
+import { RaffleStatus } from '@/lib/db/models';
 import { auth } from '@/lib/constants';
 
 /**
@@ -63,12 +64,12 @@ export type DisplayStatus = 'scheduled' | 'active' | 'ending' | 'drawing' | 'com
  */
 export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>): DisplayStatus {
   // Terminal states - return as-is
-  if (raffle.status === 'completed' || raffle.status === 'cancelled') {
+  if (raffle.status === RaffleStatus.COMPLETED || raffle.status === RaffleStatus.CANCELLED) {
     return raffle.status;
   }
 
   // Drawing state
-  if (raffle.status === 'drawing') {
+  if (raffle.status === RaffleStatus.DRAWING) {
     return 'drawing';
   }
 
@@ -83,7 +84,7 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
 
   // Less than 5 minutes until end → show urgency
   const ENDING_THRESHOLD = auth.CHALLENGE_EXPIRATION_MS; // 5 minutes in milliseconds
-  if (raffle.status === 'active' && endTime - now <= ENDING_THRESHOLD && now < endTime) {
+  if (raffle.status === RaffleStatus.ACTIVE && endTime - now <= ENDING_THRESHOLD && now < endTime) {
     return 'ending';
   }
 
@@ -110,7 +111,7 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
  * // Returns: false (winners being selected)
  */
 export function isAcceptingEntries(raffle: Pick<RaffleItem, 'status' | 'startTime' | 'endTime'>): boolean {
-  if (raffle.status !== 'active') {
+  if (raffle.status !== RaffleStatus.ACTIVE) {
     return false;
   }
 
@@ -141,7 +142,7 @@ export function isAcceptingEntries(raffle: Pick<RaffleItem, 'status' | 'startTim
  * // Returns: false (already drawing)
  */
 export function canBeDrawn(raffle: Pick<RaffleItem, 'status' | 'endTime'>): boolean {
-  if (raffle.status !== 'active') {
+  if (raffle.status !== RaffleStatus.ACTIVE) {
     return false;
   }
 
@@ -158,7 +159,7 @@ export function canBeDrawn(raffle: Pick<RaffleItem, 'status' | 'endTime'>): bool
  * @returns true if raffle is in final state
  */
 export function isFinalized(raffle: Pick<RaffleItem, 'status'>): boolean {
-  return raffle.status === 'completed' || raffle.status === 'cancelled';
+  return raffle.status === RaffleStatus.COMPLETED || raffle.status === RaffleStatus.CANCELLED;
 }
 
 /**

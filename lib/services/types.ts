@@ -11,6 +11,7 @@ import type {
   UserItem as User,
   PayoutItem as Payout,
 } from '@/lib/db/models';
+import { RaffleStatus, RaffleType, PayoutStatus as PayoutStatusEnum } from '@/lib/db/models';
 
 // ============================================================================
 // Raffle Entry Types
@@ -81,7 +82,6 @@ export interface EnrichedRaffle {
   userStats?: {
     entries: number;
     totalSpent: number;
-    rank: number;
   };
 }
 
@@ -97,8 +97,8 @@ export interface RaffleStats {
 }
 
 export interface ListRafflesParams {
-  status?: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
-  type?: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
+  status?: RaffleStatus;
+  type?: RaffleType;
   limit?: number;
   cursor?: string;
 }
@@ -226,7 +226,7 @@ export interface PayoutResult {
   winnerId: string;
   walletAddress: string;
   amount: number;
-  status: 'pending' | 'paid' | 'failed';
+  status: PayoutStatusEnum;
   transactionHash?: string;
   error?: string;
   timestamp: number;
@@ -312,7 +312,7 @@ export interface PrizeTierConfig {
 }
 
 export interface CreateRaffleParams {
-  type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
+  type: RaffleType;
   title: string;
   description?: string;
   entryPrice: number;
@@ -330,7 +330,7 @@ export interface UpdateRaffleParams {
   startTime?: number;
   endTime?: number;
   winnerCount?: number;
-  status?: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
+  status?: RaffleStatus;
 }
 
 // ============================================================================

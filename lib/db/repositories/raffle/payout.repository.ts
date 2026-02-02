@@ -1,6 +1,7 @@
 import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { PayoutItem, CreatePayoutInput } from '../../models';
+import { PayoutStatus } from '../../models';
 import { pagination } from '@/lib/constants';
 
 export class PayoutRepository {
@@ -10,9 +11,15 @@ export class PayoutRepository {
   async create(input: CreatePayoutInput): Promise<PayoutItem> {
     const now = new Date().toISOString();
     const item: PayoutItem = {
-      ...input,
       payoutId: crypto.randomUUID(),
-      status: 'pending',
+      winnerId: input.winnerId,
+      raffleId: input.raffleId,
+      walletAddress: input.walletAddress,
+      amount: input.amount,
+      status: input.status ?? PayoutStatus.PENDING,
+      transactionHash: input.transactionHash,
+      processedAt: input.processedAt,
+      error: input.error,
       createdAt: now,
       updatedAt: now,
     };

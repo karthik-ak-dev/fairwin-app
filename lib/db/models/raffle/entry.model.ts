@@ -1,4 +1,14 @@
 /**
+ * Entry status enum - represents the state of a raffle entry transaction
+ */
+export enum EntryStatus {
+  CONFIRMED = 'confirmed',
+  PENDING = 'pending',
+  FAILED = 'failed',
+  REFUNDED = 'refunded',
+}
+
+/**
  * Entry Model - Raffle Game Specific
  *
  * Represents a single entry (ticket purchase) transaction in a raffle.
@@ -87,7 +97,7 @@ export interface EntryItem {
    *
    * Most entries should be 'confirmed' within 15-30 seconds on Polygon
    */
-  status: 'confirmed' | 'pending' | 'failed' | 'refunded';
+  status: EntryStatus;
 
   /**
    * ISO 8601 timestamp of when entry was created

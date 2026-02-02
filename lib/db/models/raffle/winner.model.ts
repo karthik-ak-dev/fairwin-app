@@ -1,4 +1,14 @@
 /**
+ * Payout status enum - represents the state of a winner's payment
+ */
+export enum PayoutStatus {
+  PENDING = 'pending',
+  PAID = 'paid',
+  FAILED = 'failed',
+  PROCESSING = 'processing',
+}
+
+/**
  * Winner Model - Raffle Game Specific
  *
  * Represents a winning entry selected after a raffle ends.
@@ -128,7 +138,7 @@ export interface WinnerItem {
    * - pending → failed (if transaction fails)
    * - failed → paid (after successful retry)
    */
-  payoutStatus: 'pending' | 'paid' | 'failed';
+  payoutStatus: PayoutStatus;
 
   /**
    * Polygon transaction hash of payout (optional)
@@ -205,6 +215,6 @@ export type CreateWinnerInput = Pick<
   WinnerItem,
   'raffleId' | 'walletAddress' | 'ticketNumber' | 'totalTickets' | 'prize' | 'tier'
 > & {
-  payoutStatus?: 'pending' | 'paid' | 'failed';
+  payoutStatus?: PayoutStatus;
   payoutTransactionHash?: string;
 };

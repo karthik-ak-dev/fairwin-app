@@ -22,8 +22,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication and get admin wallet
-    const adminWallet = await requireAdmin(request);
+    // Verify admin authentication
+    await requireAdmin(request);
 
     const { id: raffleId } = await params;
     const body = await request.json().catch(() => ({}));
@@ -31,13 +31,13 @@ export async function POST(
 
     // Send payout to specific winner or all winners
     if (winnerId) {
-      const result = await sendPayoutToWinner(winnerId, adminWallet, chainId);
+      const result = await sendPayoutToWinner(winnerId, chainId);
       return success({
         type: 'single',
         payout: result,
       });
     } else {
-      const result = await sendAllPayouts(raffleId, adminWallet, chainId);
+      const result = await sendAllPayouts(raffleId, chainId);
       return success({
         type: 'batch',
         ...result,

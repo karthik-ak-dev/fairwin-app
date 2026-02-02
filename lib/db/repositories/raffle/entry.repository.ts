@@ -1,6 +1,7 @@
 import { PutCommand, QueryCommand, UpdateCommand, ScanCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { EntryItem, CreateEntryInput } from '../../models';
+import { EntryStatus } from '../../models';
 
 export class EntryRepository {
   /**
@@ -10,7 +11,7 @@ export class EntryRepository {
     const item: EntryItem = {
       ...input,
       entryId: crypto.randomUUID(),
-      status: 'confirmed',
+      status: EntryStatus.CONFIRMED,
       createdAt: new Date().toISOString(),
     };
     await db.send(new PutCommand({
@@ -169,7 +170,7 @@ export class EntryRepository {
    */
   async markAsRefunded(entryIds: string[]): Promise<void> {
     await Promise.all(
-      entryIds.map(entryId => this.update(entryId, { status: 'refunded' }))
+      entryIds.map(entryId => this.update(entryId, { status: EntryStatus.REFUNDED }))
     );
   }
 }

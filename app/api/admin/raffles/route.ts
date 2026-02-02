@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
       endTime,
     } = body;
 
-    // Validate required fields
+    // Basic validation - service layer handles detailed validation
     if (!type || !title || !entryPrice || !startTime || !endTime) {
       return badRequest('Missing required fields: type, title, entryPrice, startTime, endTime');
     }
 
     // Create raffle in database with tiered rewards
-    // Defaults are applied in the service layer
+    // Service layer applies defaults and validates complete configuration
     const raffleData = await createRaffle({
       type,
       title,

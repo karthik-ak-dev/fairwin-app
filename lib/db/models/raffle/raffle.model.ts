@@ -24,6 +24,32 @@
  * - Admin raffle management
  * - Backend winner selection
  */
+
+/**
+ * Raffle Status Enum
+ * Represents the lifecycle state of a raffle
+ */
+export enum RaffleStatus {
+  SCHEDULED = 'scheduled',
+  ACTIVE = 'active',
+  ENDING = 'ending',
+  DRAWING = 'drawing',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * Raffle Type Enum
+ * Represents the frequency/category of a raffle
+ */
+export enum RaffleType {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  FLASH = 'flash',
+  MEGA = 'mega',
+}
+
 export interface RaffleItem {
   /**
    * Unique identifier for this raffle (Primary Key)
@@ -42,7 +68,7 @@ export interface RaffleItem {
    * - flash: Short duration (1-4 hours), quick games
    * - mega: Special events, massive prize pools
    */
-  type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
+  type: RaffleType;
 
   /**
    * Raffle status (backend-controlled)
@@ -61,7 +87,7 @@ export interface RaffleItem {
    * - drawing → completed (when winners are selected)
    * - active/ending → cancelled (admin cancels)
    */
-  status: 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
+  status: RaffleStatus;
 
   /**
    * Display title for the raffle

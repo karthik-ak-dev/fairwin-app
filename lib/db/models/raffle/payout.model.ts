@@ -1,4 +1,10 @@
 /**
+ * Import PayoutStatus enum from winner model
+ * This enum is shared between WinnerItem.payoutStatus and PayoutItem.status
+ */
+import { PayoutStatus } from './winner.model';
+
+/**
  * Payout Model - Raffle Game Specific
  *
  * Represents a prize payment transaction sent to a winner.
@@ -91,7 +97,7 @@ export interface PayoutItem {
    * - processing → failed (if transaction fails)
    * - failed → processing (when retrying)
    */
-  status: 'pending' | 'processing' | 'paid' | 'failed';
+  status: PayoutStatus;
 
   /**
    * Blockchain transaction hash of payout (optional)
@@ -204,7 +210,7 @@ export interface PayoutItem {
  * - Transaction hash should be verifiable on Polygonscan
  */
 export type CreatePayoutInput = Pick<PayoutItem, 'winnerId' | 'raffleId' | 'walletAddress' | 'amount'> & {
-  status?: 'pending' | 'processing' | 'paid' | 'failed';
+  status?: PayoutStatus;
   transactionHash?: string;
   processedAt?: string;
   error?: string;

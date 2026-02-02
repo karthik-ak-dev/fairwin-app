@@ -21,8 +21,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication and get admin wallet
-    const adminWallet = await requireAdmin(request);
+    // Verify admin authentication
+    await requireAdmin(request);
 
     const { id } = await params;
     const body = await request.json().catch(() => ({}));
@@ -33,7 +33,7 @@ export async function POST(
     }
 
     // Initiate draw (instant winner selection)
-    const result = await initiateRaffleDraw(id, adminWallet, useBlockHash);
+    const result = await initiateRaffleDraw(id, useBlockHash);
 
     return success({
       raffleId: result.raffleId,

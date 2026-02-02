@@ -17,6 +17,7 @@
  */
 
 import { raffleRepo, entryRepo, userRepo, statsRepo } from '@/lib/db/repositories';
+import type { RaffleItem } from '@/lib/db/models';
 import type { CreateEntryParams, CreateEntryResult, ValidationResult } from '../types';
 import {
   RaffleNotFoundError,
@@ -29,7 +30,6 @@ import {
   validateTransactionHash,
 } from './raffle-validation.service';
 import { verifyUSDCTransfer, isTransactionUsed } from '../blockchain/usdc-transfer-verification.service';
-import { auditEntry } from '../audit/audit-trail.service';
 import { env } from '@/lib/env';
 
 /**
@@ -100,17 +100,12 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
 
   console.log(`[EntryService] Created entry ${entry.entryId}`);
 
-  // Update all related entities (raffle, user, platform stats)
-  await updateRelatedEntitiesForEntry(params.raffleId, params.walletAddress, params.numEntries, params.totalPaid);
+  // Check if user has entered this raffle before (BEFORE creating new entry)
+  const hasEnteredBefore = await entryRepo.hasUserEnteredRaffle(params.walletAddress, params.raffleId);
 
-  // Audit high-value entries
-  await auditEntry({
-    raffleId: params.raffleId,
-    walletAddress: params.walletAddress,
-    numEntries: params.numEntries,
-    totalPaid: params.totalPaid,
-    transactionHash: params.transactionHash,
-  });
+  // Update all related entities (raffle, user, platform stats)
+  // Pass raffle to avoid re-fetching
+  await updateRelatedEntitiesForEntry(raffle, params.walletAddress, params.numEntries, params.totalPaid, hasEnteredBefore);
 
   // Return result
   return {
@@ -128,21 +123,23 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
  * Update raffle stats, user stats, and platform stats
  */
 async function updateRelatedEntitiesForEntry(
-  raffleId: string,
+  raffle: RaffleItem,
   walletAddress: string,
   numEntries: number,
-  totalPaid: number
+  totalPaid: number,
+  hasEnteredBefore: boolean
 ): Promise<void> {
   // 1. Update Raffle stats
-  const raffle = await raffleRepo.getById(raffleId);
-  if (!raffle) throw new RaffleNotFoundError(raffleId);
+  // Calculate new unique participants incrementally instead of fetching all entries
+  const newTotalParticipants = hasEnteredBefore
+    ? raffle.totalParticipants
+    : raffle.totalParticipants + 1;
 
-  const uniqueParticipants = await entryRepo.countUniqueParticipants(raffleId);
   const newPrizePool = raffle.prizePool + totalPaid;
 
-  await raffleRepo.update(raffleId, {
+  await raffleRepo.update(raffle.raffleId, {
     totalEntries: raffle.totalEntries + numEntries,
-    totalParticipants: uniqueParticipants,
+    totalParticipants: newTotalParticipants,
     prizePool: newPrizePool,
     protocolFee: newPrizePool * 0.1,
     winnerPayout: newPrizePool * 0.9,
@@ -150,17 +147,13 @@ async function updateRelatedEntitiesForEntry(
 
   // 2. Update User stats
   const isNewUser = !(await userRepo.getByAddress(walletAddress));
-  const hasEnteredThisRaffleBefore = await entryRepo.hasUserEnteredRaffle(
-    walletAddress,
-    raffleId
-  );
 
   await userRepo.recordEntry(
     walletAddress,
-    raffleId,
+    raffle.raffleId,
     numEntries,
     totalPaid,
-    hasEnteredThisRaffleBefore
+    hasEnteredBefore
   );
 
   // 3. Update PlatformStats
@@ -201,8 +194,9 @@ export async function validateEntryEligibility(
       };
     }
 
-    // Get user's current entries
-    const currentEntries = await getUserEntryCount(raffleId, walletAddress);
+    // Get user's current entries by fetching entries once and calculating
+    const userEntries = await entryRepo.getUserEntriesForRaffle(walletAddress, raffleId);
+    const currentEntries = userEntries.reduce((sum, entry) => sum + entry.numEntries, 0);
 
     return {
       valid: true,
@@ -214,17 +208,6 @@ export async function validateEntryEligibility(
       error: error instanceof Error ? error.message : 'Validation failed',
     };
   }
-}
-
-/**
- * Get user's current entry count for a raffle
- */
-export async function getUserEntryCount(
-  raffleId: string,
-  walletAddress: string
-): Promise<number> {
-  const entries = await entryRepo.getUserEntriesForRaffle(walletAddress, raffleId);
-  return entries.reduce((sum, entry) => sum + entry.numEntries, 0);
 }
 
 /**

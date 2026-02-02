@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/api/admin-auth';
 import { handleError } from '@/lib/api/error-handler';
 import { success } from '@/lib/api/responses';
 import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
+import { PayoutStatus } from '@/lib/db/models';
 import { encodeCursor, decodeCursor } from '@/lib/services/shared/pagination.service';
 import { pagination } from '@/lib/constants';
 
@@ -37,11 +38,11 @@ export async function GET(request: NextRequest) {
       responseKey = 'winners';
     } else if (status) {
       // Query payouts by status
-      result = await payoutRepo.getByStatus(status as any, limit, startKey);
+      result = await payoutRepo.getByStatus(status as PayoutStatus, limit, startKey);
       responseKey = 'payouts';
     } else {
       // Default: show pending payouts
-      result = await payoutRepo.getByStatus('pending', limit, startKey);
+      result = await payoutRepo.getByStatus(PayoutStatus.PENDING, limit, startKey);
       responseKey = 'payouts';
     }
 

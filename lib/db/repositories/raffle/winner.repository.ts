@@ -1,6 +1,7 @@
-import { PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, QueryCommand, UpdateCommand, GetCommand, BatchWriteCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { WinnerItem, CreateWinnerInput } from '../../models';
+import { PayoutStatus } from '../../models';
 import { pagination } from '@/lib/constants';
 
 export class WinnerRepository {
@@ -11,7 +12,7 @@ export class WinnerRepository {
     const item: WinnerItem = {
       ...input,
       winnerId: crypto.randomUUID(),
-      payoutStatus: input.payoutStatus || 'pending',
+      payoutStatus: input.payoutStatus || PayoutStatus.PENDING,
       createdAt: new Date().toISOString(),
     };
     await db.send(new PutCommand({
@@ -61,14 +62,44 @@ export class WinnerRepository {
    * Get a single winner by ID
    */
   async getById(winnerId: string): Promise<WinnerItem | null> {
-    const { Items } = await db.send(new QueryCommand({
+    const { Item } = await db.send(new GetCommand({
       TableName: TABLE.WINNERS,
-      KeyConditionExpression: '#winnerId = :winnerId',
-      ExpressionAttributeNames: { '#winnerId': 'winnerId' },
-      ExpressionAttributeValues: { ':winnerId': winnerId },
-      Limit: 1,
+      Key: { winnerId },
     }));
-    return (Items?.[0] as WinnerItem) ?? null;
+    return (Item as WinnerItem) ?? null;
+  }
+
+  /**
+   * Batch create winner records (optimized for draw operations)
+   */
+  async batchCreate(inputs: CreateWinnerInput[]): Promise<WinnerItem[]> {
+    const items: WinnerItem[] = inputs.map(input => ({
+      ...input,
+      winnerId: crypto.randomUUID(),
+      payoutStatus: input.payoutStatus || PayoutStatus.PENDING,
+      createdAt: new Date().toISOString(),
+    }));
+
+    // DynamoDB BatchWriteItem has 25 item limit, so chunk if needed
+    const chunks: WinnerItem[][] = [];
+    for (let i = 0; i < items.length; i += 25) {
+      chunks.push(items.slice(i, i + 25));
+    }
+
+    // Execute all batch writes in parallel
+    await Promise.all(
+      chunks.map(chunk =>
+        db.send(new BatchWriteCommand({
+          RequestItems: {
+            [TABLE.WINNERS]: chunk.map(item => ({
+              PutRequest: { Item: item }
+            }))
+          }
+        }))
+      )
+    );
+
+    return items;
   }
 
   /**

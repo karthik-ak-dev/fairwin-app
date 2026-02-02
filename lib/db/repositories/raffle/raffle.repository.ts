@@ -1,6 +1,7 @@
 import { GetCommand, PutCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { db, TABLE } from '../../client';
 import type { RaffleItem, CreateRaffleInput } from '../../models';
+import { RaffleStatus } from '../../models';
 import { pagination } from '@/lib/constants';
 
 export class RaffleRepository {
@@ -54,10 +55,13 @@ export class RaffleRepository {
    */
   async create(input: CreateRaffleInput): Promise<RaffleItem> {
     const now = new Date().toISOString();
-    const item = {
+    const item: RaffleItem = {
       raffleId: crypto.randomUUID(),
       ...input,
-      status: 'scheduled' as const,
+      // Service layer guarantees these optional fields are populated with defaults
+      platformFeePercent: input.platformFeePercent!,
+      prizeTiers: input.prizeTiers!,
+      status: RaffleStatus.SCHEDULED,
       totalEntries: 0,
       totalParticipants: 0,
       prizePool: 0,
@@ -71,9 +75,9 @@ export class RaffleRepository {
   }
 
   /**
-   * Update raffle fields
+   * Update raffle fields and return the updated item
    */
-  async update(raffleId: string, updates: Partial<RaffleItem>): Promise<void> {
+  async update(raffleId: string, updates: Partial<RaffleItem>): Promise<RaffleItem> {
     const entries = Object.entries({ ...updates, updatedAt: new Date().toISOString() });
     const expressions: string[] = [];
     const names: Record<string, string> = {};
@@ -85,12 +89,15 @@ export class RaffleRepository {
       values[`:${key}`] = val;
     });
 
-    await db.send(new UpdateCommand({
+    const { Attributes } = await db.send(new UpdateCommand({
       TableName: TABLE.RAFFLES,
       Key: { raffleId },
       UpdateExpression: `SET ${expressions.join(', ')}`,
       ExpressionAttributeNames: names,
       ExpressionAttributeValues: values,
+      ReturnValues: 'ALL_NEW',
     }));
+
+    return Attributes as RaffleItem;
   }
 }

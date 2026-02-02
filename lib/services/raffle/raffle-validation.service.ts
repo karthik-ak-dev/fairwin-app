@@ -6,6 +6,7 @@
  */
 
 import type { RaffleItem as Raffle } from '@/lib/db/models';
+import { RaffleStatus, RaffleType } from '@/lib/db/models';
 import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
 import {
   RaffleNotActiveError,
@@ -37,7 +38,7 @@ const MAX_WINNER_COUNT = 100;
  * @throws RaffleNotActiveError if raffle is not accepting entries
  */
 export function validateRaffleActive(raffle: Raffle): void {
-  if (raffle.status !== 'active') {
+  if (raffle.status !== RaffleStatus.ACTIVE) {
     throw new RaffleNotActiveError(raffle.raffleId, raffle.status);
   }
 
@@ -67,17 +68,17 @@ export function validateRaffleActive(raffle: Raffle): void {
  */
 export function validateRaffleDrawable(raffle: Raffle, entryCount: number): void {
   // Check if already drawn or completed
-  if (raffle.status === 'drawing' || raffle.status === 'completed') {
+  if (raffle.status === RaffleStatus.DRAWING || raffle.status === RaffleStatus.COMPLETED) {
     throw new RaffleNotDrawableError(`Already drawn (status: ${raffle.status})`);
   }
 
   // Check if cancelled
-  if (raffle.status === 'cancelled') {
+  if (raffle.status === RaffleStatus.CANCELLED) {
     throw new RaffleNotDrawableError(`Raffle is cancelled`);
   }
 
   // Check status - must be active
-  if (raffle.status !== 'active') {
+  if (raffle.status !== RaffleStatus.ACTIVE) {
     throw new RaffleNotDrawableError(
       `Invalid status: ${raffle.status} (must be active)`
     );
@@ -249,7 +250,7 @@ export function validateRaffleConfig(config: CreateRaffleParams): void {
     }
   }
 
-  // Validate prize tiers
+  // Validate prize tiers (should be called after defaults are applied)
   if (config.prizeTiers) {
     validatePrizeTiers(config.prizeTiers, config.winnerCount);
   }
@@ -265,7 +266,7 @@ export function validateRaffleUpdate(
   updates: UpdateRaffleParams
 ): void {
   // Cannot update if raffle is completed or cancelled
-  if (raffle.status === 'completed' || raffle.status === 'cancelled') {
+  if (raffle.status === RaffleStatus.COMPLETED || raffle.status === RaffleStatus.CANCELLED) {
     throw new ValidationError(
       'status',
       `Cannot update raffle in ${raffle.status} status`
@@ -357,16 +358,16 @@ export function validateRaffleStatus(
  * @throws InvalidStatusTransitionError if transition is not allowed
  */
 export function validateStatusTransition(
-  currentStatus: Raffle['status'],
-  newStatus: Raffle['status']
+  currentStatus: RaffleStatus,
+  newStatus: RaffleStatus
 ): void {
-  const validTransitions: Record<Raffle['status'], Raffle['status'][]> = {
-    scheduled: ['active', 'cancelled'],
-    active: ['ending', 'cancelled'],
-    ending: ['drawing', 'cancelled'],
-    drawing: ['completed', 'cancelled'],
-    completed: [], // Terminal state
-    cancelled: [], // Terminal state
+  const validTransitions: Record<RaffleStatus, RaffleStatus[]> = {
+    [RaffleStatus.SCHEDULED]: [RaffleStatus.ACTIVE, RaffleStatus.CANCELLED],
+    [RaffleStatus.ACTIVE]: [RaffleStatus.ENDING, RaffleStatus.CANCELLED],
+    [RaffleStatus.ENDING]: [RaffleStatus.DRAWING, RaffleStatus.CANCELLED],
+    [RaffleStatus.DRAWING]: [RaffleStatus.COMPLETED, RaffleStatus.CANCELLED],
+    [RaffleStatus.COMPLETED]: [], // Terminal state
+    [RaffleStatus.CANCELLED]: [], // Terminal state
   };
 
   const allowed = validTransitions[currentStatus] || [];

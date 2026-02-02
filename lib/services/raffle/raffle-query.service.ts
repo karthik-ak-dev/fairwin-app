@@ -8,6 +8,7 @@
 import { raffleRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
+import { RaffleStatus } from '@/lib/db/models';
 import type {
   EnrichedRaffle,
   ListRafflesParams,
@@ -15,8 +16,6 @@ import type {
   RaffleStats,
 } from '../types';
 import { RaffleNotFoundError } from '../errors';
-import { getUserEntryCount } from './raffle-entry.service';
-import { aggregateParticipants } from './raffle-participant.service';
 import { decodeCursor } from '../shared/pagination.service';
 import { computeDisplayStatus } from './raffle-status.service';
 import { pagination } from '@/lib/constants';
@@ -47,7 +46,7 @@ export async function getRaffleWithDetails(
 
   // Get winners if completed
   let winners: any[] = [];
-  if (raffle.status === 'completed') {
+  if (raffle.status === RaffleStatus.COMPLETED) {
     const winnersResult = await winnerRepo.getByRaffle(raffleId);
     winners = winnersResult.items;
   }
@@ -55,20 +54,16 @@ export async function getRaffleWithDetails(
   // Get user-specific data if wallet provided
   let userStats;
   if (walletAddress) {
-    const entryCount = await getUserEntryCount(raffleId, walletAddress);
-    const userEntriesResult = await entryRepo.getUserEntriesForRaffle(walletAddress, raffleId);
-    const totalSpent = userEntriesResult.reduce((sum, e) => sum + e.totalPaid, 0);
+    // Fetch only this user's entries for the raffle
+    const userEntries = await entryRepo.getUserEntriesForRaffle(raffleId, walletAddress);
 
-    // Calculate rank by getting all participants sorted by entry count
-    const participantsResult = await aggregateParticipants(raffleId);
-    const userRank = participantsResult.participants.findIndex(
-      (p) => p.walletAddress.toLowerCase() === walletAddress.toLowerCase()
-    ) + 1;
+    // Calculate user's entry count and total spent
+    const entryCount = userEntries.reduce((sum, e) => sum + e.numEntries, 0);
+    const totalSpent = userEntries.reduce((sum, e) => sum + e.totalPaid, 0);
 
     userStats = {
       entries: entryCount,
       totalSpent,
-      rank: userRank > 0 ? userRank : 0,
     };
   }
 

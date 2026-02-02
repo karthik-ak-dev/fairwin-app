@@ -26,9 +26,6 @@ export * as adminPayout from './admin/admin-payout.service';
 // Blockchain services (read-only for USDC verification)
 export * as usdcTransferVerification from './blockchain/usdc-transfer-verification.service';
 
-// Audit services
-export * as auditTrail from './audit/audit-trail.service';
-
 // Shared utilities
 export * from './shared/cache.service';
 export * from './shared/pagination.service';

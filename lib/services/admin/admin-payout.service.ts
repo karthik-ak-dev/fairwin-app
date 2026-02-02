@@ -22,8 +22,8 @@ import { createWalletClient, http, type Address } from 'viem';
 import { polygon, polygonAmoy } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import { winnerRepo, payoutRepo } from '@/lib/db/repositories';
+import { PayoutStatus } from '@/lib/db/models';
 import { env, serverEnv } from '@/lib/env';
-import { auditPayout } from '../audit/audit-trail.service';
 
 // ERC20 Transfer ABI
 const ERC20_TRANSFER_ABI = [
@@ -52,7 +52,7 @@ export interface PayoutResult {
   walletAddress: string;
   amount: number;
   transactionHash: string;
-  status: 'paid' | 'failed';
+  status: PayoutStatus;
   error?: string;
 }
 
@@ -97,13 +97,11 @@ function getUSDCAddress(chainId: number): Address {
  * Send payout to a single winner
  *
  * @param winnerId Winner ID to pay
- * @param adminWallet Admin wallet address (for audit log)
  * @param chainId Chain ID (default: env.CHAIN_ID)
  * @returns Payout result
  */
 export async function sendPayoutToWinner(
   winnerId: string,
-  adminWallet: string,
   chainId: number = env.CHAIN_ID
 ): Promise<PayoutResult> {
   // Get winner details
@@ -112,7 +110,7 @@ export async function sendPayoutToWinner(
     throw new Error(`Winner ${winnerId} not found`);
   }
 
-  if (winner.payoutStatus === 'paid') {
+  if (winner.payoutStatus === PayoutStatus.PAID) {
     throw new Error(`Winner ${winnerId} already paid`);
   }
 
@@ -125,7 +123,7 @@ export async function sendPayoutToWinner(
       raffleId: winner.raffleId,
       walletAddress: winner.walletAddress,
       amount: winner.prize,
-      status: 'processing',
+      status: PayoutStatus.PROCESSING,
     });
 
     // Get wallet client
@@ -147,7 +145,7 @@ export async function sendPayoutToWinner(
     // to avoid blocking the API response
 
     // Update winner record
-    await winnerRepo.updatePayoutStatus(winnerId, 'paid', hash);
+    await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.PAID, hash);
 
     // Create payout record
     await payoutRepo.create({
@@ -155,19 +153,9 @@ export async function sendPayoutToWinner(
       raffleId: winner.raffleId,
       walletAddress: winner.walletAddress,
       amount: winner.prize,
-      status: 'paid',
+      status: PayoutStatus.PAID,
       transactionHash: hash,
       processedAt: new Date().toISOString(),
-    });
-
-    // Create audit log
-    await auditPayout({
-      raffleId: winner.raffleId,
-      winnerId,
-      walletAddress: winner.walletAddress,
-      amount: winner.prize,
-      transactionHash: hash,
-      adminWallet,
     });
 
     console.log(`[PayoutService] Payout successful for winner ${winnerId}`);
@@ -177,14 +165,14 @@ export async function sendPayoutToWinner(
       walletAddress: winner.walletAddress,
       amount: winner.prize,
       transactionHash: hash,
-      status: 'paid',
+      status: PayoutStatus.PAID,
     };
   } catch (error) {
     console.error(`[PayoutService] Payout failed for winner ${winnerId}:`, error);
 
     // Update status to failed
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    await winnerRepo.updatePayoutStatus(winnerId, 'failed');
+    await winnerRepo.updatePayoutStatus(winnerId, PayoutStatus.FAILED);
 
     // Create failed payout record
     await payoutRepo.create({
@@ -192,7 +180,7 @@ export async function sendPayoutToWinner(
       raffleId: winner.raffleId,
       walletAddress: winner.walletAddress,
       amount: winner.prize,
-      status: 'failed',
+      status: PayoutStatus.FAILED,
       error: errorMessage,
     });
 
@@ -201,7 +189,7 @@ export async function sendPayoutToWinner(
       walletAddress: winner.walletAddress,
       amount: winner.prize,
       transactionHash: '',
-      status: 'failed',
+      status: PayoutStatus.FAILED,
       error: errorMessage,
     };
   }
@@ -211,18 +199,16 @@ export async function sendPayoutToWinner(
  * Send payouts to all winners of a raffle
  *
  * @param raffleId Raffle ID
- * @param adminWallet Admin wallet address
  * @param chainId Chain ID
  * @returns Batch payout result
  */
 export async function sendAllPayouts(
   raffleId: string,
-  adminWallet: string,
   chainId: number = env.CHAIN_ID
 ): Promise<BatchPayoutResult> {
   // Get all pending winners
   const winnersResult = await winnerRepo.getByRaffle(raffleId);
-  const pendingWinners = winnersResult.items.filter(w => w.payoutStatus === 'pending');
+  const pendingWinners = winnersResult.items.filter(w => w.payoutStatus === PayoutStatus.PENDING);
 
   if (pendingWinners.length === 0) {
     throw new Error(`No pending winners for raffle ${raffleId}`);
@@ -237,10 +223,10 @@ export async function sendAllPayouts(
   // Send payouts one by one
   // Note: Could be optimized with batch transactions in production
   for (const winner of pendingWinners) {
-    const result = await sendPayoutToWinner(winner.winnerId, adminWallet, chainId);
+    const result = await sendPayoutToWinner(winner.winnerId, chainId);
     results.push(result);
 
-    if (result.status === 'paid') {
+    if (result.status === PayoutStatus.PAID) {
       successful++;
     } else {
       failed++;
@@ -262,85 +248,34 @@ export async function sendAllPayouts(
 }
 
 /**
- * Retry failed payout
- *
- * @param winnerId Winner ID with failed payout
- * @param adminWallet Admin wallet address
- * @param chainId Chain ID
- * @returns Payout result
- */
-export async function retryFailedPayout(
-  winnerId: string,
-  adminWallet: string,
-  chainId: number = env.CHAIN_ID
-): Promise<PayoutResult> {
-  const winner = await winnerRepo.getById(winnerId);
-  if (!winner) {
-    throw new Error(`Winner ${winnerId} not found`);
-  }
-
-  if (winner.payoutStatus !== 'failed') {
-    throw new Error(`Winner ${winnerId} payout status is not 'failed' (current: ${winner.payoutStatus})`);
-  }
-
-  console.log(`[PayoutService] Retrying failed payout for winner ${winnerId}`);
-
-  // Reset to pending and retry
-  await winnerRepo.updatePayoutStatus(winnerId, 'pending');
-  return sendPayoutToWinner(winnerId, adminWallet, chainId);
-}
-
-/**
  * Get payout status for a raffle
  *
  * @param raffleId Raffle ID
- * @returns Payout summary
+ * @returns Payout summary with full winner details
  */
 export async function getPayoutStatus(raffleId: string) {
   const winnersResult = await winnerRepo.getByRaffle(raffleId);
   const winners = winnersResult.items;
 
-  const pending = winners.filter(w => w.payoutStatus === 'pending').length;
-  const paid = winners.filter(w => w.payoutStatus === 'paid').length;
-  const failed = winners.filter(w => w.payoutStatus === 'failed').length;
+  const pendingWinners = winners.filter(w => w.payoutStatus === PayoutStatus.PENDING);
+  const paidWinners = winners.filter(w => w.payoutStatus === PayoutStatus.PAID);
+  const failedWinners = winners.filter(w => w.payoutStatus === PayoutStatus.FAILED);
 
   const totalAmount = winners.reduce((sum, w) => sum + w.prize, 0);
-  const paidAmount = winners
-    .filter(w => w.payoutStatus === 'paid')
-    .reduce((sum, w) => sum + w.prize, 0);
+  const paidAmount = paidWinners.reduce((sum, w) => sum + w.prize, 0);
 
   return {
     raffleId,
-    totalWinners: winners.length,
-    pending,
-    paid,
-    failed,
-    totalAmount,
-    paidAmount,
-    remainingAmount: totalAmount - paidAmount,
-    allPaid: pending === 0 && failed === 0,
+    winners,
+    summary: {
+      totalWinners: winners.length,
+      pending: pendingWinners.length,
+      paid: paidWinners.length,
+      failed: failedWinners.length,
+      totalAmount,
+      paidAmount,
+      remainingAmount: totalAmount - paidAmount,
+      allPaid: pendingWinners.length === 0 && failedWinners.length === 0,
+    },
   };
-}
-
-/**
- * Get pending payouts across all raffles
- *
- * @returns List of pending winners
- */
-export async function getAllPendingPayouts() {
-  // This would require a GSI on payoutStatus in the Winners table
-  // For now, we'll query recent raffles and filter
-  // In production, add GSI: payoutStatus-createdAt-index
-
-  const allWinners = await winnerRepo.getRecent(100); // Get recent 100 winners
-  const pending = allWinners.filter(w => w.payoutStatus === 'pending');
-
-  return pending.map(w => ({
-    winnerId: w.winnerId,
-    raffleId: w.raffleId,
-    walletAddress: w.walletAddress,
-    prize: w.prize,
-    tier: w.tier,
-    createdAt: w.createdAt,
-  }));
 }

@@ -17,6 +17,7 @@
  */
 
 import { raffleRepo, entryRepo, winnerRepo, userRepo, statsRepo } from '@/lib/db/repositories';
+import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
 import type { DrawInitiationResult, WinnerSelectionResult } from '../types';
 import {
   RaffleNotFoundError,
@@ -31,7 +32,6 @@ import {
   selectWinnersWithCrypto,
   type SelectedWinner,
 } from './raffle-winner-selection.service';
-import { auditWinnerSelection } from '../audit/audit-trail.service';
 import { env } from '@/lib/env';
 
 /**
@@ -51,10 +51,8 @@ import { env } from '@/lib/env';
  * 5. Create winner records
  * 6. Update user stats
  * 7. Change status to 'completed'
- * 8. Create audit log
  *
  * @param raffleId Raffle ID to draw
- * @param adminWallet Admin wallet triggering the draw
  * @param useBlockHash Use block hash for seed (verifiable) vs crypto random (faster)
  * @returns Draw result with winners
  * @throws RaffleNotFoundError if raffle doesn't exist
@@ -63,7 +61,6 @@ import { env } from '@/lib/env';
  */
 export async function initiateRaffleDraw(
   raffleId: string,
-  adminWallet: string,
   useBlockHash: boolean = true
 ): Promise<DrawInitiationResult> {
   // Get raffle
@@ -72,25 +69,16 @@ export async function initiateRaffleDraw(
     throw new RaffleNotFoundError(raffleId);
   }
 
-  // Check if already drawn
-  if (raffle.status === 'drawing' || raffle.status === 'completed') {
-    throw new RaffleAlreadyDrawnError(raffleId);
-  }
-
   // Get all entries
   const entriesResult = await entryRepo.getByRaffle(raffleId);
   const entries = entriesResult.items;
 
-  if (entries.length === 0) {
-    throw new NoEntriesForDrawError(raffleId);
-  }
-
-  // Validate drawable
+  // Validate raffle can be drawn (includes all status, time, and entry checks)
   validateRaffleDrawable(raffle, entries.length);
 
   // Update status to drawing
   await raffleRepo.update(raffleId, {
-    status: 'drawing',
+    status: RaffleStatus.DRAWING,
     drawTime: new Date().toISOString(),
   });
 
@@ -111,23 +99,8 @@ export async function initiateRaffleDraw(
 
   // Update raffle to completed
   await raffleRepo.update(raffleId, {
-    status: 'completed',
+    status: RaffleStatus.COMPLETED,
     randomSeed: selectionResult.randomSeed,
-  });
-
-  // Create audit log
-  await auditWinnerSelection({
-    raffleId,
-    adminWallet,
-    randomSeed: selectionResult.randomSeed,
-    winners: selectionResult.winners.map(w => ({
-      walletAddress: w.walletAddress,
-      ticketNumber: w.ticketNumber,
-      prize: w.prize,
-      tier: w.tier,
-    })),
-    totalTickets: selectionResult.totalTickets,
-    totalPrize: selectionResult.totalPrize,
   });
 
   console.log(`[DrawService] Draw completed for raffle ${raffleId}`);
@@ -137,32 +110,32 @@ export async function initiateRaffleDraw(
     winners: selectionResult.winners,
     randomSeed: selectionResult.randomSeed,
     blockHash: selectionResult.blockHash,
-    status: 'completed',
+    status: RaffleStatus.COMPLETED,
     timestamp: Date.now(),
   };
 }
 
 /**
- * Create winner records in database
+ * Create winner records in database (batch operation for efficiency)
  */
 async function createWinnerRecords(raffleId: string, winners: SelectedWinner[]): Promise<void> {
-  for (const winner of winners) {
-    await winnerRepo.create({
-      raffleId,
-      walletAddress: winner.walletAddress,
-      ticketNumber: winner.ticketNumber,
-      totalTickets: winner.totalTickets,
-      prize: winner.prize,
-      tier: winner.tier,
-      payoutStatus: 'pending', // Admin will send payouts later
-    });
-  }
+  const winnerInputs = winners.map(winner => ({
+    raffleId,
+    walletAddress: winner.walletAddress,
+    ticketNumber: winner.ticketNumber,
+    totalTickets: winner.totalTickets,
+    prize: winner.prize,
+    tier: winner.tier,
+    payoutStatus: PayoutStatus.PENDING, // Admin will send payouts later
+  }));
 
-  console.log(`[DrawService] Created ${winners.length} winner records`);
+  await winnerRepo.batchCreate(winnerInputs);
+
+  console.log(`[DrawService] Created ${winners.length} winner records in batch`);
 }
 
 /**
- * Update user stats for winners
+ * Update user stats for winners (parallel execution for efficiency)
  */
 async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): Promise<void> {
   // Get unique winners (same user might win multiple times)
@@ -172,14 +145,16 @@ async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): P
     uniqueWinners.set(winner.walletAddress, currentPrize + winner.prize);
   }
 
-  // Update stats for each unique winner
-  for (const [walletAddress, totalWon] of Array.from(uniqueWinners.entries())) {
-    await userRepo.recordWin(walletAddress, raffleId, totalWon);
-  }
+  // Update stats for all unique winners in parallel
+  const userUpdatePromises = Array.from(uniqueWinners.entries()).map(
+    ([walletAddress, totalWon]) => userRepo.recordWin(walletAddress, raffleId, totalWon)
+  );
 
-  // Update platform stats
+  // Update platform stats in parallel with user updates
   const totalPrize = winners.reduce((sum, w) => sum + w.prize, 0);
-  await statsRepo.recordPayout(totalPrize, winners.length);
+  const platformUpdatePromise = statsRepo.recordPayout(totalPrize, winners.length);
+
+  await Promise.all([...userUpdatePromises, platformUpdatePromise]);
 
   console.log(`[DrawService] Updated stats for ${uniqueWinners.size} unique winners`);
 }
@@ -221,11 +196,11 @@ export async function isRaffleReadyForDraw(raffleId: string): Promise<{
     return { ready: false, reason: 'Raffle not found' };
   }
 
-  if (raffle.status === 'completed') {
+  if (raffle.status === RaffleStatus.COMPLETED) {
     return { ready: false, reason: 'Raffle already drawn' };
   }
 
-  if (raffle.status === 'cancelled') {
+  if (raffle.status === RaffleStatus.CANCELLED) {
     return { ready: false, reason: 'Raffle cancelled' };
   }
 
