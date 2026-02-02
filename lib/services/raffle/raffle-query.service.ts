@@ -13,16 +13,18 @@
 import { raffleRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
-import { RaffleStatus } from '@/lib/db/models';
+import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
 import type { RaffleItem } from '@/lib/db/models';
 import type {
   EnrichedRaffle,
   ListRafflesParams,
   PaginatedRaffles,
+  ListWinnersParams,
+  PaginatedWinners,
   DisplayStatus,
 } from './types';
 import { RaffleNotFoundError } from '../errors';
-import { decodeCursor } from '../shared/pagination.service';
+import { decodeCursor, encodeCursor } from '../shared/pagination.service';
 import { pagination, auth } from '@/lib/constants';
 
 // ============================================================================
@@ -146,6 +148,46 @@ export async function getRaffleWithDetails(
 export async function getRaffleWinners(raffleId: string) {
   const result = await winnerRepo.getByRaffle(raffleId);
   return result.items;
+}
+
+/**
+ * List winners with optional filtering and pagination
+ *
+ * Supports filtering by:
+ * - raffleId: Get winners for a specific raffle
+ * - payoutStatus: Get winners by payout status (pending, paid, failed, processing)
+ *
+ * If no filters provided, defaults to pending payouts for admin dashboard
+ */
+export async function listWinners(params: ListWinnersParams = {}): Promise<PaginatedWinners> {
+  const { raffleId, payoutStatus, cursor } = params;
+  const limit: number = params.limit ?? pagination.USER_LIST_LIMIT;
+
+  // Decode cursor if provided
+  let startKey;
+  if (cursor) {
+    const decoded = decodeCursor(cursor);
+    startKey = JSON.parse(decoded);
+  }
+
+  let result;
+
+  if (raffleId) {
+    // Query winners by raffle
+    result = await winnerRepo.getByRaffle(raffleId, limit, startKey);
+  } else if (payoutStatus) {
+    // Query winners by payout status
+    result = await winnerRepo.getByPayoutStatus(payoutStatus, limit, startKey);
+  } else {
+    // Default: show pending payouts (for admin dashboard)
+    result = await winnerRepo.getByPayoutStatus(PayoutStatus.PENDING, limit, startKey);
+  }
+
+  return {
+    winners: result.items,
+    nextCursor: result.lastKey ? encodeCursor(JSON.stringify(result.lastKey)) : undefined,
+    hasMore: !!result.lastKey,
+  };
 }
 
 /**

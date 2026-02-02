@@ -118,6 +118,22 @@ export interface PaginatedRaffles {
   hasMore: boolean;
 }
 
+// ============================================================================
+// Winner Query Types
+// ============================================================================
+
+export interface ListWinnersParams {
+  raffleId?: string;
+  payoutStatus?: PayoutStatusEnum;
+  limit?: number;
+  cursor?: string;
+}
+
+export interface PaginatedWinners {
+  winners: WinnerItem[];
+  nextCursor?: string;
+  hasMore: boolean;
+}
 
 // ============================================================================
 // Payout Types
