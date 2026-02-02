@@ -401,8 +401,7 @@ export async function initiateRaffleDraw(
   }
 
   // Get all entries
-  const entriesResult = await entryRepo.getByRaffle(raffleId);
-  const entries = entriesResult.items;
+  const entries = await entryRepo.getByRaffleId(raffleId);
 
   // Validate raffle can be drawn (includes all status, time, and entry checks)
   validateRaffleDrawable(raffle, entries.length);
@@ -517,8 +516,8 @@ export async function isRaffleReadyForDraw(raffleId: string): Promise<{
     return { ready: false, reason: 'Raffle has not ended yet' };
   }
 
-  const entriesResult = await entryRepo.getByRaffle(raffleId);
-  if (entriesResult.items.length === 0) {
+  const entries = await entryRepo.getByRaffleId(raffleId);
+  if (entries.length === 0) {
     return { ready: false, reason: 'No entries in raffle' };
   }
 

@@ -1,11 +1,33 @@
 /**
  * Entry status enum - represents the state of a raffle entry transaction
+ *
+ * Entry Lifecycle:
+ * 1. PENDING → CONFIRMED (normal entry flow)
+ * 2. PENDING → FAILED (transaction failed)
+ * 3. CONFIRMED → REFUND_PENDING → REFUND_PROCESSING → REFUNDED (cancellation flow)
+ * 4. CONFIRMED → REFUND_PENDING → REFUND_FAILED (refund failed, can retry)
  */
 export enum EntryStatus {
-  CONFIRMED = 'confirmed',
+  /** Transaction submitted but not yet confirmed on blockchain */
   PENDING = 'pending',
+
+  /** Payment verified on-chain, entry is active */
+  CONFIRMED = 'confirmed',
+
+  /** Transaction failed or was rejected */
   FAILED = 'failed',
+
+  /** Raffle cancelled, refund queued but not yet sent */
+  REFUND_PENDING = 'refund_pending',
+
+  /** Refund transaction in progress */
+  REFUND_PROCESSING = 'refund_processing',
+
+  /** USDC successfully refunded to user */
   REFUNDED = 'refunded',
+
+  /** Refund transaction failed, needs retry */
+  REFUND_FAILED = 'refund_failed',
 }
 
 /**
@@ -90,14 +112,25 @@ export interface EntryItem {
   /**
    * Current status of this entry
    *
-   * - confirmed: Payment verified on-chain (normal state)
+   * Status Flow:
    * - pending: Transaction submitted but not yet confirmed (temporary)
+   * - confirmed: Payment verified on-chain (normal active state)
    * - failed: Transaction failed or was rejected (rare)
-   * - refunded: Entry refunded due to raffle cancellation
+   * - refund_pending: Raffle cancelled, refund queued
+   * - refund_processing: Refund transaction being sent
+   * - refunded: USDC successfully returned to user
+   * - refund_failed: Refund transaction failed (can be retried)
    *
    * Most entries should be 'confirmed' within 15-30 seconds on Polygon
    */
   status: EntryStatus;
+
+  /**
+   * Transaction hash of the refund transaction (if refunded)
+   * Only populated when status is 'refunded'
+   * Used for audit trail and verification
+   */
+  refundTransactionHash?: string;
 
   /**
    * ISO 8601 timestamp of when entry was created

@@ -102,7 +102,8 @@ export async function createEntry(params: CreateEntryParams): Promise<CreateEntr
   console.log(`[EntryService] Created entry ${entry.entryId}`);
 
   // Check if user has entered this raffle before (BEFORE creating new entry)
-  const hasEnteredBefore = await entryRepo.hasUserEnteredRaffle(params.walletAddress, params.raffleId);
+  const userEntries = await entryRepo.getUserEntriesForRaffle(params.walletAddress, params.raffleId);
+  const hasEnteredBefore = userEntries.length > 0;
 
   // Update all related entities (raffle, user, platform stats)
   // Pass raffle to avoid re-fetching

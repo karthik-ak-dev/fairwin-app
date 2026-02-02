@@ -108,7 +108,7 @@ export async function getRaffleWithDetails(
 
   // Get recent entries
   const recentEntriesLimit = 10;
-  const entriesResult = await entryRepo.getByRaffle(raffleId, recentEntriesLimit);
+  const entriesResult = await entryRepo.getByRafflePaginated(raffleId, recentEntriesLimit);
   const recentEntries = entriesResult.items;
 
   // Get winners if completed
