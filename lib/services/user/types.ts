@@ -46,13 +46,3 @@ export interface UserSummary {
     activeEntries: number;
   };
 }
-
-export interface ParticipationStats {
-  totalRaffles: number;
-  totalEntries: number;
-  totalSpent: number;
-  activeRaffles: number;
-  completedRaffles: number;
-  winCount: number;
-  winRate: number;
-}

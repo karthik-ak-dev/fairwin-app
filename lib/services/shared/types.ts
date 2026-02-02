@@ -16,13 +16,6 @@ export interface PaginationParams {
   cursor?: string;
 }
 
-export interface PaginatedResponse<T> {
-  items: T[];
-  nextCursor?: string;
-  hasMore: boolean;
-  total?: number;
-}
-
 // ============================================================================
 // Platform Stats Types
 // ============================================================================
@@ -42,18 +35,4 @@ export interface PlatformStats {
     failed: number;
     avgAmount: number;
   };
-}
-
-export interface TypeStats {
-  type: 'daily' | 'weekly' | 'mega' | 'flash' | 'monthly';
-  count: number;
-  totalRevenue: number;
-  avgPoolSize: number;
-}
-
-export interface RevenueData {
-  period: string; // ISO date string
-  revenue: number;
-  raffleCount: number;
-  entryCount: number;
 }

@@ -106,17 +106,6 @@ export interface EnrichedRaffle {
   };
 }
 
-export interface RaffleStats {
-  raffleId: string;
-  totalEntries: number;
-  totalParticipants: number;
-  prizePool: number;
-  status: string;
-  displayStatus?: string;
-  entryPrice: number;
-  avgEntriesPerUser: number;
-}
-
 export interface ListRafflesParams {
   status?: RaffleStatus;
   type?: RaffleType;
@@ -130,25 +119,6 @@ export interface PaginatedRaffles {
   hasMore: boolean;
 }
 
-// ============================================================================
-// Participant Types
-// ============================================================================
-
-export interface Participant {
-  walletAddress: string;
-  numEntries: number;
-  totalPaid: number;
-  firstEntryAt: number;
-  lastEntryAt: number;
-  rank?: number;
-}
-
-export interface ParticipantList {
-  participants: Participant[];
-  totalParticipants: number;
-  nextCursor?: string;
-  hasMore: boolean;
-}
 
 // ============================================================================
 // Payout Types
@@ -169,19 +139,6 @@ export interface BatchPayoutResult {
   successful: number;
   failed: number;
   payouts: PayoutResult[];
-}
-
-export interface PayoutStatus {
-  raffleId: string;
-  totalWinners: number;
-  payoutsSummary: {
-    pending: number;
-    paid: number;
-    failed: number;
-    totalAmount: number;
-    paidAmount: number;
-  };
-  payouts: PayoutItem[];
 }
 
 export interface RefundResult {
