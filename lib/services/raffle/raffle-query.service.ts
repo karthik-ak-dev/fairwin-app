@@ -19,26 +19,15 @@ import type {
   EnrichedRaffle,
   ListRafflesParams,
   PaginatedRaffles,
-} from '../types';
+  DisplayStatus,
+} from './types';
 import { RaffleNotFoundError } from '../errors';
 import { decodeCursor } from '../shared/pagination.service';
 import { pagination, auth } from '@/lib/constants';
 
 // ============================================================================
-// Display Status Types & Computation
+// Display Status Computation
 // ============================================================================
-
-/**
- * Display status type - what users see in the UI
- *
- * - scheduled: Raffle created but not started yet
- * - active: Raffle accepting entries
- * - ending: Less than 5 minutes until endTime (urgency indicator)
- * - drawing: Backend selecting winners
- * - completed: Winners selected, payouts pending/processed
- * - cancelled: Raffle cancelled, refunds available
- */
-export type DisplayStatus = 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 
 /**
  * Compute display status from raffle data

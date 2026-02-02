@@ -6,7 +6,8 @@
 
 import { entryRepo } from '@/lib/db/repositories';
 import { raffleRepo } from '@/lib/db/repositories';
-import type { EnrichedEntry, EnrichedEntryList, PaginationParams } from '../types';
+import type { EnrichedEntry, EnrichedEntryList } from './types';
+import type { PaginationParams } from '../shared/types';
 import { validateWalletAddress } from '../shared/validation.service';
 import { CacheService } from '../shared/cache.service';
 import { encodeCursor, decodeCursor } from '../shared/pagination.service';

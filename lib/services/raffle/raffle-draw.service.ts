@@ -32,7 +32,7 @@ import { polygon, polygonAmoy } from 'viem/chains';
 import { raffleRepo, entryRepo, winnerRepo, userRepo, statsRepo } from '@/lib/db/repositories';
 import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
 import type { EntryItem } from '@/lib/db/models';
-import type { DrawInitiationResult } from '../types';
+import type { DrawInitiationResult, SelectedWinner, WinnerSelectionResult, PrizeTierConfig, Ticket } from './types';
 import { RaffleNotFoundError } from '../errors';
 import { validateRaffleDrawable } from './raffle-validation.service';
 import { env } from '@/lib/env';
@@ -69,36 +69,6 @@ class SeededRandom {
   nextInt(min: number, max: number): number {
     return Math.floor(this.next() * (max - min)) + min;
   }
-}
-
-export interface Ticket {
-  ticketNumber: number; // 0-indexed position in pool
-  walletAddress: string;
-  entryId: string;
-}
-
-export interface SelectedWinner {
-  walletAddress: string;
-  ticketNumber: number;
-  totalTickets: number;
-  prize: number; // In USDC smallest unit
-  tier: string;
-  position: number; // 1 = first, 2 = second, etc.
-}
-
-export interface WinnerSelectionResult {
-  winners: SelectedWinner[];
-  randomSeed: string;
-  totalTickets: number;
-  totalPrize: number;
-  blockNumber?: bigint;
-  blockHash?: string;
-}
-
-export interface PrizeTierConfig {
-  name: string;
-  percentage: number;
-  winnerCount: number;
 }
 
 // ============================================================================

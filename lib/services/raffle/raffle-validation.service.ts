@@ -12,7 +12,7 @@
 import type { RaffleItem } from '@/lib/db/models';
 import { RaffleStatus } from '@/lib/db/models';
 import { raffle as raffleConstants } from '@/lib/constants';
-import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
+import type { CreateRaffleParams, UpdateRaffleParams } from './types';
 import {
   InvalidRaffleConfigError,
   InvalidStatusTransitionError,

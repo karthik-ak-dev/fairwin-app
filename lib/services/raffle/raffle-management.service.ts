@@ -13,7 +13,7 @@
 import { raffleRepo, statsRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
 import { RaffleStatus } from '@/lib/db/models';
-import type { CreateRaffleParams, UpdateRaffleParams } from '../types';
+import type { CreateRaffleParams, UpdateRaffleParams } from './types';
 import { RaffleNotFoundError } from '../errors';
 import { raffle as raffleConstants } from '@/lib/constants';
 import { processRaffleCancellation } from './raffle-payout.service';

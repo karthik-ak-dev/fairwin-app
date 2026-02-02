@@ -7,7 +7,7 @@
 
 import { statsRepo } from '@/lib/db/repositories';
 import { RaffleStatus } from '@/lib/db/models';
-import type { PlatformStats } from '../types';
+import type { PlatformStats } from './types';
 import { listRaffles } from '../raffle/raffle-query.service';
 import { getPlatformPayoutBreakdown } from '../raffle/raffle-payout.service';
 

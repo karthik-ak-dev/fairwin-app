@@ -8,7 +8,7 @@ import { userRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import type { UserItem } from '@/lib/db/models';
-import type { UserSummary } from '../types';
+import type { UserSummary } from './types';
 import { UserNotFoundError } from '../errors';
 import { validateWalletAddress } from '../shared/validation.service';
 

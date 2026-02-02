@@ -25,23 +25,7 @@ import { winnerRepo, payoutRepo, entryRepo, userRepo } from '@/lib/db/repositori
 import { PayoutStatus, EntryStatus } from '@/lib/db/models';
 import { ERC20_ABI, getWalletClient, getUSDCAddress } from '@/lib/blockchain/client';
 import { env } from '@/lib/env';
-
-export interface PayoutResult {
-  winnerId: string;
-  walletAddress: string;
-  amount: number;
-  transactionHash: string;
-  status: PayoutStatus;
-  error?: string;
-}
-
-export interface BatchPayoutResult {
-  raffleId: string;
-  totalWinners: number;
-  successful: number;
-  failed: number;
-  payouts: PayoutResult[];
-}
+import type { PayoutResult, BatchPayoutResult, RefundResult, BatchRefundResult } from './types';
 
 /**
  * Send payout to a single winner
@@ -275,22 +259,6 @@ export async function getPlatformPayoutBreakdown() {
   };
 }
 
-export interface RefundResult {
-  entryId: string;
-  walletAddress: string;
-  amount: number;
-  transactionHash: string;
-  status: EntryStatus;
-  error?: string;
-}
-
-export interface BatchRefundResult {
-  raffleId: string;
-  totalEntries: number;
-  successful: number;
-  failed: number;
-  refunds: RefundResult[];
-}
 
 /**
  * Send refund for a single entry

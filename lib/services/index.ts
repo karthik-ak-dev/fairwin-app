@@ -24,5 +24,7 @@ export * from './shared/pagination.service';
 // Error types
 export * from './errors';
 
-// Types
-export * from './types';
+// Types - organized by domain
+export * from './raffle/types';
+export * from './user/types';
+export * from './shared/types';

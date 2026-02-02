@@ -18,7 +18,7 @@
 
 import { raffleRepo, entryRepo, userRepo, statsRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
-import type { CreateEntryParams, CreateEntryResult, ValidationResult } from '../types';
+import type { CreateEntryParams, CreateEntryResult, ValidationResult } from './types';
 import {
   RaffleNotFoundError,
   InvalidEntryError,
