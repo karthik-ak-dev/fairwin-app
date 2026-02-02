@@ -8,6 +8,7 @@ import { statsRepo } from '@/lib/db/repositories';
 import { raffleRepo } from '@/lib/db/repositories';
 import { payoutRepo } from '@/lib/db/repositories';
 import type { PlatformStats, TypeStats } from '../types';
+import { raffle } from '@/lib/constants';
 
 /**
  * Get comprehensive platform statistics
@@ -71,7 +72,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
  * Returns stats grouped by raffle type (daily, weekly, mega, flash, monthly)
  */
 export async function getRaffleTypeStats(): Promise<TypeStats[]> {
-  const types = ['daily', 'weekly', 'mega', 'flash', 'monthly'] as const;
+  const types = raffle.TYPES;
 
   const statsPromises = types.map(async (type) => {
     const rafflesResult = await raffleRepo.getByType(type);

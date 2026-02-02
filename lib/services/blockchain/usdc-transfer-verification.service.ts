@@ -18,7 +18,6 @@ import { createPublicClient, http, decodeFunctionData, type Address } from 'viem
 import { polygon, polygonAmoy } from 'viem/chains';
 import { env } from '@/lib/env';
 import { formatUSDC } from '@/shared/utils/format';
-import { isValidTransactionHash, patterns } from '@/lib/constants';
 
 // ERC20 Transfer ABI - only what we need
 const ERC20_TRANSFER_ABI = [
@@ -202,11 +201,4 @@ export async function isTransactionUsed(
 ): Promise<boolean> {
   const existing = await entryRepo.findByTransactionHash(transactionHash);
   return !!existing;
-}
-
-/**
- * Validate wallet address format
- */
-export function isValidAddress(address: string): boolean {
-  return patterns.WALLET_ADDRESS.test(address);
 }

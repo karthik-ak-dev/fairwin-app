@@ -15,9 +15,7 @@ import {
   InvalidStatusTransitionError,
   ValidationError,
 } from '../errors';
-
-const RAFFLE_TYPES = ['daily', 'weekly', 'mega', 'flash', 'monthly'] as const;
-const RAFFLE_STATUSES = ['scheduled', 'active', 'ending', 'drawing', 'completed', 'cancelled'] as const;
+import { patterns, errors, raffle } from '@/lib/constants';
 
 // Maximum platform fee percent (10% in our Web2 model)
 const MAX_PLATFORM_FEE_PERCENT = 10;
@@ -123,10 +121,10 @@ export function validateMaxEntriesPerUser(
  */
 export function validateRaffleConfig(config: CreateRaffleParams): void {
   // Validate type
-  if (!RAFFLE_TYPES.includes(config.type)) {
+  if (!(raffle.TYPES as readonly string[]).includes(config.type)) {
     throw new InvalidRaffleConfigError(
       'type',
-      `Must be one of: ${RAFFLE_TYPES.join(', ')}`
+      `Must be one of: ${raffle.TYPES.join(', ')}`
     );
   }
 
@@ -345,11 +343,8 @@ export function validateStatusTransition(
  * @throws ValidationError if address is invalid
  */
 export function validateWalletAddress(address: string): void {
-  // EVM address: 0x followed by 40 hex characters
-  const addressRegex = /^0x[a-fA-F0-9]{40}$/;
-
-  if (!addressRegex.test(address)) {
-    throw new ValidationError('walletAddress', 'Invalid Ethereum address format');
+  if (!patterns.WALLET_ADDRESS.test(address)) {
+    throw new ValidationError('walletAddress', errors.auth.INVALID_ADDRESS);
   }
 }
 
@@ -370,10 +365,7 @@ export function validatePositiveNumber(value: number, fieldName: string): void {
  * @throws ValidationError if hash is invalid
  */
 export function validateTransactionHash(hash: string): void {
-  // Polygon transaction hash: 0x followed by 64 hex characters
-  const txHashRegex = /^0x[a-fA-F0-9]{64}$/;
-
-  if (!txHashRegex.test(hash)) {
-    throw new ValidationError('transactionHash', 'Invalid transaction hash format');
+  if (!patterns.TRANSACTION_HASH.test(hash)) {
+    throw new ValidationError('transactionHash', errors.auth.INVALID_TX_HASH);
   }
 }
