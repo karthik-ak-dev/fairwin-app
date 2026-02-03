@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stake USDT (Updated) | MassiveHikeCoin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e1a;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #0099ff;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --error: #ff4444;
+            --warning: #ffaa00;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover { color: white; }
+        .wallet-connected { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(0,153,255,0.1); border: 1px solid rgba(0,153,255,0.3); border-radius: 8px; }
+        .wallet-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .wallet-address { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); }
+
+        /* PAGE HEADER */
+        .page-header { padding: 100px 0 40px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: white; }
+        .page-title { font-size: 48px; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+        .page-subtitle { font-size: 18px; color: var(--text-muted); }
+
+        /* MAIN CONTENT */
+        .stake-layout { display: grid; grid-template-columns: 1fr 400px; gap: 32px; }
+
+        /* STAKE FORM */
+        .stake-form-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 40px; }
+
+        .form-section { margin-bottom: 32px; }
+        .form-section:last-child { margin-bottom: 0; }
+
+        .form-label { font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; display: block; }
+
+        .amount-input-wrapper { position: relative; }
+        .amount-input { width: 100%; padding: 24px 120px 24px 24px; background: rgba(255,255,255,0.02); border: 2px solid var(--border); border-radius: 12px; color: white; font-size: 32px; font-weight: 700; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+        .amount-input:focus { outline: none; border-color: var(--accent); background: rgba(255,255,255,0.05); }
+        .amount-input::placeholder { color: var(--text-muted); }
+        .amount-currency { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); font-size: 18px; font-weight: 700; color: var(--text-muted); }
+
+        .amount-limits { font-size: 12px; color: var(--text-muted); margin-top: 8px; display: flex; justify-content: space-between; }
+
+        .amount-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+        .preset-btn { padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center; }
+        .preset-btn:hover { background: rgba(255,255,255,0.05); border-color: white; color: white; }
+        .preset-btn.active { background: rgba(0,153,255,0.1); border-color: var(--accent); color: var(--accent); }
+
+        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { font-size: 14px; color: var(--text-muted); }
+        .info-value { font-size: 16px; font-weight: 700; }
+        .info-value.accent { color: var(--accent); font-size: 20px; }
+
+        .info-box { background: rgba(0,153,255,0.05); border: 1px solid rgba(0,153,255,0.2); border-radius: 12px; padding: 16px; display: flex; gap: 12px; margin-top: 24px; }
+        .info-icon { font-size: 20px; flex-shrink: 0; }
+        .info-content { flex: 1; }
+        .info-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+        .info-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .warning-box { background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.3); border-radius: 12px; padding: 16px; display: flex; gap: 12px; margin-top: 24px; }
+        .warning-icon { font-size: 20px; flex-shrink: 0; }
+        .warning-content { flex: 1; }
+        .warning-title { font-size: 14px; font-weight: 700; color: var(--warning); margin-bottom: 4px; }
+        .warning-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .deposit-wallet-section { margin-top: 32px; padding: 24px; background: rgba(0,153,255,0.05); border: 1px solid rgba(0,153,255,0.2); border-radius: 12px; }
+        .deposit-wallet-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .deposit-wallet-address { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent); word-break: break-all; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; margin-bottom: 8px; }
+        .deposit-wallet-note { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+        .btn-stake { width: 100%; padding: 20px; background: var(--accent); color: black; font-weight: 800; font-size: 16px; border: none; border-radius: 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; margin-top: 32px; }
+        .btn-stake:hover { transform: scale(1.02); }
+        .btn-stake:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* SUMMARY CARD */
+        .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; position: sticky; top: 100px; }
+        .summary-title { font-size: 20px; font-weight: 800; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+
+        .summary-section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .summary-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+
+        .summary-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .summary-item:last-child { margin-bottom: 0; }
+        .summary-label { font-size: 13px; color: var(--text-muted); }
+        .summary-value { font-size: 16px; font-weight: 700; }
+        .summary-value.large { font-size: 32px; color: var(--accent); }
+
+        .earnings-projection { background: rgba(0,153,255,0.05); border: 1px solid rgba(0,153,255,0.2); border-radius: 12px; padding: 20px; text-align: center; }
+        .earnings-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .earnings-value { font-size: 40px; font-weight: 900; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+        .earnings-period { font-size: 13px; color: var(--text-muted); }
+
+        .existing-stakes { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .existing-stakes-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; }
+        .existing-stake-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+        .existing-stake-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .existing-stake-label { color: var(--text-muted); }
+        .existing-stake-value { font-weight: 700; }
+
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); margin-top: 80px; }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="#" class="logo">MASSIVE<span>HIKE</span></a>
+            <div class="nav-links">
+                <a href="#">Home</a>
+                <a href="#">Dashboard</a>
+                <a href="#">Referrals</a>
+                <div class="wallet-connected">
+                    <div class="wallet-dot"></div>
+                    <span class="wallet-address">0x742d...4a8e</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="#">Home</a>
+                <span>→</span>
+                <span>Stake</span>
+            </div>
+            <h1 class="page-title">Stake USDT</h1>
+            <p class="page-subtitle">Lock your USDT for 24 months and earn 8% monthly</p>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="stake-layout">
+                <!-- Left: Stake Form -->
+                <div class="stake-form-card">
+                    <div class="form-section">
+                        <label class="form-label">💰 Stake Amount</label>
+                        <div class="amount-input-wrapper">
+                            <input type="text" class="amount-input" placeholder="0.00" value="2500">
+                            <div class="amount-currency">USDT</div>
+                        </div>
+                        <div class="amount-limits">
+                            <span>Minimum: $50</span>
+                            <span>Maximum: $10,000 per stake</span>
+                        </div>
+                        <div class="amount-presets">
+                            <button class="preset-btn">$500</button>
+                            <button class="preset-btn active">$2,500</button>
+                            <button class="preset-btn">$5,000</button>
+                            <button class="preset-btn">$10,000</button>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label class="form-label">📊 Stake Details</label>
+                        <div class="info-row">
+                            <span class="info-label">Lock Period</span>
+                            <span class="info-value">24 Months</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Monthly Rate</span>
+                            <span class="info-value accent">8.0%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Daily Accumulation</span>
+                            <span class="info-value">$6.67 / day</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Monthly Withdrawal</span>
+                            <span class="info-value accent">$200.00</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Total Over 24 Months</span>
+                            <span class="info-value accent">$4,800.00</span>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-icon">💡</div>
+                        <div class="info-content">
+                            <div class="info-title">No Stake Limit</div>
+                            <div class="info-text">
+                                You can create unlimited stakes! Each stake is independent with its own 24-month timeline. Min $50, max $10,000 per stake.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <div class="warning-icon">⚠️</div>
+                        <div class="warning-content">
+                            <div class="warning-title">24-Month Lock Period</div>
+                            <div class="warning-text">
+                                Your principal ($2,500 USDT) will be locked for 24 months. You can withdraw accumulated rewards monthly, but principal is only available after the lock period ends.
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="deposit-wallet-section">
+                        <div class="deposit-wallet-label">🏦 Your Deposit Wallet (Where You Stake From)</div>
+                        <div class="deposit-wallet-address">0x742d35Cc6634C0532925a3b844Bc9e7595f4a8e</div>
+                        <div class="deposit-wallet-note">
+                            ⚠️ Rewards will be sent to a different wallet address when you withdraw monthly.
+                        </div>
+                    </div>
+
+                    <button class="btn-stake">Approve & Stake 2,500 USDT →</button>
+                </div>
+
+                <!-- Right: Summary -->
+                <div class="summary-card">
+                    <h3 class="summary-title">📈 Earnings Summary</h3>
+
+                    <div class="summary-section">
+                        <div class="summary-item">
+                            <span class="summary-label">Your Stake</span>
+                            <span class="summary-value">$2,500 USDT</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Duration</span>
+                            <span class="summary-value">24 Months</span>
+                        </div>
+                    </div>
+
+                    <div class="summary-section">
+                        <div class="earnings-projection">
+                            <div class="earnings-label">Monthly Earnings</div>
+                            <div class="earnings-value">$200</div>
+                            <div class="earnings-period">8% of $2,500</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-section">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Rewards (24mo)</span>
+                            <span class="summary-value large">$4,800</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Principal Returned</span>
+                            <span class="summary-value">$2,500</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Total After 24mo</span>
+                            <span class="summary-value accent">$7,300</span>
+                        </div>
+                    </div>
+
+                    <div class="summary-section">
+                        <div class="existing-stakes">
+                            <div class="existing-stakes-title">🎯 Your Existing Stakes</div>
+                            <div class="existing-stake-item">
+                                <span class="existing-stake-label">Stake #1</span>
+                                <span class="existing-stake-value">$5,000</span>
+                            </div>
+                            <div class="existing-stake-item">
+                                <span class="existing-stake-label">Stake #2</span>
+                                <span class="existing-stake-value">$7,000</span>
+                            </div>
+                            <div class="existing-stake-item">
+                                <span class="existing-stake-label">Stake #3</span>
+                                <span class="existing-stake-value">$300</span>
+                            </div>
+                            <div class="existing-stake-item" style="border-top: 2px solid var(--border); margin-top: 12px; padding-top: 12px; font-size: 14px;">
+                                <span class="existing-stake-label" style="color: white; font-weight: 700;">Current Total</span>
+                                <span class="existing-stake-value" style="color: var(--accent);">$12,300</span>
+                            </div>
+                            <div class="existing-stake-item" style="font-size: 14px;">
+                                <span class="existing-stake-label" style="color: white; font-weight: 700;">New Total (After This)</span>
+                                <span class="existing-stake-value" style="color: var(--accent);">$14,800</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">Docs</a>
+                <a href="#">Support</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 MassiveHikeCoin</div>
+        </div>
+    </footer>
+</body>
+</html>

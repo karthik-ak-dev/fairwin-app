@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw Rewards (Multiple Stakes) | MassiveHikeCoin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e1a;
+            --bg-card: rgba(255,255,255,0.03);
+            --accent: #0099ff;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --gold: #FFD700;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+        /* NAV */
+        .nav { padding: 18px 0; position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: rgba(10,14,26,0.95); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+        .nav .container { display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; text-decoration: none; color: var(--text); }
+        .logo span { color: var(--accent); }
+        .nav-links { display: flex; gap: 36px; align-items: center; }
+        .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; transition: color 0.2s; }
+        .nav-links a:hover { color: white; }
+        .wallet-connected { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(0,153,255,0.1); border: 1px solid rgba(0,153,255,0.3); border-radius: 8px; }
+        .wallet-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+        .wallet-address { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); }
+
+        /* PAGE HEADER */
+        .page-header { padding: 100px 0 40px; }
+        .breadcrumb { font-size: 13px; color: var(--text-muted); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color 0.2s; }
+        .breadcrumb a:hover { color: white; }
+        .page-title { font-size: 48px; font-weight: 900; letter-spacing: -1px; margin-bottom: 12px; }
+        .page-subtitle { font-size: 18px; color: var(--text-muted); }
+
+        /* MAIN CONTENT */
+        .withdrawal-layout { display: grid; grid-template-columns: 1fr 400px; gap: 32px; }
+
+        /* WITHDRAWAL CARD */
+        .withdrawal-card { background: linear-gradient(135deg, rgba(0,153,255,0.1) 0%, rgba(0,153,255,0.02) 100%); border: 1px solid rgba(0,153,255,0.3); border-radius: 20px; padding: 40px; }
+
+        .amount-display { text-align: center; margin-bottom: 40px; padding: 40px; background: rgba(0,0,0,0.5); border-radius: 16px; }
+        .amount-label { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .amount-value { font-size: 64px; font-weight: 900; color: var(--accent); line-height: 1; margin-bottom: 8px; }
+        .amount-usd { font-size: 16px; color: var(--text-muted); }
+
+        .breakdown-section { margin-bottom: 32px; }
+        .breakdown-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .breakdown-group { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .breakdown-group:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+        .breakdown-group-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+
+        .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .breakdown-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .breakdown-label { font-size: 13px; color: var(--text-muted); }
+        .breakdown-value { font-size: 16px; font-weight: 700; }
+        .breakdown-value.large { font-size: 24px; color: var(--accent); }
+
+        .breakdown-total { border-top: 2px solid var(--accent); margin-top: 16px; padding-top: 16px; }
+
+        .wallet-section { background: rgba(0,153,255,0.05); border: 1px solid rgba(0,153,255,0.2); border-radius: 12px; padding: 24px; margin-bottom: 32px; }
+        .wallet-section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .wallet-item { margin-bottom: 16px; }
+        .wallet-item:last-child { margin-bottom: 0; }
+        .wallet-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+        .wallet-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); word-break: break-all; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; }
+
+        .info-box { background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.3); border-radius: 12px; padding: 16px; display: flex; gap: 12px; margin-bottom: 32px; }
+        .info-icon { font-size: 20px; flex-shrink: 0; }
+        .info-content { flex: 1; }
+        .info-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+        .btn-withdraw { width: 100%; padding: 20px; background: var(--accent); color: black; font-weight: 800; font-size: 16px; border: none; border-radius: 12px; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: transform 0.2s; }
+        .btn-withdraw:hover { transform: scale(1.02); }
+
+        /* SUMMARY SIDEBAR */
+        .summary-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; position: sticky; top: 100px; }
+        .summary-title { font-size: 20px; font-weight: 800; margin-bottom: 24px; display: flex; align-items: center; gap: 8px; }
+
+        .stat-item { padding: 20px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 16px; text-align: center; }
+        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .stat-value { font-size: 28px; font-weight: 800; color: var(--accent); }
+        .stat-subtext { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        .history-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .history-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-size: 12px; color: var(--text-muted); }
+        .history-amount { font-size: 14px; font-weight: 700; color: var(--accent); }
+
+        /* FOOTER */
+        .footer { padding: 36px 0; border-top: 1px solid var(--border); margin-top: 80px; }
+        .footer .container { display: flex; justify-content: space-between; align-items: center; }
+        .footer-links { display: flex; gap: 32px; }
+        .footer-links a { color: var(--text-muted); text-decoration: none; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+        .footer-links a:hover { color: white; }
+        .footer-copy { font-size: 13px; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <div class="container">
+            <a href="#" class="logo">MASSIVE<span>HIKE</span></a>
+            <div class="nav-links">
+                <a href="#">Home</a>
+                <a href="#">Dashboard</a>
+                <a href="#">Referrals</a>
+                <div class="wallet-connected">
+                    <div class="wallet-dot"></div>
+                    <span class="wallet-address">0x742d...4a8e</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <div class="breadcrumb">
+                <a href="#">Dashboard</a>
+                <span>→</span>
+                <span>Withdraw</span>
+            </div>
+            <h1 class="page-title">Withdraw Rewards</h1>
+            <p class="page-subtitle">Claim your accumulated staking and referral rewards from all stakes</p>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            <div class="withdrawal-layout">
+                <!-- Left: Withdrawal Form -->
+                <div class="withdrawal-card">
+                    <div class="amount-display">
+                        <div class="amount-label">💰 Total Available to Withdraw</div>
+                        <div class="amount-value">$1,229</div>
+                        <div class="amount-usd">1,229 USDT on BSC</div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <h3 class="breakdown-title">📊 Detailed Breakdown</h3>
+
+                        <!-- Staking Rewards -->
+                        <div class="breakdown-group">
+                            <div class="breakdown-group-title">💎 Staking Rewards</div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Stake #1 ($5,000 • 14mo)</div>
+                                <div class="breakdown-value">$400.00</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Stake #2 ($7,000 • 8mo)</div>
+                                <div class="breakdown-value">$560.00</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Stake #3 ($300 • 1mo)</div>
+                                <div class="breakdown-value">$24.00</div>
+                            </div>
+                            <div class="breakdown-row" style="border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px;">
+                                <div class="breakdown-label" style="font-weight: 700; color: white;">Staking Subtotal</div>
+                                <div class="breakdown-value" style="color: var(--accent);">$984.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Referral Rewards -->
+                        <div class="breakdown-group">
+                            <div class="breakdown-group-title" style="color: #FFD700;">🤝 Referral Commissions</div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Level 1 (5 referrals)</div>
+                                <div class="breakdown-value">$150.00</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Level 2 (7 referrals)</div>
+                                <div class="breakdown-value">$65.00</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Level 3 (4 referrals)</div>
+                                <div class="breakdown-value">$24.00</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Level 4 (2 referrals)</div>
+                                <div class="breakdown-value">$4.50</div>
+                            </div>
+                            <div class="breakdown-row">
+                                <div class="breakdown-label">Level 5 (1 referral)</div>
+                                <div class="breakdown-value">$1.50</div>
+                            </div>
+                            <div class="breakdown-row" style="border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px;">
+                                <div class="breakdown-label" style="font-weight: 700; color: white;">Referral Subtotal</div>
+                                <div class="breakdown-value" style="color: #FFD700;">$245.00</div>
+                            </div>
+                        </div>
+
+                        <!-- Grand Total -->
+                        <div class="breakdown-total">
+                            <div class="breakdown-row">
+                                <div class="breakdown-label" style="font-size: 16px; font-weight: 700; color: white;">
+                                    💸 Total Withdrawal
+                                </div>
+                                <div class="breakdown-value large">$1,229.00</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="wallet-section">
+                        <div class="wallet-section-title">🔐 Wallet Configuration</div>
+                        <div class="wallet-item">
+                            <div class="wallet-label">💰 Deposit Wallet (Used for Staking)</div>
+                            <div class="wallet-value">0x742d35Cc6634C0532925a3b844Bc9e7595f4a8e</div>
+                        </div>
+                        <div class="wallet-item">
+                            <div class="wallet-label">💸 Withdrawal Wallet (Receives Rewards)</div>
+                            <div class="wallet-value">0x9b3f28a1c45e67f2d8a3b59c7e1f4d2a6b8c9d0e</div>
+                        </div>
+                    </div>
+
+                    <div class="info-box">
+                        <div class="info-icon">ℹ️</div>
+                        <div class="info-content">
+                            <div class="info-text">
+                                <strong>Important:</strong> This withdrawal combines rewards from all 3 active stakes plus referral earnings. Your rewards will be sent to your withdrawal wallet. Transaction fees will be paid from the operator wallet.
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-withdraw">Withdraw $1,229 USDT →</button>
+
+                    <div style="margin-top: 16px; text-align: center; font-size: 12px; color: var(--text-muted);">
+                        Next withdrawal available: March 1, 2026
+                    </div>
+                </div>
+
+                <!-- Right: Summary -->
+                <div class="summary-card">
+                    <h3 class="summary-title">📈 Your Stats</h3>
+
+                    <div class="stat-item">
+                        <div class="stat-label">Total Earned (All Stakes)</div>
+                        <div class="stat-value">$9,117</div>
+                        <div class="stat-subtext">Staking + Referrals</div>
+                    </div>
+
+                    <div class="stat-item">
+                        <div class="stat-label">Total Withdrawn</div>
+                        <div class="stat-value">$7,888</div>
+                        <div class="stat-subtext">12 transactions</div>
+                    </div>
+
+                    <div class="stat-item">
+                        <div class="stat-label">Active Stakes</div>
+                        <div class="stat-value">3</div>
+                        <div class="stat-subtext">Total: $12,300</div>
+                    </div>
+
+                    <div class="history-section">
+                        <h4 class="history-title">Recent Withdrawals</h4>
+                        <div class="history-item">
+                            <div class="history-date">Feb 1, 2026</div>
+                            <div class="history-amount">$1,150</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-date">Jan 1, 2026</div>
+                            <div class="history-amount">$1,088</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-date">Dec 1, 2025</div>
+                            <div class="history-amount">$1,025</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-date">Nov 1, 2025</div>
+                            <div class="history-amount">$962</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-date">Oct 1, 2025</div>
+                            <div class="history-amount">$960</div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-date">Sep 1, 2025</div>
+                            <div class="history-amount">$400</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="#">Contract</a>
+                <a href="#">Docs</a>
+                <a href="#">Support</a>
+                <a href="#">Twitter</a>
+            </div>
+            <div class="footer-copy">© 2026 MassiveHikeCoin</div>
+        </div>
+    </footer>
+</body>
+</html>
