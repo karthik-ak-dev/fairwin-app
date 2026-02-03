@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operator Wallet - FairWin Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #111111;
+            --bg-sidebar: #0d0d0d;
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --success: #00ff88;
+            --warning: #ffa500;
+            --danger: #ff4444;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; display: flex; min-height: 100vh; }
+        
+        /* SIDEBAR */
+        .sidebar { width: 240px; background: var(--bg-sidebar); border-right: 1px solid var(--border); padding: 24px 0; position: fixed; top: 0; left: 0; bottom: 0; }
+        .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .sidebar-logo h1 { font-size: 20px; font-weight: 800; }
+        .sidebar-logo h1 span { color: var(--accent); }
+        .sidebar-logo .badge { font-size: 10px; color: var(--accent); background: rgba(0,255,136,0.1); padding: 4px 8px; border-radius: 4px; margin-left: 8px; }
+        .nav-section { margin-bottom: 24px; }
+        .nav-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 24px; margin-bottom: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+        .nav-item.active { color: var(--accent); background: rgba(0,255,136,0.08); border-right: 2px solid var(--accent); }
+        .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        
+        /* MAIN */
+        .main { flex: 1; margin-left: 240px; padding: 32px; }
+        
+        /* HEADER */
+        .header { margin-bottom: 32px; }
+        .header h1 { font-size: 28px; font-weight: 800; }
+        
+        /* WALLET CARD */
+        .wallet-card {
+            background: linear-gradient(135deg, rgba(0,255,136,0.1) 0%, var(--bg-card) 100%);
+            border: 1px solid rgba(0,255,136,0.2);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+        }
+        .wallet-label { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; }
+        .wallet-address {
+            font-size: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .copy-btn {
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .copy-btn:hover { background: rgba(255,255,255,0.15); color: white; }
+        
+        .wallet-balances { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+        .balance-item { }
+        .balance-label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+        .balance-value { font-size: 32px; font-weight: 800; }
+        .balance-value.accent { color: var(--accent); }
+        .balance-usd { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+        
+        /* TWO COL */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+        
+        /* CARD */
+        .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; }
+        .card-title { font-size: 16px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        /* FORM */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; }
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        .form-input:focus { outline: none; border-color: var(--accent); }
+        .btn { width: 100%; padding: 14px; font-size: 14px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; margin-top: 8px; }
+        .btn-primary { background: var(--accent); color: black; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        
+        /* ALERT */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+        .alert.success { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.2); }
+        .alert.warning { background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.2); }
+        .alert-icon { font-size: 20px; }
+        .alert-content { flex: 1; }
+        .alert-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+        .alert-title.warning { color: var(--warning); }
+        .alert-desc { font-size: 13px; color: var(--text-muted); }
+        
+        /* TABLE */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { text-align: left; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .table td { padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .table tr:last-child td { border: none; }
+        .tx-type { display: flex; align-items: center; gap: 8px; }
+        .tx-icon { font-size: 16px; }
+        .amount-in { color: var(--success); }
+        .amount-out { color: var(--danger); }
+        .tx-hash { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); text-decoration: none; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h1>FAIR<span>WIN</span> <span class="badge">Admin</span></h1>
+        </div>
+        <nav>
+            <div class="nav-section">
+                <div class="nav-label">Overview</div>
+                <a href="01-dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Raffles</div>
+                <a href="02-raffles.html" class="nav-item"><span class="nav-icon">🎟️</span> All Raffles</a>
+                <a href="03-create-raffle.html" class="nav-item"><span class="nav-icon">➕</span> Create Raffle</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Finance</div>
+                <a href="05-winners-payouts.html" class="nav-item"><span class="nav-icon">🏆</span> Winners & Payouts</a>
+                <a href="06-operator-wallet.html" class="nav-item active"><span class="nav-icon">💰</span> Operator Wallet</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a href="07-settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <h1>💰 Operator Wallet</h1>
+        </header>
+
+        <div class="wallet-card">
+            <div class="wallet-label">Operator Address</div>
+            <div class="wallet-address">
+                0x1234567890abcdef1234567890abcdef12345678
+                <button class="copy-btn">📋 Copy</button>
+                <a href="#" class="copy-btn">↗ Polygonscan</a>
+            </div>
+            <div class="wallet-balances">
+                <div class="balance-item">
+                    <div class="balance-label">MATIC (Gas)</div>
+                    <div class="balance-value">142.5</div>
+                    <div class="balance-usd">≈ $128.25</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">USDC (Revenue)</div>
+                    <div class="balance-value accent">$23,450</div>
+                    <div class="balance-usd">Protocol fees collected</div>
+                </div>
+                <div class="balance-item">
+                    <div class="balance-label">LINK (VRF)</div>
+                    <div class="balance-value">48.2</div>
+                    <div class="balance-usd">≈ $675.80</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert success">
+            <span class="alert-icon">✅</span>
+            <div class="alert-content">
+                <div class="alert-title">All balances healthy</div>
+                <div class="alert-desc">Gas and VRF funds sufficient for normal operations.</div>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-title">📤 Withdraw Revenue</div>
+                <div class="form-group">
+                    <label class="form-label">Amount (USDC)</label>
+                    <input type="number" class="form-input" placeholder="0.00" value="10000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Destination Address</label>
+                    <input type="text" class="form-input" placeholder="0x...">
+                </div>
+                <button class="btn btn-primary">Withdraw USDC</button>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center;">Available: $23,450 USDC</p>
+            </div>
+
+            <div class="card">
+                <div class="card-title">⛽ Fund Gas</div>
+                <div class="form-group">
+                    <label class="form-label">Amount (MATIC)</label>
+                    <input type="number" class="form-input" placeholder="0.00" value="50">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Source</label>
+                    <input type="text" class="form-input" placeholder="Connect external wallet" disabled>
+                </div>
+                <button class="btn btn-outline">Connect Wallet to Fund</button>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px; text-align: center;">Current: 142.5 MATIC</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📜 Recent Transactions</div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Time</th>
+                        <th>Transaction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">📥</span> VRF Fee Received</div></td>
+                        <td class="amount-in">+$148.00 (10%)</td>
+                        <td>2h ago</td>
+                        <td><a href="#" class="tx-hash">0xabc1...def2 ↗</a></td>
+                    </tr>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">⛽</span> Gas Used (VRF)</div></td>
+                        <td class="amount-out">-0.024 MATIC</td>
+                        <td>2h ago</td>
+                        <td><a href="#" class="tx-hash">0x789a...bc12 ↗</a></td>
+                    </tr>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">📥</span> VRF Fee Received</div></td>
+                        <td class="amount-in">+$89.00 (10%)</td>
+                        <td>6h ago</td>
+                        <td><a href="#" class="tx-hash">0xfed9...87ba ↗</a></td>
+                    </tr>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">⛽</span> Gas Used (VRF)</div></td>
+                        <td class="amount-out">-0.018 MATIC</td>
+                        <td>6h ago</td>
+                        <td><a href="#" class="tx-hash">0x123d...ef45 ↗</a></td>
+                    </tr>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">📥</span> VRF Fee Received</div></td>
+                        <td class="amount-in">+$1,488.00 (10%)</td>
+                        <td>1d ago</td>
+                        <td><a href="#" class="tx-hash">0x456a...bc78 ↗</a></td>
+                    </tr>
+                    <tr>
+                        <td><div class="tx-type"><span class="tx-icon">📤</span> Withdrawal</div></td>
+                        <td class="amount-out">-$15,000 USDC</td>
+                        <td>3d ago</td>
+                        <td><a href="#" class="tx-hash">0x789d...ef01 ↗</a></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

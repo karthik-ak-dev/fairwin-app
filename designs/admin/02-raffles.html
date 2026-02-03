@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raffles - FairWin Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: #111111;
+            --bg-sidebar: #0d0d0d;
+            --accent: #00ff88;
+            --text: #ffffff;
+            --text-muted: #888888;
+            --border: rgba(255,255,255,0.08);
+            --success: #00ff88;
+            --warning: #ffa500;
+            --danger: #ff4444;
+        }
+        body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; display: flex; min-height: 100vh; }
+        
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px;
+            background: var(--bg-sidebar);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+        }
+        .sidebar-logo { padding: 0 24px 24px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+        .sidebar-logo h1 { font-size: 20px; font-weight: 800; }
+        .sidebar-logo h1 span { color: var(--accent); }
+        .sidebar-logo .badge { font-size: 10px; color: var(--accent); background: rgba(0,255,136,0.1); padding: 4px 8px; border-radius: 4px; margin-left: 8px; }
+        .nav-section { margin-bottom: 24px; }
+        .nav-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 24px; margin-bottom: 8px; }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 24px; color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; }
+        .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+        .nav-item.active { color: var(--accent); background: rgba(0,255,136,0.08); border-right: 2px solid var(--accent); }
+        .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        
+        /* MAIN */
+        .main { flex: 1; margin-left: 240px; padding: 32px; }
+        
+        /* HEADER */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .header h1 { font-size: 28px; font-weight: 800; }
+        .btn-primary { padding: 12px 20px; background: var(--accent); color: black; font-weight: 600; font-size: 13px; border: none; border-radius: 8px; cursor: pointer; }
+        
+        /* FILTERS */
+        .filters { display: flex; gap: 12px; margin-bottom: 24px; }
+        .filter-btn {
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .filter-btn.active { background: var(--accent); border-color: var(--accent); color: black; }
+        .filter-btn .count { margin-left: 6px; opacity: 0.7; }
+        
+        .search-box {
+            margin-left: auto;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 13px;
+            width: 240px;
+        }
+        .search-box::placeholder { color: var(--text-muted); }
+        
+        /* TABLE CARD */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        /* TABLE */
+        .table { width: 100%; border-collapse: collapse; }
+        .table th { text-align: left; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+        .table td { padding: 18px 20px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        .table tr:last-child td { border: none; }
+        .table tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .raffle-name { font-weight: 600; }
+        .raffle-id { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .badge.active { background: rgba(0,255,136,0.15); color: var(--success); }
+        .badge.ending { background: rgba(255,165,0,0.15); color: var(--warning); }
+        .badge.drawing { background: rgba(59,130,246,0.15); color: #3b82f6; }
+        .badge.ended { background: rgba(255,255,255,0.1); color: var(--text-muted); }
+        .badge.scheduled { background: rgba(168,85,247,0.15); color: #a855f7; }
+        
+        .pool-value { font-weight: 700; color: var(--accent); }
+        .time-value { color: var(--text-muted); }
+        .time-value.urgent { color: var(--warning); font-weight: 600; }
+        
+        .action-btn {
+            padding: 8px 14px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+        .action-btn:hover { background: rgba(255,255,255,0.05); color: white; }
+        .action-btn.primary { background: var(--accent); border-color: var(--accent); color: black; }
+        
+        /* PAGINATION */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
+        }
+        .pagination-info { font-size: 13px; color: var(--text-muted); }
+        .pagination-btns { display: flex; gap: 8px; }
+        .page-btn {
+            padding: 8px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .page-btn:hover { background: rgba(255,255,255,0.05); }
+        .page-btn.active { background: var(--accent); border-color: var(--accent); color: black; }
+    </style>
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <h1>FAIR<span>WIN</span> <span class="badge">Admin</span></h1>
+        </div>
+        <nav>
+            <div class="nav-section">
+                <div class="nav-label">Overview</div>
+                <a href="01-dashboard.html" class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Raffles</div>
+                <a href="02-raffles.html" class="nav-item active"><span class="nav-icon">🎟️</span> All Raffles</a>
+                <a href="03-create-raffle.html" class="nav-item"><span class="nav-icon">➕</span> Create Raffle</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">Finance</div>
+                <a href="05-winners-payouts.html" class="nav-item"><span class="nav-icon">🏆</span> Winners & Payouts</a>
+                <a href="06-operator-wallet.html" class="nav-item"><span class="nav-icon">💰</span> Operator Wallet</a>
+            </div>
+            <div class="nav-section">
+                <div class="nav-label">System</div>
+                <a href="07-settings.html" class="nav-item"><span class="nav-icon">⚙️</span> Settings</a>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main">
+        <header class="header">
+            <h1>🎟️ Raffles</h1>
+            <a href="03-create-raffle.html"><button class="btn-primary">+ Create Raffle</button></a>
+        </header>
+
+        <div class="filters">
+            <button class="filter-btn active">All <span class="count">24</span></button>
+            <button class="filter-btn">Active <span class="count">6</span></button>
+            <button class="filter-btn">Ending Soon <span class="count">2</span></button>
+            <button class="filter-btn">Drawing <span class="count">0</span></button>
+            <button class="filter-btn">Ended <span class="count">16</span></button>
+            <button class="filter-btn">Scheduled <span class="count">0</span></button>
+            <input type="text" class="search-box" placeholder="🔍 Search raffles...">
+        </div>
+
+        <div class="card">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Raffle</th>
+                        <th>Status</th>
+                        <th>Pool</th>
+                        <th>Entries</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Daily Raffle</div>
+                            <div class="raffle-id">#1848</div>
+                        </td>
+                        <td><span class="badge active">Active</span></td>
+                        <td class="pool-value">$2,475</td>
+                        <td>852</td>
+                        <td class="time-value">5h 42m left</td>
+                        <td>
+                            <a href="04-raffle-detail.html"><button class="action-btn">View</button></a>
+                            <button class="action-btn">Edit</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Weekly Raffle</div>
+                            <div class="raffle-id">#43</div>
+                        </td>
+                        <td><span class="badge ending">Ending</span></td>
+                        <td class="pool-value">$14,920</td>
+                        <td>2,384</td>
+                        <td class="time-value urgent">38m left</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn primary">Trigger Draw</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Mega Raffle</div>
+                            <div class="raffle-id">#8</div>
+                        </td>
+                        <td><span class="badge active">Active</span></td>
+                        <td class="pool-value">$48,500</td>
+                        <td>4,620</td>
+                        <td class="time-value">17d 22h left</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn">Edit</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Flash Raffle</div>
+                            <div class="raffle-id">#894</div>
+                        </td>
+                        <td><span class="badge active">Active</span></td>
+                        <td class="pool-value">$920</td>
+                        <td>184</td>
+                        <td class="time-value">1h 12m left</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn">Edit</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Daily Raffle</div>
+                            <div class="raffle-id">#1847</div>
+                        </td>
+                        <td><span class="badge ended">Ended</span></td>
+                        <td class="pool-value">$2,462</td>
+                        <td>847</td>
+                        <td class="time-value">2h ago</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn">Results</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Flash Raffle</div>
+                            <div class="raffle-id">#893</div>
+                        </td>
+                        <td><span class="badge ended">Ended</span></td>
+                        <td class="pool-value">$989</td>
+                        <td>198</td>
+                        <td class="time-value">6h ago</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn">Results</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="raffle-name">Weekly Raffle</div>
+                            <div class="raffle-id">#42</div>
+                        </td>
+                        <td><span class="badge ended">Ended</span></td>
+                        <td class="pool-value">$14,880</td>
+                        <td>2,343</td>
+                        <td class="time-value">1d ago</td>
+                        <td>
+                            <button class="action-btn">View</button>
+                            <button class="action-btn">Results</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="pagination">
+                <div class="pagination-info">Showing 1-7 of 24 raffles</div>
+                <div class="pagination-btns">
+                    <button class="page-btn">← Prev</button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn">4</button>
+                    <button class="page-btn">Next →</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
