@@ -10,6 +10,9 @@ export * as authChallenge from './auth/challenge.service';
 export * as authJwt from './auth/jwt.service';
 export * as authSignature from './auth/signature.service';
 
+// Admin services
+export * as adminDashboard from './admin/dashboard-stats.service';
+
 // Raffle services
 export * as raffleEntry from './raffle/raffle-entry.service';
 export * as raffleDraw from './raffle/raffle-draw.service';
@@ -30,6 +33,7 @@ export * from './errors';
 
 // Types - organized by domain
 export * from './auth/types';
+export * from './admin/types';
 export * from './raffle/types';
 export * from './user/types';
 export * from './shared/types';

@@ -172,4 +172,38 @@ export class EntryRepository {
       entryIds.map(entryId => this.updateStatus(entryId, status))
     );
   }
+
+  /**
+   * Get all entries created since a specific timestamp
+   * Uses DynamoDB Scan with FilterExpression and auto-pagination
+   *
+   * @param sinceTimestamp - ISO 8601 timestamp (e.g., "2025-01-30T00:00:00.000Z")
+   * @returns Array of entries created on or after the given timestamp
+   */
+  async getEntriesSince(sinceTimestamp: string): Promise<EntryItem[]> {
+    const allItems: EntryItem[] = [];
+    let lastEvaluatedKey: Record<string, any> | undefined;
+
+    do {
+      const { Items, LastEvaluatedKey } = await db.send(new ScanCommand({
+        TableName: TABLE.ENTRIES,
+        FilterExpression: '#createdAt >= :sinceTimestamp',
+        ExpressionAttributeNames: {
+          '#createdAt': 'createdAt'
+        },
+        ExpressionAttributeValues: {
+          ':sinceTimestamp': sinceTimestamp
+        },
+        ...(lastEvaluatedKey && { ExclusiveStartKey: lastEvaluatedKey }),
+      }));
+
+      if (Items && Items.length > 0) {
+        allItems.push(...(Items as EntryItem[]));
+      }
+
+      lastEvaluatedKey = LastEvaluatedKey;
+    } while (lastEvaluatedKey);
+
+    return allItems;
+  }
 }

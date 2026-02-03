@@ -52,7 +52,7 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
 
   // Drawing state
   if (raffle.status === RaffleStatus.DRAWING) {
-    return 'drawing';
+    return RaffleStatus.DRAWING;
   }
 
   const now = Date.now();
@@ -61,13 +61,13 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
 
   // Before start time → show as scheduled
   if (now < startTime) {
-    return 'scheduled';
+    return RaffleStatus.SCHEDULED;
   }
 
   // Less than 5 minutes until end → show urgency
   const ENDING_THRESHOLD = auth.CHALLENGE_EXPIRATION_MS; // 5 minutes in milliseconds
   if (raffle.status === RaffleStatus.ACTIVE && endTime - now <= ENDING_THRESHOLD && now < endTime) {
-    return 'ending';
+    return RaffleStatus.ENDING;
   }
 
   // Otherwise, display status matches base status
