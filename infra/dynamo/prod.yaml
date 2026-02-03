@@ -6,9 +6,9 @@ Description: >
 Parameters:
   Environment:
     Type: String
-    Default: Prod
+    Default: prod
     AllowedValues:
-      - Prod
+      - prod
     Description: Environment name
 
 Resources:
@@ -18,6 +18,9 @@ Resources:
 
   # Users Table - Shared across all games
   # Primary Key: walletAddress (HASH)
+  #
+  # Stores aggregate user statistics across ALL games on the platform.
+  # No GSIs needed - only accessed by wallet address (primary key).
   # ===========================================
   UsersTable:
     Type: AWS::DynamoDB::Table
@@ -52,7 +55,10 @@ Resources:
   # ===========================================
   # PlatformStats Table - Shared across all games
   # Primary Key: statId (HASH)
-  # Single-record table for global stats
+  #
+  # Singleton table - only one record with statId='global'
+  # Stores platform-wide aggregate statistics across all games.
+  # No GSIs needed - single record accessed by statId='global'.
   # ===========================================
   PlatformStatsTable:
     Type: AWS::DynamoDB::Table
@@ -81,6 +87,8 @@ Resources:
           Value: CloudFormation
         - Key: TableType
           Value: Shared
+        - Key: CriticalData
+          Value: 'true'
 
   # ===========================================
   # RAFFLE GAME TABLES
@@ -90,6 +98,14 @@ Resources:
   # Primary Key: raffleId (HASH)
   # GSI1: status-endTime-index (status as HASH, endTime as RANGE)
   # GSI2: type-createdAt-index (type as HASH, createdAt as RANGE)
+  #
+  # Access Patterns:
+  # 1. Get raffle by ID → Primary key query
+  # 2. Get raffles by status (active, scheduled, completed, etc.) → GSI1
+  # 3. Get raffles by type (daily, weekly, monthly, flash, mega) → GSI2
+  #
+  # The endTime range on GSI1 allows sorting by draw time (useful for "ending soon" lists)
+  # The createdAt range on GSI2 allows chronological sorting (newest first)
   # ===========================================
   RaffleRafflesTable:
     Type: AWS::DynamoDB::Table
@@ -151,6 +167,15 @@ Resources:
   # Primary Key: entryId (HASH)
   # GSI1: raffleId-createdAt-index (raffleId as HASH, createdAt as RANGE)
   # GSI2: walletAddress-createdAt-index (walletAddress as HASH, createdAt as RANGE)
+  #
+  # Access Patterns:
+  # 1. Get entry by ID → Primary key query
+  # 2. Get all entries for a raffle → GSI1 (for winner selection, refunds, participant list)
+  # 3. Get all entries by a user → GSI2 (for user entry history)
+  #
+  # GSI1 is critical for winner selection (need all entries for a raffle)
+  # GSI2 enables user profile showing their entry history across all raffles
+  # CreatedAt as range key allows chronological ordering (most recent first)
   # ===========================================
   RaffleEntriesTable:
     Type: AWS::DynamoDB::Table
@@ -210,6 +235,19 @@ Resources:
   # Primary Key: winnerId (HASH)
   # GSI1: raffleId-createdAt-index (raffleId as HASH, createdAt as RANGE)
   # GSI2: walletAddress-createdAt-index (walletAddress as HASH, createdAt as RANGE)
+  #
+  # Access Patterns:
+  # 1. Get winner by ID → Primary key query
+  # 2. Get all winners for a raffle → GSI1 (for displaying raffle results)
+  # 3. Get all wins by a user → GSI2 (for user win history, profile)
+  #
+  # Payout information is stored directly in winner records:
+  # - payoutStatus (pending, processing, paid, failed)
+  # - payoutTransactionHash (transaction hash when paid)
+  # - payoutProcessedAt (timestamp when paid)
+  # - payoutError (error message if failed)
+  #
+  # No separate Payouts table needed - simplified architecture.
   # ===========================================
   RaffleWinnersTable:
     Type: AWS::DynamoDB::Table
@@ -264,94 +302,37 @@ Resources:
         - Key: CriticalData
           Value: 'true'
 
-  # ===========================================
-  # Raffle-Payouts Table
-  # Primary Key: payoutId (HASH)
-  # GSI1: winnerId-createdAt-index (winnerId as HASH, createdAt as RANGE)
-  # GSI2: status-createdAt-index (status as HASH, createdAt as RANGE)
-  # ===========================================
-  RafflePayoutsTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      TableName: !Sub 'FairWin-${Environment}-Raffle-Payouts'
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: payoutId
-          AttributeType: S
-        - AttributeName: winnerId
-          AttributeType: S
-        - AttributeName: status
-          AttributeType: S
-        - AttributeName: createdAt
-          AttributeType: S
-      KeySchema:
-        - AttributeName: payoutId
-          KeyType: HASH
-      GlobalSecondaryIndexes:
-        - IndexName: winnerId-createdAt-index
-          KeySchema:
-            - AttributeName: winnerId
-              KeyType: HASH
-            - AttributeName: createdAt
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-        - IndexName: status-createdAt-index
-          KeySchema:
-            - AttributeName: status
-              KeyType: HASH
-            - AttributeName: createdAt
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Project
-          Value: FairWin
-        - Key: ManagedBy
-          Value: CloudFormation
-        - Key: GameType
-          Value: Raffle
-        - Key: CriticalData
-          Value: 'true'
-
 Outputs:
-  # Shared Tables
+  # ===== SHARED TABLES =====
+
   UsersTableName:
-    Description: Users table name (Shared)
+    Description: Users table name (Shared across all games)
     Value: !Ref UsersTable
     Export:
       Name: !Sub '${Environment}-UsersTableName'
 
   UsersTableArn:
-    Description: Users table ARN (Shared)
+    Description: Users table ARN
     Value: !GetAtt UsersTable.Arn
     Export:
       Name: !Sub '${Environment}-UsersTableArn'
 
   PlatformStatsTableName:
-    Description: PlatformStats table name (Shared)
+    Description: PlatformStats table name (Shared across all games)
     Value: !Ref PlatformStatsTable
     Export:
       Name: !Sub '${Environment}-PlatformStatsTableName'
 
   PlatformStatsTableArn:
-    Description: PlatformStats table ARN (Shared)
+    Description: PlatformStats table ARN
     Value: !GetAtt PlatformStatsTable.Arn
     Export:
       Name: !Sub '${Environment}-PlatformStatsTableArn'
 
-  # Raffle Game Tables
+  # ===== RAFFLE GAME TABLES =====
+
   RaffleRafflesTableName:
-    Description: Raffle-Raffles table name
+    Description: Raffle-Raffles table name (stores raffle configurations and state)
     Value: !Ref RaffleRafflesTable
     Export:
       Name: !Sub '${Environment}-RaffleRafflesTableName'
@@ -363,7 +344,7 @@ Outputs:
       Name: !Sub '${Environment}-RaffleRafflesTableArn'
 
   RaffleEntriesTableName:
-    Description: Raffle-Entries table name
+    Description: Raffle-Entries table name (stores user raffle entries/tickets)
     Value: !Ref RaffleEntriesTable
     Export:
       Name: !Sub '${Environment}-RaffleEntriesTableName'
@@ -375,7 +356,7 @@ Outputs:
       Name: !Sub '${Environment}-RaffleEntriesTableArn'
 
   RaffleWinnersTableName:
-    Description: Raffle-Winners table name
+    Description: Raffle-Winners table name (stores winners and payout information)
     Value: !Ref RaffleWinnersTable
     Export:
       Name: !Sub '${Environment}-RaffleWinnersTableName'
@@ -385,15 +366,3 @@ Outputs:
     Value: !GetAtt RaffleWinnersTable.Arn
     Export:
       Name: !Sub '${Environment}-RaffleWinnersTableArn'
-
-  RafflePayoutsTableName:
-    Description: Raffle-Payouts table name
-    Value: !Ref RafflePayoutsTable
-    Export:
-      Name: !Sub '${Environment}-RafflePayoutsTableName'
-
-  RafflePayoutsTableArn:
-    Description: Raffle-Payouts table ARN
-    Value: !GetAtt RafflePayoutsTable.Arn
-    Export:
-      Name: !Sub '${Environment}-RafflePayoutsTableArn'
