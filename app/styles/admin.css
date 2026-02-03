@@ -158,15 +158,44 @@ html,
   border-radius: 50%;
 }
 
-.btn-primary {
+.btn {
   padding: 12px 20px;
-  background: var(--admin-accent);
-  color: black;
-  font-weight: 600;
   font-size: 13px;
+  font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: var(--admin-accent);
+  color: black;
+}
+
+.btn-primary:hover {
+  background: #00dd77;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text-muted);
+}
+
+.btn-secondary:hover {
+  border-color: var(--admin-text-muted);
+  color: var(--admin-text);
+}
+
+.btn-danger {
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid var(--admin-danger);
+  color: var(--admin-danger);
+}
+
+.btn-danger:hover {
+  background: rgba(255, 68, 68, 0.25);
 }
 
 /* STATS GRID */
@@ -234,6 +263,7 @@ html,
   border: 1px solid var(--admin-border);
   border-radius: 12px;
   padding: 24px;
+  margin-bottom: 24px;
 }
 
 .card-header {
@@ -758,5 +788,334 @@ html,
   .table td {
     padding: 10px 6px;
     font-size: 12px;
+  }
+}
+
+/* ============================================================================
+   RAFFLE DETAIL PAGE STYLES
+   ============================================================================ */
+
+/* Status Badge */
+.status-badge {
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.active {
+  background: rgba(0, 255, 136, 0.15);
+  color: var(--admin-success);
+}
+
+.status-badge.ending {
+  background: rgba(255, 165, 0, 0.15);
+  color: var(--admin-warning);
+}
+
+.status-badge.drawing {
+  background: rgba(100, 100, 255, 0.15);
+  color: #6666ff;
+}
+
+.status-badge.ended {
+  background: rgba(136, 136, 136, 0.15);
+  color: var(--admin-text-muted);
+}
+
+.status-badge.scheduled {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--admin-text-muted);
+}
+
+/* Header Back Link */
+.header-back {
+  color: var(--admin-text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+}
+
+.header-back:hover {
+  color: var(--admin-text);
+}
+
+/* Header Top */
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.header-top h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Stats Row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--admin-bg-card);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.stat-card.highlight {
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--admin-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.stat-value.accent {
+  color: var(--admin-accent);
+}
+
+/* Two Column Layout */
+.two-col {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 24px;
+}
+
+/* Entry Distribution Grid */
+.distribution-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  text-align: center;
+}
+
+.distribution-item {
+  background: var(--admin-bg);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.distribution-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.distribution-label {
+  font-size: 11px;
+  color: var(--admin-text-muted);
+}
+
+/* Prize Tiers */
+.prize-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.prize-tier {
+  background: var(--admin-bg);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.prize-tier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.prize-tier-name {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.prize-tier-percentage {
+  font-size: 12px;
+  color: var(--admin-text-muted);
+}
+
+.prize-tier-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prize-tier-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.prize-tier-detail-label {
+  color: var(--admin-text-muted);
+}
+
+.prize-tier-detail-value {
+  font-weight: 600;
+}
+
+.prize-tier-detail-value.accent {
+  color: var(--admin-accent);
+}
+
+/* Countdown Card */
+.countdown-card {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, var(--admin-bg-card) 100%);
+  border-color: rgba(0, 255, 136, 0.2);
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.countdown-label {
+  font-size: 12px;
+  color: var(--admin-accent);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 16px;
+}
+
+.countdown-display {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--admin-text);
+  line-height: 1.2;
+}
+
+/* Info Rows */
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.info-row:last-child {
+  border: none;
+}
+
+.info-label {
+  font-size: 13px;
+  color: var(--admin-text-muted);
+}
+
+.info-value {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.info-value.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+
+.info-value a {
+  color: var(--admin-accent);
+  text-decoration: none;
+}
+
+/* Action Box */
+.action-box {
+  background: rgba(255, 165, 0, 0.08);
+  border: 1px solid var(--admin-warning);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 24px;
+}
+
+.action-box-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--admin-warning);
+  margin-bottom: 8px;
+}
+
+.action-box-desc {
+  font-size: 13px;
+  color: var(--admin-text-muted);
+  margin-bottom: 16px;
+}
+
+.btn-warning {
+  background: var(--admin-warning);
+  color: black;
+}
+
+/* Responsive - Raffle Detail */
+@media (max-width: 1024px) {
+  .stats-row {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .distribution-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header-top {
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .distribution-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-value {
+    font-size: 20px;
   }
 }

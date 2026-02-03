@@ -14,7 +14,7 @@ import { raffleRepo } from '@/lib/db/repositories';
 import { entryRepo } from '@/lib/db/repositories';
 import { winnerRepo } from '@/lib/db/repositories';
 import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
-import type { RaffleItem } from '@/lib/db/models';
+import type { RaffleItem, EntryItem } from '@/lib/db/models';
 import type {
   EnrichedRaffle,
   ListRafflesParams,
@@ -79,6 +79,57 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
 // ============================================================================
 
 /**
+ * Calculate entry distribution showing how users are distributed by entry count
+ * Returns a histogram of users per entry count range
+ */
+async function calculateEntryDistribution(raffleId: string) {
+  // Get all entries for this raffle (paginate through all)
+  const allEntries: EntryItem[] = [];
+  let lastKey;
+
+  do {
+    const result = await entryRepo.getByRafflePaginated(raffleId, 100, lastKey);
+    allEntries.push(...result.items);
+    lastKey = result.lastKey;
+  } while (lastKey);
+
+  // Group entries by wallet address to count total entries per user
+  const userEntryMap = new Map<string, number>();
+  for (const entry of allEntries) {
+    const current = userEntryMap.get(entry.walletAddress) || 0;
+    userEntryMap.set(entry.walletAddress, current + entry.numEntries);
+  }
+
+  // Create histogram: count how many users have each entry count
+  const histogram = new Map<number, number>();
+
+  for (const [, entryCount] of Array.from(userEntryMap.entries())) {
+    const current = histogram.get(entryCount) || 0;
+    histogram.set(entryCount, current + 1);
+  }
+
+  // Convert to sorted array for easy display
+  const distribution = Array.from(histogram.entries())
+    .map(([entries, userCount]) => ({ entries, userCount }))
+    .sort((a, b) => a.entries - b.entries);
+
+  return distribution;
+}
+
+/**
+ * Calculate prize breakdown with actual amounts for each tier
+ */
+function calculatePrizeTierBreakdown(raffle: RaffleItem) {
+  return raffle.prizeTiers.map(tier => ({
+    name: tier.name,
+    percentage: tier.percentage,
+    winnerCount: tier.winnerCount,
+    totalAmount: Math.floor((raffle.winnerPayout * tier.percentage) / 100),
+    amountPerWinner: Math.floor((raffle.winnerPayout * tier.percentage) / 100 / tier.winnerCount),
+  }));
+}
+
+/**
  * Get raffle with enriched data
  *
  * Includes:
@@ -86,6 +137,8 @@ export function computeDisplayStatus(raffle: Pick<RaffleItem, 'status' | 'startT
  * - Recent entries (last 10)
  * - Winners (if completed)
  * - User-specific data (if wallet provided)
+ * - Entry distribution by user entry counts
+ * - Prize tier breakdown with calculated amounts
  */
 export async function getRaffleWithDetails(
   raffleId: string,
@@ -125,6 +178,12 @@ export async function getRaffleWithDetails(
     };
   }
 
+  // Calculate entry distribution
+  const entryDistribution = await calculateEntryDistribution(raffleId);
+
+  // Calculate prize tier breakdown with amounts
+  const prizeTierBreakdown = calculatePrizeTierBreakdown(raffle);
+
   // Enrich raffle with displayStatus
   const displayStatus = computeDisplayStatus(raffle);
 
@@ -136,6 +195,8 @@ export async function getRaffleWithDetails(
     recentEntries,
     winners,
     userStats,
+    entryDistribution,
+    prizeTierBreakdown,
   };
 }
 

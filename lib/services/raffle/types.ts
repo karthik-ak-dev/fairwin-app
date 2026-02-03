@@ -103,6 +103,17 @@ export interface EnrichedRaffle {
     entries: number;
     totalSpent: number;
   };
+  entryDistribution: Array<{
+    entries: number;
+    userCount: number;
+  }>;
+  prizeTierBreakdown: Array<{
+    name: string;
+    percentage: number;
+    winnerCount: number;
+    totalAmount: number;
+    amountPerWinner: number;
+  }>;
 }
 
 export interface ListRafflesParams {

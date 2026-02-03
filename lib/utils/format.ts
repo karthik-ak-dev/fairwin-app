@@ -2,13 +2,49 @@
  * Formatting utilities for display
  */
 
+// ============================================================================
+// Currency Constants
+// ============================================================================
+
+/**
+ * USDC uses 6 decimal places (same as on-chain representation)
+ * Example: 1 USDC = 1,000,000 smallest units
+ */
+export const USDC_DECIMALS = 6;
+export const USDC_UNIT = Math.pow(10, USDC_DECIMALS); // 1000000
+
+/**
+ * Convert from smallest unit to display value
+ * @param amount - Amount in smallest unit (e.g., 1000000 = 1 USDC)
+ * @returns Display value (e.g., 1.0)
+ */
+export function toDisplayValue(amount: number): number {
+  return amount / USDC_UNIT;
+}
+
+/**
+ * Convert from display value to smallest unit
+ * @param amount - Display value (e.g., 1.0)
+ * @returns Amount in smallest unit (e.g., 1000000)
+ */
+export function toSmallestUnit(amount: number): number {
+  return Math.floor(amount * USDC_UNIT);
+}
+
+// ============================================================================
+// Formatting Functions
+// ============================================================================
+
 /**
  * Format currency amount
- * @param amount - Amount in smallest unit (e.g., cents)
- * @param decimals - Number of decimal places (default: 0)
+ * @param amount - Amount in smallest unit (USDC uses 6 decimals, so 1000000 = 1 USDC)
+ * @param decimals - Number of decimal places to display (default: 2)
  */
-export function formatCurrency(amount: number, decimals: number = 0): string {
-  return `$${amount.toLocaleString('en-US', {
+export function formatCurrency(amount: number, decimals: number = 2): string {
+  // Convert from smallest unit to display value
+  const displayValue = toDisplayValue(amount);
+
+  return `$${displayValue.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   })}`;
