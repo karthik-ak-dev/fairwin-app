@@ -1,0 +1,29 @@
+{
+  "name": "massivehikecoin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    // Dependencies to install:
+    // - next: ^14.x - Next.js framework
+    // - react, react-dom: ^18.x - React library
+    // - wagmi: ^2.14.x - Web3 React hooks
+    // - viem: ^2.x - Ethereum utilities
+    // - @rainbow-me/rainbowkit: ^2.2.x - Wallet connection UI
+    // - @tanstack/react-query: ^5.x - Server state management
+    // - zustand: ^4.x - Client state management
+    // - @aws-sdk/client-dynamodb, @aws-sdk/lib-dynamodb: DynamoDB client
+    // - tailwindcss, postcss, autoprefixer: Styling
+    // - typescript, @types/node, @types/react, @types/react-dom: TypeScript support
+    // - jsonwebtoken, @types/jsonwebtoken: JWT authentication
+    // - date-fns: Date utilities for reward calculations
+  },
+  "devDependencies": {
+    // Add TypeScript and Tailwind dev dependencies
+  }
+}
