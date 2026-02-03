@@ -2,15 +2,12 @@
 
 import './Home.styles.css';
 import { useRaffles } from '@/lib/hooks/raffle/raffle-query.hooks';
-import { usePlatformStats } from '@/lib/hooks/shared/platform-stats.hooks';
 import { RaffleStatus } from '@/lib/db/models';
 
 export default function Home() {
   const { data: rafflesData } = useRaffles({ status: RaffleStatus.ACTIVE });
-  const { data: statsData } = usePlatformStats();
 
   const activeRaffles = rafflesData?.raffles || [];
-  const stats = statsData?.stats;
 
   return (
     <div className="home">

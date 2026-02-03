@@ -29,7 +29,7 @@
 
 import { createPublicClient, http } from 'viem';
 import { polygon, polygonAmoy } from 'viem/chains';
-import { raffleRepo, entryRepo, winnerRepo, userRepo, statsRepo } from '@/lib/db/repositories';
+import { raffleRepo, entryRepo, winnerRepo, userRepo } from '@/lib/db/repositories';
 import { RaffleStatus, PayoutStatus } from '@/lib/db/models';
 import type { EntryItem } from '@/lib/db/models';
 import type { DrawInitiationResult, SelectedWinner, WinnerSelectionResult, PrizeTierConfig, Ticket } from './types';
@@ -453,10 +453,7 @@ async function updateWinnerStats(raffleId: string, winners: SelectedWinner[]): P
     ([walletAddress, totalWon]) => userRepo.recordWin(walletAddress, raffleId, totalWon)
   );
 
-  // Update platform stats in parallel with user updates
-  const platformUpdatePromise = statsRepo.recordPayout(totalPrize, winners.length);
-
-  await Promise.all([...userUpdatePromises, platformUpdatePromise]);
+  await Promise.all(userUpdatePromises);
 
   console.log(`[DrawService] Updated stats for ${uniqueWinners.size} unique winners`);
 }

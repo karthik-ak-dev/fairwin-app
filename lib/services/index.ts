@@ -22,7 +22,6 @@ export * as userProfile from './user/user-profile.service';
 export * as userEntry from './user/user-entry.service';
 
 // Shared utilities
-export * as platformStats from './shared/platform-stats.service';
 export * from './shared/cache.service';
 export * from './shared/pagination.service';
 

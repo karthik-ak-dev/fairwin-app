@@ -12,7 +12,6 @@
 
 // Shared repositories
 export { UserRepository } from './shared/user.repository';
-export { StatsRepository } from './shared/platform-stats.repository';
 
 // Raffle game repositories
 export { RaffleRepository } from './raffle/raffle.repository';
@@ -24,14 +23,12 @@ export { WinnerRepository } from './raffle/winner.repository';
 // ============================================
 
 import { UserRepository } from './shared/user.repository';
-import { StatsRepository } from './shared/platform-stats.repository';
 import { RaffleRepository } from './raffle/raffle.repository';
 import { EntryRepository } from './raffle/entry.repository';
 import { WinnerRepository } from './raffle/winner.repository';
 
 // Shared repository instances
 export const userRepo = new UserRepository();
-export const statsRepo = new StatsRepository();
 
 // Raffle game repository instances
 export const raffleRepo = new RaffleRepository();

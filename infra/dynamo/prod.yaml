@@ -53,44 +53,6 @@ Resources:
           Value: 'true'
 
   # ===========================================
-  # PlatformStats Table - Shared across all games
-  # Primary Key: statId (HASH)
-  #
-  # Singleton table - only one record with statId='global'
-  # Stores platform-wide aggregate statistics across all games.
-  # No GSIs needed - single record accessed by statId='global'.
-  # ===========================================
-  PlatformStatsTable:
-    Type: AWS::DynamoDB::Table
-    DeletionPolicy: Retain
-    UpdateReplacePolicy: Retain
-    Properties:
-      TableName: !Sub 'FairWin-${Environment}-PlatformStats'
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: statId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: statId
-          KeyType: HASH
-      PointInTimeRecoverySpecification:
-        PointInTimeRecoveryEnabled: true
-      SSESpecification:
-        SSEEnabled: true
-        SSEType: KMS
-      Tags:
-        - Key: Environment
-          Value: !Ref Environment
-        - Key: Project
-          Value: FairWin
-        - Key: ManagedBy
-          Value: CloudFormation
-        - Key: TableType
-          Value: Shared
-        - Key: CriticalData
-          Value: 'true'
-
-  # ===========================================
   # RAFFLE GAME TABLES
   # ===========================================
 
@@ -316,18 +278,6 @@ Outputs:
     Value: !GetAtt UsersTable.Arn
     Export:
       Name: !Sub '${Environment}-UsersTableArn'
-
-  PlatformStatsTableName:
-    Description: PlatformStats table name (Shared across all games)
-    Value: !Ref PlatformStatsTable
-    Export:
-      Name: !Sub '${Environment}-PlatformStatsTableName'
-
-  PlatformStatsTableArn:
-    Description: PlatformStats table ARN
-    Value: !GetAtt PlatformStatsTable.Arn
-    Export:
-      Name: !Sub '${Environment}-PlatformStatsTableArn'
 
   # ===== RAFFLE GAME TABLES =====
 

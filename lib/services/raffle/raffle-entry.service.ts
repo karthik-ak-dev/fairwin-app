@@ -16,7 +16,7 @@
  * - No event listeners needed
  */
 
-import { raffleRepo, entryRepo, userRepo, statsRepo } from '@/lib/db/repositories';
+import { raffleRepo, entryRepo, userRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
 import type { CreateEntryParams, CreateEntryResult, ValidationResult } from './types';
 import {
@@ -45,8 +45,6 @@ import { raffle as raffleConstants } from '@/lib/constants';
  * - Creates entry record with status='confirmed'
  * - Updates raffle stats (totalEntries, prizePool, totalParticipants)
  * - Updates user stats (totalSpent, rafflesEntered, activeEntries)
- * - Updates platform stats (totalEntries, totalRevenue, totalUsers)
- * - Creates audit log for high-value entries
  *
  * @throws RaffleNotFoundError if raffle doesn't exist
  * @throws RaffleNotActiveError if raffle is not accepting entries
@@ -148,8 +146,6 @@ async function updateRelatedEntitiesForEntry(
   });
 
   // 2. Update User stats
-  const isNewUser = !(await userRepo.getByAddress(walletAddress));
-
   await userRepo.recordEntry(
     walletAddress,
     raffle.raffleId,
@@ -157,9 +153,6 @@ async function updateRelatedEntitiesForEntry(
     totalPaid,
     hasEnteredBefore
   );
-
-  // 3. Update PlatformStats
-  await statsRepo.recordEntry(totalPaid, isNewUser);
 }
 
 /**

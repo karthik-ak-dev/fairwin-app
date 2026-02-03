@@ -10,7 +10,7 @@
  * DATABASE-ONLY: No blockchain interactions for MVP.
  */
 
-import { raffleRepo, statsRepo } from '@/lib/db/repositories';
+import { raffleRepo } from '@/lib/db/repositories';
 import type { RaffleItem } from '@/lib/db/models';
 import { RaffleStatus } from '@/lib/db/models';
 import type { CreateRaffleParams, UpdateRaffleParams } from './types';
@@ -38,7 +38,6 @@ import {
  * - Creates raffle with tiered reward configuration
  * - Applies platform fee percentage (default 5%)
  * - Sets up prize tiers (default: 3-tier system with 40%/30%/30% split)
- * - Increments platform raffle count
  * - Sets initial status to 'scheduled'
  *
  * @param params Raffle creation parameters
@@ -86,9 +85,6 @@ export async function createRaffle(
     startTime,
     endTime,
   });
-
-  // Update platform stats
-  await statsRepo.incrementRaffleCount();
 
   // Return created raffle (already in memory)
   return raffle;

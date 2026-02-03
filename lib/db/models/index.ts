@@ -1,7 +1,7 @@
 /**
  * Database models - organized by shared vs game-specific
  *
- * Shared models: Used across all games (Users, PlatformStats)
+ * Shared models: Used across all games (Users)
  * Game-specific models: Organized by game type (raffle/, slots/, etc.)
  */
 
