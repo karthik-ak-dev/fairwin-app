@@ -31,42 +31,136 @@ export const raffleQueryKeys = {
 // ============================================================================
 
 async function fetchRaffles(params: ListRafflesParams): Promise<PaginatedRaffles> {
-  const searchParams = new URLSearchParams();
+  // TODO: Uncomment when ready to use real API
+  // const searchParams = new URLSearchParams();
+  //
+  // if (params.status) searchParams.set('status', params.status);
+  // if (params.type) searchParams.set('type', params.type);
+  // if (params.limit) searchParams.set('limit', params.limit.toString());
+  // if (params.cursor) searchParams.set('cursor', params.cursor);
+  //
+  // const response = await fetch(`/api/raffles?${searchParams.toString()}`);
+  //
+  // if (!response.ok) {
+  //   throw new Error('Failed to fetch raffles');
+  // }
+  //
+  // const data = await response.json();
+  //
+  // // API returns { data, hasMore, nextCursor }, map to PaginatedRaffles format
+  // return {
+  //   raffles: data.data,
+  //   hasMore: data.hasMore,
+  //   nextCursor: data.nextCursor,
+  // };
 
-  if (params.status) searchParams.set('status', params.status);
-  if (params.type) searchParams.set('type', params.type);
-  if (params.limit) searchParams.set('limit', params.limit.toString());
-  if (params.cursor) searchParams.set('cursor', params.cursor);
+  // Dummy data for development (ignoring params for now)
+  void params;
 
-  const response = await fetch(`/api/raffles?${searchParams.toString()}`);
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch raffles');
-  }
-
-  const data = await response.json();
-
-  // API returns { data, hasMore, nextCursor }, map to PaginatedRaffles format
   return {
-    raffles: data.data,
-    hasMore: data.hasMore,
-    nextCursor: data.nextCursor,
+    raffles: [
+      {
+        raffleId: 'raffle-1',
+        name: 'Grand Prize Raffle',
+        description: 'Win amazing prizes in our grand raffle',
+        prizePool: 50000,
+        entryPrice: 100,
+        maxEntries: 1000,
+        currentEntries: 750,
+        status: 'active',
+        displayStatus: 'active',
+        type: 'daily',
+        startTime: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
+        protocolFee: 2500,
+      },
+      {
+        raffleId: 'raffle-2',
+        name: 'Quick Draw Raffle',
+        description: 'Fast-paced raffle ending soon',
+        prizePool: 25000,
+        entryPrice: 50,
+        maxEntries: 500,
+        currentEntries: 480,
+        status: 'active',
+        displayStatus: 'ending',
+        type: 'daily',
+        startTime: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        protocolFee: 1250,
+      },
+      {
+        raffleId: 'raffle-3',
+        name: 'Weekly Mega Raffle',
+        description: 'Biggest prizes of the week',
+        prizePool: 100000,
+        entryPrice: 200,
+        maxEntries: 2000,
+        currentEntries: 1200,
+        status: 'active',
+        displayStatus: 'active',
+        type: 'weekly',
+        startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        endTime: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        protocolFee: 5000,
+      },
+    ] as any,
+    hasMore: false,
+    nextCursor: undefined,
   };
 }
 
 async function fetchWinners(params: ListWinnersParams): Promise<PaginatedWinners> {
-  const searchParams = new URLSearchParams();
+  // TODO: Uncomment when ready to use real API
+  // const searchParams = new URLSearchParams();
+  //
+  // if (params.limit) searchParams.set('limit', params.limit.toString());
+  // if (params.cursor) searchParams.set('cursor', params.cursor);
+  //
+  // const response = await fetch(`/api/raffles/${params.raffleId}/winners?${searchParams.toString()}`);
+  //
+  // if (!response.ok) {
+  //   throw new Error('Failed to fetch winners');
+  // }
+  //
+  // return response.json();
 
-  if (params.limit) searchParams.set('limit', params.limit.toString());
-  if (params.cursor) searchParams.set('cursor', params.cursor);
-
-  const response = await fetch(`/api/raffles/${params.raffleId}/winners?${searchParams.toString()}`);
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch winners');
-  }
-
-  return response.json();
+  // Dummy data for development
+  return {
+    winners: [
+      {
+        winnerId: 'winner-1',
+        raffleId: params.raffleId || 'raffle-1',
+        walletAddress: '0x1234567890123456789012345678901234567890',
+        prizeAmount: 10000,
+        payoutStatus: 'paid',
+        transactionHash: '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        paidAt: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        winnerId: 'winner-2',
+        raffleId: params.raffleId || 'raffle-1',
+        walletAddress: '0x2345678901234567890123456789012345678901',
+        prizeAmount: 5000,
+        payoutStatus: 'pending',
+        createdAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        winnerId: 'winner-3',
+        raffleId: params.raffleId || 'raffle-1',
+        walletAddress: '0x3456789012345678901234567890123456789012',
+        prizeAmount: 2500,
+        payoutStatus: 'pending',
+        createdAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      },
+    ] as any,
+    hasMore: false,
+    nextCursor: undefined,
+  };
 }
 
 // ============================================================================
