@@ -128,11 +128,14 @@ export function validateRaffleStatus(
  * Validate status transition is allowed
  *
  * Valid transitions:
- * - scheduled -> active (when start time reached)
+ * - scheduled -> active (when start time reached or manually activated)
+ * - active <-> paused (admin can pause/resume)
+ * - paused -> active (resume - reuses activate endpoint)
+ * - paused -> ending (when resumed close to endTime)
  * - active -> ending (when close to end time)
  * - ending -> drawing (when draw triggered)
  * - drawing -> completed (when winners selected)
- * - any -> cancelled (when admin cancels)
+ * - scheduled/active/paused/ending -> cancelled (admin cancels)
  *
  * @throws InvalidStatusTransitionError if transition is not allowed
  */
@@ -142,7 +145,8 @@ export function validateStatusTransition(
 ): void {
   const validTransitions: Record<RaffleStatus, RaffleStatus[]> = {
     [RaffleStatus.SCHEDULED]: [RaffleStatus.ACTIVE, RaffleStatus.CANCELLED],
-    [RaffleStatus.ACTIVE]: [RaffleStatus.ENDING, RaffleStatus.CANCELLED],
+    [RaffleStatus.ACTIVE]: [RaffleStatus.PAUSED, RaffleStatus.ENDING, RaffleStatus.CANCELLED],
+    [RaffleStatus.PAUSED]: [RaffleStatus.ACTIVE, RaffleStatus.ENDING, RaffleStatus.CANCELLED],
     [RaffleStatus.ENDING]: [RaffleStatus.DRAWING, RaffleStatus.CANCELLED],
     [RaffleStatus.DRAWING]: [RaffleStatus.COMPLETED, RaffleStatus.CANCELLED],
     [RaffleStatus.COMPLETED]: [], // Terminal state

@@ -170,10 +170,11 @@ export async function cancelRaffle(
 }
 
 /**
- * Activate a scheduled raffle
+ * Activate a scheduled raffle or resume a paused raffle
  *
  * Business Rules:
- * - Can only activate scheduled raffles
+ * - Can activate scheduled raffles (scheduled -> active)
+ * - Can resume paused raffles (paused -> active)
  * - Updates status to 'active'
  *
  * @throws RaffleNotFoundError if raffle doesn't exist
@@ -185,9 +186,34 @@ export async function activateRaffle(raffleId: string): Promise<RaffleItem> {
     throw new RaffleNotFoundError(raffleId);
   }
 
-  // Validate can activate
+  // Validate can activate (supports both scheduled->active and paused->active)
   validateStatusTransition(raffle.status, RaffleStatus.ACTIVE);
 
   // Update status and return
   return await raffleRepo.update(raffleId, { status: RaffleStatus.ACTIVE });
+}
+
+/**
+ * Pause an active raffle
+ *
+ * Business Rules:
+ * - Can only pause active raffles
+ * - Updates status to 'paused'
+ * - No new entries can be made while paused
+ * - Can be resumed using activateRaffle
+ *
+ * @throws RaffleNotFoundError if raffle doesn't exist
+ * @throws InvalidStatusTransitionError if raffle cannot be paused
+ */
+export async function pauseRaffle(raffleId: string): Promise<RaffleItem> {
+  const raffle = await raffleRepo.getById(raffleId);
+  if (!raffle) {
+    throw new RaffleNotFoundError(raffleId);
+  }
+
+  // Validate can pause (only active raffles can be paused)
+  validateStatusTransition(raffle.status, RaffleStatus.PAUSED);
+
+  // Update status and return
+  return await raffleRepo.update(raffleId, { status: RaffleStatus.PAUSED });
 }

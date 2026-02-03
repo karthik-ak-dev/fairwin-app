@@ -88,7 +88,7 @@ export default function RafflesPage() {
       <header className="header">
         <h1>🎟️ Raffles</h1>
         <Link href="/admin/raffles/create">
-          <button className="btn-primary">+ Create Raffle</button>
+          <button className="btn btn-primary">+ Create Raffle</button>
         </Link>
       </header>
 
@@ -191,16 +191,16 @@ export default function RafflesPage() {
                           <td>
                             <div className="action-btns">
                               <Link href={`/admin/raffles/${raffle.raffleId}`}>
-                                <button className="action-btn">View</button>
+                                <button className="btn btn-secondary">View</button>
                               </Link>
                               {!isEnded && (
-                                <button className="action-btn">Edit</button>
+                                <button className="btn btn-secondary" disabled>Edit</button>
                               )}
                               {canTriggerDraw && (
-                                <button className="action-btn primary">Trigger Draw</button>
+                                <button className="btn btn-primary">Trigger Draw</button>
                               )}
                               {isEnded && (
-                                <button className="action-btn">Results</button>
+                                <button className="btn btn-secondary">Results</button>
                               )}
                             </div>
                           </td>

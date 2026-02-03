@@ -93,7 +93,7 @@ export interface PrizeTierConfig {
 // Raffle Query Types
 // ============================================================================
 
-export type DisplayStatus = 'scheduled' | 'active' | 'ending' | 'drawing' | 'completed' | 'cancelled';
+export type DisplayStatus = 'scheduled' | 'active' | 'paused' | 'ending' | 'drawing' | 'completed' | 'cancelled';
 
 export interface EnrichedRaffle {
   raffle: RaffleItem & { displayStatus?: DisplayStatus };

@@ -13,10 +13,11 @@
  * Lifecycle:
  * 1. scheduled → Admin creates raffle, not yet accepting entries
  * 2. active → Accepting entries, users can buy tickets
- * 3. ending → Less than 5 minutes until endTime (urgency UI)
- * 4. drawing → Backend selecting winners (instant, <1 second)
- * 5. completed → Winners selected, payouts may be pending
- * 6. cancelled → Admin cancelled (rare, refunds issued)
+ * 3. paused → Temporarily stopped (admin can resume to active)
+ * 4. ending → Less than 5 minutes until endTime (urgency UI)
+ * 5. drawing → Backend selecting winners (instant, <1 second)
+ * 6. completed → Winners selected, payouts may be pending
+ * 7. cancelled → Admin cancelled (rare, refunds issued)
  *
  * Use Cases:
  * - Raffle listing page (filter by status/type)
@@ -32,6 +33,7 @@
 export enum RaffleStatus {
   SCHEDULED = 'scheduled',
   ACTIVE = 'active',
+  PAUSED = 'paused',
   ENDING = 'ending',
   DRAWING = 'drawing',
   COMPLETED = 'completed',
@@ -75,17 +77,20 @@ export interface RaffleItem {
    *
    * - scheduled: Admin created raffle, not yet accepting entries
    * - active: Accepting entries, users can buy tickets
+   * - paused: Temporarily stopped, no new entries accepted
    * - ending: Less than 5 minutes until endTime (urgency UI)
    * - drawing: Winners being selected (momentary state)
    * - completed: Winners selected, payouts may be pending/in-progress
    * - cancelled: Admin cancelled (refunds issued if needed)
    *
    * Status Transitions:
-   * - scheduled → active (when startTime is reached)
+   * - scheduled → active (when startTime is reached or manually activated)
+   * - active ⇄ paused (admin can pause/resume)
+   * - paused → ending (when resumed close to endTime)
    * - active → ending (when less than 5min until endTime)
    * - ending → drawing (when admin triggers draw)
    * - drawing → completed (when winners are selected)
-   * - active/ending → cancelled (admin cancels)
+   * - active/paused/ending → cancelled (admin cancels)
    */
   status: RaffleStatus;
 

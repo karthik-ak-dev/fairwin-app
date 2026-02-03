@@ -1,13 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useRaffleDetails } from '@/lib/hooks/raffle/raffle-query.hooks';
+import { usePauseRaffle, useResumeRaffle, useCancelRaffle } from '@/lib/hooks/raffle/raffle-mutation.hooks';
 import { RaffleStatus } from '@/lib/db/models';
 import { formatCurrency, formatTimeRemaining } from '@/lib/utils/format';
 
 function StatusBadge({ status }: { status: string }) {
   const statusClasses: Record<string, string> = {
     active: 'status-badge active',
+    paused: 'status-badge scheduled',
     ending: 'status-badge ending',
     drawing: 'status-badge drawing',
     completed: 'status-badge ended',
@@ -17,6 +20,7 @@ function StatusBadge({ status }: { status: string }) {
 
   const statusLabels: Record<string, string> = {
     active: 'Active',
+    paused: 'Paused',
     ending: 'Ending',
     drawing: 'Drawing',
     completed: 'Ended',
@@ -34,6 +38,10 @@ function StatusBadge({ status }: { status: string }) {
 export default function RaffleDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { data, isLoading } = useRaffleDetails(id);
+  const { mutate: pauseRaffle, isPending: isPausing } = usePauseRaffle();
+  const { mutate: resumeRaffle, isPending: isResuming } = useResumeRaffle();
+  const { mutate: cancelRaffle, isPending: isCancelling } = useCancelRaffle();
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   if (isLoading) {
     return (
@@ -53,9 +61,44 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
 
   const { raffle, recentEntries, entryDistribution, prizeTierBreakdown } = data;
   const isEnded = raffle.status === RaffleStatus.COMPLETED || raffle.status === RaffleStatus.CANCELLED;
+  const isPaused = raffle.status === RaffleStatus.PAUSED;
+  const isActive = raffle.status === RaffleStatus.ACTIVE;
   const avgPerUser = raffle.totalParticipants > 0
     ? (raffle.totalEntries / raffle.totalParticipants).toFixed(1)
     : '0';
+
+  const handlePause = () => {
+    pauseRaffle(id, {
+      onError: (error) => {
+        alert(`Failed to pause raffle: ${error.message}`);
+      }
+    });
+  };
+
+  const handleResume = () => {
+    resumeRaffle(id, {
+      onError: (error) => {
+        alert(`Failed to resume raffle: ${error.message}`);
+      }
+    });
+  };
+
+  const handleCancel = () => {
+    if (!showCancelConfirm) {
+      setShowCancelConfirm(true);
+      return;
+    }
+
+    cancelRaffle(id, {
+      onSuccess: () => {
+        setShowCancelConfirm(false);
+      },
+      onError: (error) => {
+        alert(`Failed to cancel raffle: ${error.message}`);
+        setShowCancelConfirm(false);
+      }
+    });
+  };
 
   // Group entry distribution into buckets for display
   const distributionBuckets = {
@@ -78,9 +121,33 @@ export default function RaffleDetailPage({ params }: { params: { id: string } })
           <div className="header-actions">
             {!isEnded && (
               <>
-                <button className="btn btn-secondary">Edit</button>
-                <button className="btn btn-secondary">Pause</button>
-                <button className="btn btn-danger">Cancel</button>
+                <button className="btn btn-secondary" disabled>Edit</button>
+
+                {isPaused ? (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handleResume}
+                    disabled={isResuming}
+                  >
+                    {isResuming ? 'Resuming...' : 'Resume'}
+                  </button>
+                ) : isActive && (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={handlePause}
+                    disabled={isPausing}
+                  >
+                    {isPausing ? 'Pausing...' : 'Pause'}
+                  </button>
+                )}
+
+                <button
+                  className="btn btn-danger"
+                  onClick={handleCancel}
+                  disabled={isCancelling}
+                >
+                  {showCancelConfirm ? (isCancelling ? 'Cancelling...' : 'Confirm Cancel?') : 'Cancel'}
+                </button>
               </>
             )}
           </div>

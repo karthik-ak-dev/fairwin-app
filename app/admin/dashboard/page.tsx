@@ -20,7 +20,7 @@ export default function DashboardPage() {
               0x1234...5678
             </span>
           </div>
-          <button className="btn-primary">+ New Raffle</button>
+          <button className="btn btn-primary">+ New Raffle</button>
         </div>
       </header>
 
