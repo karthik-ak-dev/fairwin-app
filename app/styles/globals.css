@@ -16,6 +16,16 @@ body {
   line-height: 1.5;
 }
 
+/* Hide scrollbars globally while keeping scroll functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
 .container {
   max-width: var(--container-max-width);
   margin: 0 auto;
