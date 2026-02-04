@@ -252,7 +252,7 @@ export default function DashboardPage() {
               </button>
 
               {/* Breakdown */}
-              <div className="mt-5 p-5 bg-black/50 rounded-xl">
+              <div className="mt-5 p-5 bg-white/[0.02] border border-white/8 rounded-xl">
                 <div className="flex justify-between items-center py-2 text-sm">
                   <span className="text-gray-400">Stake Rewards</span>
                   <span className="font-bold text-accent">{formatCurrency(withdrawal.breakdown.stakeRewards)}</span>
