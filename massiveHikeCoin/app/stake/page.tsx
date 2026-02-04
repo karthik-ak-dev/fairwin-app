@@ -42,24 +42,24 @@ export default function StakePage() {
     <div className="min-h-screen pb-20">
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-xl border-b border-white/8">
-        <div className="container mx-auto px-8">
-          <div className="flex justify-between items-center py-5">
-            <Link href="/" className="text-2xl font-extrabold tracking-tight text-white">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4 sm:py-5">
+            <Link href="/" className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
               MASSIVE<span className="text-accent">HIKE</span>
             </Link>
-            <div className="flex items-center gap-9">
-              <Link href="/" className="text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+            <div className="flex items-center gap-3 sm:gap-6 lg:gap-9">
+              <Link href="/" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Home
               </Link>
-              <Link href="/dashboard" className="text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+              <Link href="/dashboard" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Dashboard
               </Link>
-              <Link href="/referrals" className="text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+              <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
-              <div className="flex items-center gap-3 px-5 py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
+              <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
                 <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <span className="font-mono text-sm font-semibold text-accent">
+                <span className="font-mono text-xs sm:text-sm font-semibold text-accent">
                   {formatWalletAddress(walletAddress)}
                 </span>
               </div>
@@ -69,26 +69,26 @@ export default function StakePage() {
       </nav>
 
       {/* Page Header */}
-      <header className="pt-28 pb-10">
-        <div className="container mx-auto px-8">
-          <div className="flex items-center gap-2 text-sm text-gray-400 mb-5">
+      <header className="pt-24 sm:pt-28 pb-6 sm:pb-10">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-400 mb-4 sm:mb-5">
             <Link href="/" className="hover:text-white transition-colors">Home</Link>
             <span>→</span>
             <span>Stake</span>
           </div>
-          <h1 className="text-5xl font-black tracking-tight mb-3">Stake USDT</h1>
-          <p className="text-lg text-gray-400">Lock your USDT for 24 months and earn 8% monthly</p>
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-2 sm:mb-3">Stake USDT</h1>
+          <p className="text-base sm:text-lg text-gray-400">Lock your USDT for 24 months and earn 8% monthly</p>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 lg:gap-8">
           {/* Left: Stake Form */}
-          <div className="bg-white/3 border border-white/8 rounded-2xl p-10">
+          <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8 lg:p-10">
             {/* Amount Section */}
-            <div className="mb-8">
-              <label className="block text-sm font-bold uppercase tracking-wider mb-3">
+            <div className="mb-6 sm:mb-8">
+              <label className="block text-xs sm:text-sm font-bold uppercase tracking-wider mb-2 sm:mb-3">
                 💰 Stake Amount
               </label>
               <div className="relative">
@@ -97,19 +97,19 @@ export default function StakePage() {
                   value={amount}
                   onChange={(e) => handleAmountChange(e.target.value)}
                   placeholder="0.00"
-                  className="w-full px-6 py-6 pr-32 bg-white/[0.02] border-2 border-white/8 rounded-xl text-white text-4xl font-bold focus:outline-none focus:border-accent focus:bg-white/[0.05] transition-all placeholder:text-gray-500"
+                  className="w-full px-4 sm:px-6 py-4 sm:py-6 pr-20 sm:pr-32 bg-white/[0.02] border-2 border-white/8 rounded-xl text-white text-2xl sm:text-3xl lg:text-4xl font-bold focus:outline-none focus:border-accent focus:bg-white/[0.05] transition-all placeholder:text-gray-500"
                 />
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 text-lg font-bold text-gray-400">
+                <div className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-sm sm:text-base lg:text-lg font-bold text-gray-400">
                   USDT
                 </div>
               </div>
-              <div className="flex justify-between text-xs text-gray-400 mt-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0 text-xs text-gray-400 mt-2">
                 <span>Minimum: ${MIN_STAKE}</span>
                 <span>Maximum: ${MAX_STAKE.toLocaleString()} per stake</span>
               </div>
 
               {/* Preset Buttons */}
-              <div className="grid grid-cols-4 gap-3 mt-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-3">
                 {presetAmounts.map((preset) => (
                   <button
                     key={preset}
@@ -207,7 +207,7 @@ export default function StakePage() {
           </div>
 
           {/* Right: Summary Card */}
-          <div className="bg-white/3 border border-white/8 rounded-2xl p-8 lg:sticky lg:top-28 h-fit">
+          <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8 lg:sticky lg:top-28 h-fit">
             <h3 className="text-xl font-extrabold mb-6 flex items-center gap-2">
               📈 Earnings Summary
             </h3>
@@ -229,7 +229,7 @@ export default function StakePage() {
               <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
                 Total Earnings Projection
               </div>
-              <div className="text-5xl font-black text-accent leading-none mb-1">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-black text-accent leading-none mb-1">
                 {formatCurrency(calculations.totalEarnings)}
               </div>
               <div className="text-sm text-gray-400">over 24 months</div>
@@ -260,10 +260,10 @@ export default function StakePage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/8 py-9 mt-20">
-        <div className="container mx-auto px-8">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-8">
+      <footer className="border-t border-white/8 py-6 sm:py-9 mt-12 sm:mt-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+            <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-8">
               <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Contract
               </Link>
