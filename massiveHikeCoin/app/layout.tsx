@@ -1,7 +1,27 @@
-// Root layout component for Next.js App Router
-// Responsibilities:
-// - Set up HTML structure with Outfit font from Google Fonts
-// - Import global Tailwind CSS styles
-// - Wrap application with Web3Provider and QueryProvider from providers/
-// - Define metadata for SEO (title, description)
-// - Apply Dark Navy background color globally
+import type { Metadata } from 'next';
+import { Outfit } from 'next/font/google';
+import './globals.css';
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+});
+
+export const metadata: Metadata = {
+  title: 'MassiveHikeCoin - Stake & Earn 8% Monthly',
+  description: 'Simple USDT staking with guaranteed 8% monthly returns for 24 months. Plus earn up to 15% commission from 5-level referrals on Binance Smart Chain.',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${outfit.variable} font-sans antialiased`}>
+        {children}
+      </body>
+    </html>
+  );
+}

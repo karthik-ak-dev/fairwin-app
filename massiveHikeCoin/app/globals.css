@@ -1,13 +1,47 @@
-/* Global styles for MassiveHikeCoin */
-/* Responsibilities:
- * - Import Tailwind base, components, and utilities
- * - Define CSS custom properties for colors (--bg, --accent, --gold)
- * - Set global background color to Dark Navy (#0a0e1a)
- * - Define reusable classes for glassmorphism effects
- * - Custom scrollbar styling
- * - Animation keyframes for loading states
- */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: #0a0e1a;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --accent: #0099ff;
+    --gold: #FFD700;
+    --text: #ffffff;
+    --text-muted: #888888;
+    --border: rgba(255, 255, 255, 0.08);
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-bg text-white;
+    font-family: var(--font-outfit), sans-serif;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-bg;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

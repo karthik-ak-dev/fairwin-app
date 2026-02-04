@@ -16,9 +16,10 @@ const config: Config = {
         bg: '#0a0e1a',
         accent: '#0099ff',
         gold: '#FFD700',
+        border: 'rgba(255, 255, 255, 0.08)',
       },
       fontFamily: {
-        sans: ['Outfit', 'sans-serif'],
+        sans: ['var(--font-outfit)', 'sans-serif'],
       },
     },
   },
