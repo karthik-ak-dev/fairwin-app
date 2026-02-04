@@ -37,7 +37,7 @@ export default function LandingPage() {
               <Link href="#how-it-works" className="hidden md:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 How it Works
               </Link>
-              <Link href="#referrals" className="hidden md:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+              <Link href="/referrals" className="hidden md:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
               <button className="hidden sm:block px-4 sm:px-6 py-2 sm:py-3 bg-accent text-black font-bold text-xs sm:text-sm rounded-md uppercase tracking-wide hover:scale-105 transition-transform whitespace-nowrap">
@@ -80,7 +80,7 @@ export default function LandingPage() {
                 How it Works
               </Link>
               <Link
-                href="#referrals"
+                href="/referrals"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
               >
@@ -217,7 +217,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Staking Rewards */}
-            <div className="bg-gradient-to-br from-accent/10 to-accent/2 border border-accent/30 rounded-2xl p-6 sm:p-8 lg:p-10">
+            <Link href="/stake" className="bg-gradient-to-br from-accent/10 to-accent/2 border border-accent/30 rounded-2xl p-6 sm:p-8 lg:p-10 hover:scale-[1.02] hover:border-accent transition-all cursor-pointer">
               <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">💎</div>
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-2 sm:mb-3">Staking Rewards</h3>
               <div className="text-5xl sm:text-6xl lg:text-7xl font-black text-accent leading-none mb-2">8%</div>
@@ -240,10 +240,10 @@ export default function LandingPage() {
                   <span>24-month program</span>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Referral Rewards */}
-            <div className="bg-gradient-to-br from-gold/10 to-gold/2 border border-gold/30 rounded-2xl p-6 sm:p-8 lg:p-10">
+            <Link href="/referrals" className="bg-gradient-to-br from-gold/10 to-gold/2 border border-gold/30 rounded-2xl p-6 sm:p-8 lg:p-10 hover:scale-[1.02] hover:border-gold transition-all cursor-pointer">
               <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">🤝</div>
               <h3 className="text-2xl sm:text-3xl font-extrabold mb-2 sm:mb-3">Referral Rewards</h3>
               <div className="text-5xl sm:text-6xl lg:text-7xl font-black text-gold leading-none mb-2">15%</div>
@@ -266,7 +266,7 @@ export default function LandingPage() {
                   <span>Track your downline</span>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Referral Levels */}
