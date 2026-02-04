@@ -1,9 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { useStakeDeposit } from '@/lib/hooks/useStakeDeposit';
 
 export default function StakePage() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const {
     amount,
     isProcessing,
@@ -57,15 +59,64 @@ export default function StakePage() {
               <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
-              <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
+              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
                 <div className="w-2 h-2 bg-accent rounded-full"></div>
                 <span className="font-mono text-xs sm:text-sm font-semibold text-accent">
                   {formatWalletAddress(walletAddress)}
                 </span>
               </div>
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="sm:hidden p-2 text-white hover:text-accent transition-colors"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isMobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden border-t border-white/8 bg-bg/98 backdrop-blur-xl">
+            <div className="container mx-auto px-4 py-4 space-y-3">
+              <Link
+                href="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                href="/dashboard"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/referrals"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                Referrals
+              </Link>
+              <div className="flex items-center gap-2 px-4 py-3 bg-accent/10 border border-accent/30 rounded-lg">
+                <div className="w-2 h-2 bg-accent rounded-full"></div>
+                <span className="font-mono text-xs font-semibold text-accent">
+                  {formatWalletAddress(walletAddress)}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Page Header */}
