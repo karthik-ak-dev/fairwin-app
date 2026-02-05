@@ -13,9 +13,9 @@ class Environment {
   public readonly DYNAMODB_REFERRALS_TABLE: string;
   public readonly DYNAMODB_WITHDRAWALS_TABLE: string;
 
-  // DynamoDB GSI Indexes
-  public readonly GSI_EMAIL: string = 'email-index';
-  public readonly GSI_REFERRAL_CODE: string = 'referralCode-index';
+  // DynamoDB GSI Indexes - Users Table
+  public readonly DYNAMODB_USERS_TABLE_GSI_EMAIL: string = 'email-index';
+  public readonly DYNAMODB_USERS_TABLE_GSI_REFERRAL_CODE: string = 'referralCode-index';
 
   // NextAuth / Google OAuth
   public readonly NEXTAUTH_SECRET: string;

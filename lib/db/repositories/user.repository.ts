@@ -64,7 +64,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   const result = await docClient.send(
     new QueryCommand({
       TableName: env.DYNAMODB_USERS_TABLE,
-      IndexName: env.GSI_EMAIL,
+      IndexName: env.DYNAMODB_USERS_TABLE_GSI_EMAIL,
       KeyConditionExpression: 'email = :email',
       ExpressionAttributeValues: {
         ':email': email,
@@ -83,7 +83,7 @@ export async function getUserByReferralCode(referralCode: string): Promise<User 
   const result = await docClient.send(
     new QueryCommand({
       TableName: env.DYNAMODB_USERS_TABLE,
-      IndexName: env.GSI_REFERRAL_CODE,
+      IndexName: env.DYNAMODB_USERS_TABLE_GSI_REFERRAL_CODE,
       KeyConditionExpression: 'referralCode = :referralCode',
       ExpressionAttributeValues: {
         ':referralCode': referralCode,
