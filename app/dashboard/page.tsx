@@ -6,9 +6,12 @@ import { useDashboard } from '@/lib/hooks/useDashboard';
 import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function DashboardPage() {
-  const { stats, stakes, referrals, withdrawal, referralLink } = useDashboard();
+  const { stats, stakes, referrals, withdrawal, withdrawalHistory, referralLink } = useDashboard();
   const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawWallet, setWithdrawWallet] = useState('');
+  const [isProcessingWithdraw, setIsProcessingWithdraw] = useState(false);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -26,6 +29,36 @@ export default function DashboardPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Copied to clipboard!');
+  };
+
+  const handleWithdrawClick = () => {
+    if (withdrawal.isWithdrawalAvailable) {
+      setShowWithdrawModal(true);
+    }
+  };
+
+  const handleWithdrawSubmit = async () => {
+    if (!withdrawWallet || withdrawWallet.length < 10) {
+      alert('Please enter a valid withdrawal wallet address');
+      return;
+    }
+
+    setIsProcessingWithdraw(true);
+
+    // Simulate withdrawal processing
+    // In real implementation:
+    // 1. POST /api/withdrawals/create with wallet address
+    // 2. Backend validates withdrawal date (1st of month only)
+    // 3. Backend creates withdrawal transaction on BSC
+    // 4. Backend updates user balance
+    // 5. Backend sends confirmation email
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    alert(`Withdrawal successful!\n${formatCurrency(withdrawal.availableAmount)} has been sent to ${withdrawWallet.slice(0, 10)}...`);
+
+    setIsProcessingWithdraw(false);
+    setShowWithdrawModal(false);
+    setWithdrawWallet('');
   };
 
   return (
@@ -295,6 +328,7 @@ export default function DashboardPage() {
               </div>
 
               <button
+                onClick={handleWithdrawClick}
                 disabled={!withdrawal.isWithdrawalAvailable}
                 className={`w-full py-4 rounded-xl font-extrabold text-base uppercase tracking-wide transition-transform ${
                   withdrawal.isWithdrawalAvailable
@@ -306,13 +340,25 @@ export default function DashboardPage() {
               </button>
 
               {/* Breakdown */}
-              <div className="mt-5 p-5 bg-white/[0.02] border border-white/8 rounded-xl">
-                <div className="flex justify-between items-center py-2 text-sm">
-                  <span className="text-gray-400">Stake Rewards</span>
-                  <span className="font-bold text-accent">{formatCurrency(withdrawal.breakdown.stakeRewards)}</span>
+              <div className="mt-5 p-5 bg-white/[0.02] border border-white/8 rounded-xl space-y-3">
+                {/* Per-Stake Rewards */}
+                <div>
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Stake Rewards</div>
+                  {withdrawal.breakdown.stakeRewards.map((stake, index) => (
+                    <div key={stake.stakeId} className="flex justify-between items-center py-1.5 text-sm pl-2">
+                      <span className="text-gray-400">Stake #{index + 1} ({formatCurrency(stake.amount)})</span>
+                      <span className="font-bold text-accent">{formatCurrency(stake.reward)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center py-2 text-sm border-t border-white/8 mt-2 pt-2">
+                    <span className="text-gray-300 font-semibold">Total Stake Rewards</span>
+                    <span className="font-bold text-accent">{formatCurrency(withdrawal.breakdown.totalStakeRewards)}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center py-2 text-sm">
-                  <span className="text-gray-400">Referral Commissions</span>
+
+                {/* Referral Commissions */}
+                <div className="flex justify-between items-center py-2 text-sm border-t border-white/8 pt-3">
+                  <span className="text-gray-300 font-semibold">Referral Commissions</span>
                   <span className="font-bold text-accent">{formatCurrency(withdrawal.breakdown.referralCommissions)}</span>
                 </div>
               </div>
@@ -333,6 +379,85 @@ export default function DashboardPage() {
               >
                 📋 Copy Link
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Withdrawal History */}
+        <div className="mt-8 sm:mt-10">
+          <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-xl">📜</span>
+              <h2 className="text-xl font-extrabold">Withdrawal History</h2>
+            </div>
+
+            {/* Table - Mobile Card View / Desktop Table */}
+            <div>
+              {/* Mobile View - Card Layout */}
+              <div className="sm:hidden space-y-3 max-h-[520px] overflow-y-auto">
+                {withdrawalHistory.map((wd) => (
+                  <div
+                    key={wd.id}
+                    className="bg-white/[0.02] border border-white/8 rounded-lg p-4 hover:bg-white/[0.04] transition-colors"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="text-xs text-gray-400 mb-1">{wd.date}</div>
+                        <div className="text-sm">
+                          <span className={`font-semibold ${wd.source.includes('Referral') ? 'text-gold' : 'text-accent'}`}>
+                            {wd.source}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">{wd.sourceDetail}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold text-white mb-1">{formatCurrency(wd.amount)}</div>
+                        <span className="inline-block px-2 py-0.5 text-xs font-bold rounded uppercase bg-green-500/10 border border-green-500/30 text-green-400">
+                          {wd.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop View - Table Layout */}
+              <div className="hidden sm:block overflow-x-auto">
+                <div className="inline-block min-w-full align-middle">
+                  {/* Header */}
+                  <div className="grid grid-cols-5 gap-4 pb-3 border-b border-white/8 text-xs text-gray-400 uppercase tracking-wider min-w-[700px]">
+                    <div>Date</div>
+                    <div>Source</div>
+                    <div className="text-right">Detail</div>
+                    <div className="text-right">Amount</div>
+                    <div className="text-center">Status</div>
+                  </div>
+
+                  {/* Rows - Scrollable Container (max 10 entries visible) */}
+                  <div className="space-y-0 min-w-[700px] max-h-[520px] overflow-y-auto">
+                    {withdrawalHistory.map((wd) => (
+                      <div
+                        key={wd.id}
+                        className="grid grid-cols-5 gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
+                      >
+                        <div className="text-sm text-gray-300">{wd.date}</div>
+                        <div className="text-sm">
+                          <span className={`${wd.source.includes('Referral') ? 'text-gold' : 'text-accent'}`}>
+                            {wd.source}
+                          </span>
+                        </div>
+                        <div className="text-right text-xs text-gray-400">{wd.sourceDetail}</div>
+                        <div className="text-right font-bold text-white">{formatCurrency(wd.amount)}</div>
+                        <div className="text-center">
+                          <span className="inline-block px-2 py-0.5 text-xs font-bold rounded uppercase bg-green-500/10 border border-green-500/30 text-green-400">
+                            {wd.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -362,6 +487,97 @@ export default function DashboardPage() {
           </div>
         </div>
       </footer>
+
+      {/* Withdrawal Modal */}
+      {showWithdrawModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-bg border border-white/10 rounded-2xl p-6 sm:p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-extrabold">Confirm Withdrawal</h2>
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Withdrawal Summary */}
+            <div className="bg-accent/10 border border-accent/30 rounded-xl p-5 mb-6">
+              <div className="text-center mb-4">
+                <div className="text-sm text-gray-400 mb-2">Total Withdrawal Amount</div>
+                <div className="text-4xl font-black text-accent">{formatCurrency(withdrawal.availableAmount)}</div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                {/* Per-Stake Breakdown */}
+                <div className="border-t border-white/10 pt-3">
+                  <div className="text-xs text-gray-400 uppercase mb-2">Stake Rewards</div>
+                  {withdrawal.breakdown.stakeRewards.map((stake, index) => (
+                    <div key={stake.stakeId} className="flex justify-between py-1">
+                      <span className="text-gray-400">Stake #{index + 1} ({formatCurrency(stake.amount)})</span>
+                      <span className="text-accent font-bold">{formatCurrency(stake.reward)}</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between py-2 border-t border-white/10 mt-2">
+                    <span className="font-semibold">Total Stake Rewards</span>
+                    <span className="text-accent font-bold">{formatCurrency(withdrawal.breakdown.totalStakeRewards)}</span>
+                  </div>
+                </div>
+
+                {/* Referral Commissions */}
+                <div className="flex justify-between py-2 border-t border-white/10">
+                  <span className="font-semibold">Referral Commissions</span>
+                  <span className="text-gold font-bold">{formatCurrency(withdrawal.breakdown.referralCommissions)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Withdrawal Wallet Input */}
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-400 mb-2">
+                Withdrawal Wallet Address (BSC)
+              </label>
+              <input
+                type="text"
+                value={withdrawWallet}
+                onChange={(e) => setWithdrawWallet(e.target.value)}
+                placeholder="0x..."
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-accent focus:bg-white/10 transition-all"
+              />
+              <div className="text-xs text-gray-500 mt-2">
+                Enter your Binance Smart Chain wallet address to receive USDT
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowWithdrawModal(false)}
+                disabled={isProcessingWithdraw}
+                className="flex-1 py-3 bg-white/5 border border-white/10 rounded-lg text-white font-semibold hover:bg-white/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleWithdrawSubmit}
+                disabled={isProcessingWithdraw || !withdrawWallet}
+                className="flex-1 py-3 bg-accent text-black font-extrabold rounded-lg uppercase tracking-wide hover:scale-[1.02] transition-transform disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {isProcessingWithdraw ? 'Processing...' : 'Confirm Withdrawal'}
+              </button>
+            </div>
+
+            {/* Important Notice */}
+            <div className="mt-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <div className="text-xs text-yellow-400">
+                <span className="font-bold">⚠️ Important:</span> Withdrawals are only processed on the 1st of each month.
+                Please ensure your wallet address is correct as transactions cannot be reversed.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
