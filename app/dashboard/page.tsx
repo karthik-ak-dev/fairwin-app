@@ -6,7 +6,9 @@ import { useDashboard } from '@/lib/hooks/useDashboard';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { formatCurrency, formatWalletAddress, copyToClipboard } from '@/lib/utils/format';
+import { DataTable } from '@/components/DataTable';
+import { ShareReferralLink } from '@/components/ShareReferralLink';
+import { formatCurrency, formatWalletAddress } from '@/lib/utils/format';
 
 export default function DashboardPage() {
   const { stats, stakes, referrals, withdrawal, withdrawalHistory, referralLink } = useDashboard();
@@ -273,21 +275,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Referral Link Card */}
-            <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8">
-              <h3 className="text-lg font-extrabold mb-6 text-center">🔗 Your Referral Link</h3>
-
-              <div className="bg-white/[0.02] border border-white/8 rounded-xl p-4 mb-4">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2 text-center">Share this link</div>
-                <div className="font-mono text-xs text-accent break-all text-center">{referralLink}</div>
-              </div>
-
-              <button
-                onClick={() => copyToClipboard(referralLink)}
-                className="w-full py-3.5 bg-transparent border border-white/8 rounded-lg text-white text-sm font-semibold hover:bg-white/5 hover:border-white transition-all"
-              >
-                📋 Copy Link
-              </button>
-            </div>
+            <ShareReferralLink referralLink={referralLink} />
           </div>
         </div>
 
@@ -299,74 +287,50 @@ export default function DashboardPage() {
               <h2 className="text-xl font-extrabold">Withdrawal History</h2>
             </div>
 
-            {/* Table - Mobile Card View / Desktop Table */}
-            <div>
-              {/* Mobile View - Card Layout */}
-              <div className="sm:hidden space-y-3 max-h-[520px] overflow-y-auto">
-                {withdrawalHistory.map((wd) => (
-                  <div
-                    key={wd.id}
-                    className="bg-white/[0.02] border border-white/8 rounded-lg p-4 hover:bg-white/[0.04] transition-colors"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <div className="text-xs text-gray-400 mb-1">{wd.date}</div>
-                        <div className="text-sm">
-                          <span className={`font-semibold ${wd.source.includes('Referral') ? 'text-gold' : 'text-accent'}`}>
-                            {wd.source}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-400 mt-1">{wd.sourceDetail}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-white mb-1">{formatCurrency(wd.amount)}</div>
-                        <span className="inline-block px-2 py-0.5 text-xs font-bold rounded uppercase bg-green-500/10 border border-green-500/30 text-green-400">
-                          {wd.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Desktop View - Table Layout */}
-              <div className="hidden sm:block overflow-x-auto">
-                <div className="inline-block min-w-full align-middle">
-                  {/* Header */}
-                  <div className="grid grid-cols-5 gap-4 pb-3 border-b border-white/8 text-xs text-gray-400 uppercase tracking-wider min-w-[700px]">
-                    <div>Date</div>
-                    <div>Source</div>
-                    <div className="text-right">Detail</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-center">Status</div>
-                  </div>
-
-                  {/* Rows - Scrollable Container (max 10 entries visible) */}
-                  <div className="space-y-0 min-w-[700px] max-h-[520px] overflow-y-auto">
-                    {withdrawalHistory.map((wd) => (
-                      <div
-                        key={wd.id}
-                        className="grid grid-cols-5 gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                      >
-                        <div className="text-sm text-gray-300">{wd.date}</div>
-                        <div className="text-sm">
-                          <span className={`${wd.source.includes('Referral') ? 'text-gold' : 'text-accent'}`}>
-                            {wd.source}
-                          </span>
-                        </div>
-                        <div className="text-right text-xs text-gray-400">{wd.sourceDetail}</div>
-                        <div className="text-right font-bold text-white">{formatCurrency(wd.amount)}</div>
-                        <div className="text-center">
-                          <span className="inline-block px-2 py-0.5 text-xs font-bold rounded uppercase bg-green-500/10 border border-green-500/30 text-green-400">
-                            {wd.status}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
+            <DataTable
+              data={withdrawalHistory}
+              columns={[
+                {
+                  key: 'date',
+                  label: 'Date',
+                  align: 'left',
+                },
+                {
+                  key: 'source',
+                  label: 'Source',
+                  align: 'left',
+                  render: (value) => (
+                    <span className={`${value.includes('Referral') ? 'text-gold' : 'text-accent'}`}>
+                      {value}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'sourceDetail',
+                  label: 'Detail',
+                  align: 'right',
+                  render: (value) => <span className="text-xs text-gray-400">{value}</span>,
+                },
+                {
+                  key: 'amount',
+                  label: 'Amount',
+                  align: 'right',
+                  render: (value) => <span className="font-bold text-white">{formatCurrency(value)}</span>,
+                },
+                {
+                  key: 'status',
+                  label: 'Status',
+                  align: 'center',
+                  render: (value) => (
+                    <span className="inline-block px-2 py-0.5 text-xs font-bold rounded uppercase bg-green-500/10 border border-green-500/30 text-green-400">
+                      {value}
+                    </span>
+                  ),
+                },
+              ]}
+              maxHeight="max-h-[520px]"
+              emptyMessage="No withdrawal history available"
+            />
           </div>
         </div>
       </main>

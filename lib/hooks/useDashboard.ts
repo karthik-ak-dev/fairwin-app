@@ -192,8 +192,8 @@ export const useDashboard = () => {
     },
   ];
 
-  // Dummy referral link (based on user ID from Google auth)
-  const referralLink = 'https://massivehikecoin.io/ref/user_123456';
+  // Dummy referral link
+  const referralLink = 'massivehike.com/ref/MH742d';
 
   return {
     stats,

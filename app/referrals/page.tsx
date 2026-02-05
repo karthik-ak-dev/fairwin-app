@@ -1,21 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 import { useReferralsPage } from '@/lib/hooks/useReferralsPage';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { formatCurrency, copyToClipboard } from '@/lib/utils/format';
+import { DataTable } from '@/components/DataTable';
+import { ShareReferralLink } from '@/components/ShareReferralLink';
+import { formatCurrency } from '@/lib/utils/format';
 
 export default function ReferralsPage() {
   const { stats, rootUser, levelSummary, recentEarnings, commissionRates, referralLink, allReferrals } = useReferralsPage();
   const { user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
 
-  // Filter referrals based on search query (by name)
-  const filteredReferrals = allReferrals.filter((ref) =>
-    ref.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Helper function for level colors (matches Network Tree colors)
+  const getLevelColor = (level: number) => {
+    const colors = {
+      1: 'bg-orange-500/10 border border-orange-500/30 text-orange-400',
+      2: 'bg-orange-400/10 border border-orange-400/30 text-orange-300',
+      3: 'bg-red-500/10 border border-red-500/30 text-red-400',
+      4: 'bg-purple-500/10 border border-purple-500/30 text-purple-400',
+      5: 'bg-blue-500/10 border border-blue-500/30 text-blue-400',
+    };
+    return colors[level as keyof typeof colors] || colors[1];
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -180,26 +187,7 @@ export default function ReferralsPage() {
           {/* Right Column - Sidebar */}
           <div className="space-y-6">
             {/* Share Your Link */}
-            <div className="bg-gradient-to-br from-gold/10 to-gold/2 border border-gold/30 rounded-2xl p-6 sm:p-8">
-              <div className="flex items-center gap-2 mb-6">
-                <span className="text-xl">🔗</span>
-                <h3 className="text-lg font-extrabold">Share Your Link</h3>
-              </div>
-
-              <div className="mb-4">
-                <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Your Referral Link</div>
-                <div className="bg-black/30 border border-white/8 rounded-lg p-3 font-mono text-sm text-gold break-all">
-                  {referralLink}
-                </div>
-              </div>
-
-              <button
-                onClick={() => copyToClipboard(referralLink)}
-                className="w-full py-3.5 bg-gold text-black font-bold text-sm rounded-lg uppercase tracking-wide hover:scale-[1.02] transition-transform flex items-center justify-center gap-2"
-              >
-                📋 Copy Referral Link
-              </button>
-            </div>
+            <ShareReferralLink referralLink={referralLink} />
 
             {/* Commission Rates */}
             <div className="bg-white/3 border border-white/8 rounded-2xl p-4 sm:p-6">
@@ -229,131 +217,91 @@ export default function ReferralsPage() {
                 <h2 className="text-xl font-extrabold">Recent Earnings</h2>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto -mx-6 sm:mx-0">
-                <div className="inline-block min-w-full align-middle px-6 sm:px-0">
-                  {/* Header */}
-                  <div className="grid grid-cols-4 gap-3 sm:gap-4 pb-3 border-b border-white/8 text-xs text-gray-400 uppercase tracking-wider min-w-[480px]">
-                    <div>Referral</div>
-                    <div className="text-center">Level</div>
-                    <div className="text-right">Amount</div>
-                    <div className="text-right">Date</div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="space-y-0 min-w-[480px]">
-                    {recentEarnings.map((earning, index) => (
-                      <div
-                        key={index}
-                        className="grid grid-cols-4 gap-3 sm:gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                      >
-                        <div className="text-xs sm:text-sm text-gray-300">{earning.referralName}</div>
-                        <div className="text-center">
-                          <span
-                            className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${
-                              earning.level === 1
-                                ? 'bg-orange-500/10 border border-orange-500/30 text-orange-400'
-                                : earning.level === 2
-                                ? 'bg-orange-500/10 border border-orange-500/30 text-orange-300'
-                                : earning.level === 3
-                                ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-                                : earning.level === 4
-                                ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400'
-                                : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
-                            }`}
-                          >
-                            L{earning.level}
-                          </span>
-                        </div>
-                        <div className="text-right text-gold font-bold text-sm sm:text-base">{formatCurrency(earning.amount)}</div>
-                        <div className="text-right text-xs sm:text-sm text-gray-400">{earning.date}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <DataTable
+                data={recentEarnings}
+                columns={[
+                  {
+                    key: 'referralName',
+                    label: 'Name',
+                    align: 'left',
+                  },
+                  {
+                    key: 'level',
+                    label: 'Level',
+                    align: 'center',
+                    render: (value) => (
+                      <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${getLevelColor(value)}`}>
+                        L{value}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'amount',
+                    label: 'Amount',
+                    align: 'right',
+                    render: (value) => <span className="font-bold text-gold">{formatCurrency(value)}</span>,
+                  },
+                  {
+                    key: 'date',
+                    label: 'Date',
+                    align: 'right',
+                    render: (value) => <span className="text-gray-400">{value}</span>,
+                  },
+                ]}
+                emptyMessage="No recent earnings"
+              />
             </div>
 
             {/* All Referrals */}
             <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">👥</span>
-                  <h2 className="text-lg sm:text-xl font-extrabold">All Referrals</h2>
-                  <span className="text-xs sm:text-sm text-gray-400">({allReferrals.length} total)</span>
-                </div>
-
-                {/* Search */}
-                <div className="relative w-full sm:w-auto">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by name..."
-                    className="w-full sm:w-64 px-4 py-2 bg-white/[0.02] border border-white/8 rounded-lg text-white text-sm focus:outline-none focus:border-gold focus:bg-white/[0.05] transition-all placeholder:text-gray-500"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-xl">👥</span>
+                <h2 className="text-lg sm:text-xl font-extrabold">All Referrals</h2>
+                <span className="text-xs sm:text-sm text-gray-400">({allReferrals.length} total)</span>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto -mx-6 sm:mx-0">
-                <div className="inline-block min-w-full align-middle px-6 sm:px-0">
-                  {/* Header */}
-                  <div className="grid grid-cols-5 gap-4 pb-3 border-b border-white/8 text-xs text-gray-400 uppercase tracking-wider min-w-[700px]">
-                    <div>Name</div>
-                    <div className="text-center">Level</div>
-                    <div className="text-right">Joined Date</div>
-                    <div className="text-right">Staked</div>
-                    <div className="text-right">Your Earnings</div>
-                  </div>
-
-                  {/* Rows */}
-                  <div className="space-y-0 min-w-[700px]">
-                    {filteredReferrals.length > 0 ? (
-                      filteredReferrals.map((referral, index) => (
-                        <div
-                          key={index}
-                          className="grid grid-cols-5 gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
-                        >
-                          <div className="text-sm text-gray-300">{referral.name}</div>
-                          <div className="text-center">
-                            <span
-                              className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${
-                                referral.level === 1
-                                  ? 'bg-orange-500/10 border border-orange-500/30 text-orange-400'
-                                  : referral.level === 2
-                                  ? 'bg-orange-500/10 border border-orange-500/30 text-orange-300'
-                                  : referral.level === 3
-                                  ? 'bg-red-500/10 border border-red-500/30 text-red-400'
-                                  : referral.level === 4
-                                  ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400'
-                                  : 'bg-blue-500/10 border border-blue-500/30 text-blue-400'
-                              }`}
-                            >
-                              L{referral.level}
-                            </span>
-                          </div>
-                          <div className="text-right text-sm text-gray-400">{referral.joinedDate}</div>
-                          <div className="text-right font-bold">{formatCurrency(referral.staked)}</div>
-                          <div className="text-right text-gold font-bold">{formatCurrency(referral.yourEarnings)}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="py-8 text-center text-gray-400">
-                        No referrals found matching "{searchQuery}"
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <DataTable
+                data={allReferrals}
+                searchable={true}
+                searchField="name"
+                searchPlaceholder="Search by name..."
+                columns={[
+                  {
+                    key: 'name',
+                    label: 'Name',
+                    align: 'left',
+                  },
+                  {
+                    key: 'level',
+                    label: 'Level',
+                    align: 'center',
+                    render: (value) => (
+                      <span className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${getLevelColor(value)}`}>
+                        L{value}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'joinedDate',
+                    label: 'Joined Date',
+                    align: 'right',
+                    render: (value) => <span className="text-gray-400">{value}</span>,
+                  },
+                  {
+                    key: 'staked',
+                    label: 'Staked',
+                    align: 'right',
+                    render: (value) => formatCurrency(value),
+                  },
+                  {
+                    key: 'yourEarnings',
+                    label: 'Your Earnings',
+                    align: 'right',
+                    render: (value) => <span className="font-bold text-gold">{formatCurrency(value)}</span>,
+                  },
+                ]}
+                emptyMessage="No referrals found"
+              />
             </div>
         </div>
       </main>
