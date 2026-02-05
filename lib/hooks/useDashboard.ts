@@ -1,8 +1,8 @@
 'use client';
 
 export const useDashboard = () => {
-  // Dummy wallet data
-  const walletAddress = '0x742d35Cc6634C0532925a3b844Bc9e7595f4a8e';
+  // User is authenticated via Google SSO
+  // User info (name, email, picture) is fetched from useAuth hook
 
   // Dummy stats overview
   const stats = {
@@ -78,11 +78,10 @@ export const useDashboard = () => {
     },
   };
 
-  // Dummy referral link
-  const referralLink = 'https://massivehikecoin.io/ref/0x742d...4a8e';
+  // Dummy referral link (based on user ID from Google auth)
+  const referralLink = 'https://massivehikecoin.io/ref/user_123456';
 
   return {
-    walletAddress,
     stats,
     stakes,
     referrals,

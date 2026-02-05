@@ -5,3 +5,8 @@
 // - Call referral-tree.service.calculateTotalReferralEarnings(userId)
 // - Return: stakeRewards, referralCommissions, total, nextWithdrawalDate
 // - Used by withdrawal page to show breakdown
+
+// Placeholder route - to be implemented
+export async function GET() {
+  return Response.json({ message: 'Not implemented yet' }, { status: 501 });
+}

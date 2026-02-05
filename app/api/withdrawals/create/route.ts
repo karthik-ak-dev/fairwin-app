@@ -7,3 +7,8 @@
 // - Return withdrawal record with txHash
 // - Error handling for insufficient balance, invalid date
 // - Return 403 if not withdrawal day
+
+// Placeholder route - to be implemented
+export async function GET() {
+  return Response.json({ message: 'Not implemented yet' }, { status: 501 });
+}

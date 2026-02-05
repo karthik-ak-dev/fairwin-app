@@ -8,3 +8,7 @@
 // - Handle withdrawal transaction via Web3 (USDT transfer to user's withdrawal wallet)
 // - Update database after successful withdrawal
 // - Show transaction confirmation and status
+
+export default function WithdrawalsPage() {
+  return <div className='min-h-screen flex items-center justify-center'><h1 className='text-2xl'>Withdrawals Page - Coming Soon</h1></div>;
+}

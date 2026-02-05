@@ -7,3 +7,8 @@
 // - Error handling for invalid amounts, duplicate txHash
 // - Return 400 if amount outside $50-$10,000 range
 // - Process referral commissions if referralCode provided
+
+// Placeholder route - to be implemented
+export async function GET() {
+  return Response.json({ message: 'Not implemented yet' }, { status: 501 });
+}

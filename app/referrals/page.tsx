@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useReferralsPage } from '@/lib/hooks/useReferralsPage';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function ReferralsPage() {
-  const { walletAddress, stats, rootUser, levelSummary, recentEarnings, commissionRates, referralLink, allReferrals } = useReferralsPage();
+  const { stats, rootUser, levelSummary, recentEarnings, commissionRates, referralLink, allReferrals } = useReferralsPage();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -18,18 +20,14 @@ export default function ReferralsPage() {
     }).format(value);
   };
 
-  const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     alert('Copied to clipboard!');
   };
 
-  // Filter referrals based on search query
+  // Filter referrals based on search query (by name)
   const filteredReferrals = allReferrals.filter((ref) =>
-    ref.address.toLowerCase().includes(searchQuery.toLowerCase())
+    ref.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -51,10 +49,10 @@ export default function ReferralsPage() {
               <Link href="/referrals" className="hidden sm:block text-sm font-medium text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
-              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-gold/10 border border-gold/30 rounded-lg">
-                <div className="w-2 h-2 bg-gold rounded-full"></div>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-gold">
-                  {formatWalletAddress(walletAddress)}
+              <div className="hidden sm:flex items-center gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-gold/10 border border-gold/30 rounded-lg">
+                <img src={user?.picture} alt={user?.name} className="w-6 h-6 rounded-full" />
+                <span className="text-xs sm:text-sm font-semibold text-white">
+                  {user?.name || 'User'}
                 </span>
               </div>
               {/* Mobile Menu Button */}
@@ -100,11 +98,12 @@ export default function ReferralsPage() {
               >
                 Referrals
               </Link>
-              <div className="flex items-center gap-2 px-4 py-3 bg-gold/10 border border-gold/30 rounded-lg">
-                <div className="w-2 h-2 bg-gold rounded-full"></div>
-                <span className="font-mono text-xs font-semibold text-gold">
-                  {formatWalletAddress(walletAddress)}
-                </span>
+              <div className="flex items-center gap-3 px-4 py-3 bg-gold/10 border border-gold/30 rounded-lg">
+                <img src={user?.picture} alt={user?.name} className="w-8 h-8 rounded-full" />
+                <div>
+                  <div className="text-sm font-semibold text-white">{user?.name || 'User'}</div>
+                  <div className="text-xs text-gray-400">{user?.email}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -194,12 +193,12 @@ export default function ReferralsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-sm sm:text-base font-bold">You</span>
+                        <span className="text-sm sm:text-base font-bold">{user?.name || 'You'}</span>
                         <span className="px-2 py-0.5 bg-gold/20 border border-gold text-gold text-xs font-bold rounded uppercase">
                           ROOT
                         </span>
                       </div>
-                      <div className="font-mono text-xs text-gray-400">{rootUser.address}</div>
+                      <div className="text-xs text-gray-400">{user?.email}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 sm:gap-6">
@@ -337,7 +336,7 @@ export default function ReferralsPage() {
                         key={index}
                         className="grid grid-cols-4 gap-3 sm:gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
                       >
-                        <div className="font-mono text-xs sm:text-sm text-gray-300">{earning.referral}</div>
+                        <div className="text-xs sm:text-sm text-gray-300">{earning.referralName}</div>
                         <div className="text-center">
                           <span
                             className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${
@@ -379,7 +378,7 @@ export default function ReferralsPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by address..."
+                    placeholder="Search by name..."
                     className="w-full sm:w-64 px-4 py-2 bg-white/[0.02] border border-white/8 rounded-lg text-white text-sm focus:outline-none focus:border-gold focus:bg-white/[0.05] transition-all placeholder:text-gray-500"
                   />
                   {searchQuery && (
@@ -398,7 +397,7 @@ export default function ReferralsPage() {
                 <div className="inline-block min-w-full align-middle px-6 sm:px-0">
                   {/* Header */}
                   <div className="grid grid-cols-5 gap-4 pb-3 border-b border-white/8 text-xs text-gray-400 uppercase tracking-wider min-w-[700px]">
-                    <div>Address</div>
+                    <div>Name</div>
                     <div className="text-center">Level</div>
                     <div className="text-right">Joined Date</div>
                     <div className="text-right">Staked</div>
@@ -413,7 +412,7 @@ export default function ReferralsPage() {
                           key={index}
                           className="grid grid-cols-5 gap-4 py-3 border-b border-white/8 last:border-b-0 hover:bg-white/[0.02] transition-colors"
                         >
-                          <div className="font-mono text-sm text-gray-300">{referral.address}</div>
+                          <div className="text-sm text-gray-300">{referral.name}</div>
                           <div className="text-center">
                             <span
                               className={`inline-block px-2 py-0.5 text-xs font-bold rounded uppercase ${

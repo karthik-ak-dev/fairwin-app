@@ -1,7 +1,27 @@
 // React Query Provider for server state management
 // Responsibilities:
-// - Set up QueryClient with default configuration
-// - Configure caching strategy (staleTime, cacheTime)
-// - Enable React Query DevTools in development
-// - Provide query context for data fetching throughout app
-// - Handle refetch on window focus for real-time updates
+// - Configure React Query client with default options
+// - Provide QueryClientProvider to entire app
+// - Set up devtools for development
+// - Configure caching, refetching, and retry logic
+
+'use client';
+
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useState } from 'react';
+
+export function QueryProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000, // 1 minute
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+}

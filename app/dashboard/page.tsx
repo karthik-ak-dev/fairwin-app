@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useDashboard } from '@/lib/hooks/useDashboard';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function DashboardPage() {
-  const { walletAddress, stats, stakes, referrals, withdrawal, referralLink } = useDashboard();
+  const { stats, stakes, referrals, withdrawal, referralLink } = useDashboard();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const formatCurrency = (value: number) => {
@@ -45,10 +47,10 @@ export default function DashboardPage() {
               <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
-              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
-                <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-accent">
-                  {formatWalletAddress(walletAddress)}
+              <div className="hidden sm:flex items-center gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
+                <img src={user?.picture} alt={user?.name} className="w-6 h-6 rounded-full" />
+                <span className="text-xs sm:text-sm font-semibold text-white">
+                  {user?.name || 'User'}
                 </span>
               </div>
               {/* Mobile Menu Button */}
@@ -94,11 +96,12 @@ export default function DashboardPage() {
               >
                 Referrals
               </Link>
-              <div className="flex items-center gap-2 px-4 py-3 bg-accent/10 border border-accent/30 rounded-lg">
-                <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <span className="font-mono text-xs font-semibold text-accent">
-                  {formatWalletAddress(walletAddress)}
-                </span>
+              <div className="flex items-center gap-3 px-4 py-3 bg-accent/10 border border-accent/30 rounded-lg">
+                <img src={user?.picture} alt={user?.name} className="w-8 h-8 rounded-full" />
+                <div>
+                  <div className="text-sm font-semibold text-white">{user?.name || 'User'}</div>
+                  <div className="text-xs text-gray-400">{user?.email}</div>
+                </div>
               </div>
             </div>
           </div>

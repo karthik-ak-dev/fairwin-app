@@ -3,14 +3,17 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useStakeDeposit } from '@/lib/hooks/useStakeDeposit';
+import { QRCodeSVG } from 'qrcode.react';
 
 export default function StakePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [txHash, setTxHash] = useState('');
+  const [copiedWallet, setCopiedWallet] = useState(false);
+
   const {
     amount,
     isProcessing,
-    walletAddress,
-    depositWallet,
+    centralWallet,
     existingStakes,
     totalStaked,
     totalActiveStakes,
@@ -22,10 +25,18 @@ export default function StakePage() {
     presetAmounts,
     isValidAmount,
     canStake,
+    pendingStake,
     handleAmountChange,
     handlePresetClick,
-    handleStake,
+    handleCreateStake,
+    handleSubmitTxHash,
   } = useStakeDeposit();
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedWallet(true);
+    setTimeout(() => setCopiedWallet(false), 2000);
+  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -59,12 +70,6 @@ export default function StakePage() {
               <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
                 Referrals
               </Link>
-              <div className="hidden sm:flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
-                <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <span className="font-mono text-xs sm:text-sm font-semibold text-accent">
-                  {formatWalletAddress(walletAddress)}
-                </span>
-              </div>
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -108,12 +113,6 @@ export default function StakePage() {
               >
                 Referrals
               </Link>
-              <div className="flex items-center gap-2 px-4 py-3 bg-accent/10 border border-accent/30 rounded-lg">
-                <div className="w-2 h-2 bg-accent rounded-full"></div>
-                <span className="font-mono text-xs font-semibold text-accent">
-                  {formatWalletAddress(walletAddress)}
-                </span>
-              </div>
             </div>
           </div>
         )}
@@ -228,33 +227,103 @@ export default function StakePage() {
               </div>
             </div>
 
-            {/* Deposit Wallet Section */}
-            <div className="bg-accent/5 border border-accent/20 rounded-xl p-6 mb-8">
-              <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
-                🏦 Your Deposit Wallet (Where You Stake From)
-              </div>
-              <div className="font-mono text-sm text-accent p-3 bg-black/50 rounded-lg mb-2 break-all">
-                {depositWallet}
-              </div>
-              <div className="text-xs text-gray-400 leading-relaxed">
-                ⚠️ Rewards will be sent to a different wallet address when you withdraw monthly.
-              </div>
-            </div>
+{/* Conditional Rendering: Step 1 (Create Stake) OR Step 2 (Submit Txn Hash) */}
+            {!pendingStake ? (
+              // STEP 1: Create Stake Entry
+              <button
+                onClick={handleCreateStake}
+                disabled={!canStake}
+                className={`w-full py-5 rounded-xl font-extrabold text-base uppercase tracking-wide transition-transform ${
+                  canStake
+                    ? 'bg-accent text-black hover:scale-[1.02]'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isProcessing
+                  ? 'Creating Stake...'
+                  : `Create Stake ${parseFloat(amount) || 0} USDT →`}
+              </button>
+            ) : (
+              // STEP 2: Show QR Code + Submit Transaction Hash
+              <>
+                {/* Central Wallet Section */}
+                <div className="bg-accent/5 border border-accent/20 rounded-xl p-6 mb-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <div className="text-sm font-bold text-accent mb-1">✅ Stake Created! Now Send USDT</div>
+                      <div className="text-xs text-gray-400">
+                        Send exactly {formatCurrency(pendingStake.amount)} USDT to this address (BSC Network)
+                      </div>
+                    </div>
+                  </div>
 
-            {/* Stake Button */}
-            <button
-              onClick={handleStake}
-              disabled={!canStake}
-              className={`w-full py-5 rounded-xl font-extrabold text-base uppercase tracking-wide transition-transform ${
-                canStake
-                  ? 'bg-accent text-black hover:scale-[1.02]'
-                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {isProcessing
-                ? 'Processing...'
-                : `Approve & Stake ${parseFloat(amount) || 0} USDT →`}
-            </button>
+                  {/* QR Code */}
+                  <div className="flex flex-col items-center gap-4 mb-4">
+                    <div className="bg-white p-4 rounded-xl">
+                      <QRCodeSVG value={centralWallet} size={160} />
+                    </div>
+
+                    {/* Wallet Address */}
+                    <div className="w-full">
+                      <div className="relative">
+                        <div className="font-mono text-xs sm:text-sm text-accent p-3 bg-black/50 rounded-lg break-all pr-20">
+                          {centralWallet}
+                        </div>
+                        <button
+                          onClick={() => copyToClipboard(centralWallet)}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent text-xs font-semibold rounded-md transition-all"
+                        >
+                          {copiedWallet ? '✓ Copied' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 flex gap-2">
+                    <div className="text-base flex-shrink-0">⚠️</div>
+                    <div className="text-xs text-gray-400 leading-relaxed">
+                      Send exactly <span className="text-white font-semibold">{formatCurrency(pendingStake.amount)}</span> on <span className="text-white font-semibold">Binance Smart Chain (BSC)</span> network only!
+                    </div>
+                  </div>
+                </div>
+
+                {/* Transaction Hash Section */}
+                <div className="bg-white/3 border border-white/8 rounded-xl p-6 mb-6">
+                  <div className="text-sm font-bold mb-1">Submit Transaction Hash</div>
+                  <div className="text-xs text-gray-400 mb-4">
+                    After sending USDT, paste your transaction hash here to verify your stake
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={txHash}
+                      onChange={(e) => setTxHash(e.target.value)}
+                      placeholder="0x..."
+                      className="w-full px-4 py-3 bg-white/[0.02] border-2 border-white/8 rounded-lg text-white text-sm font-mono focus:outline-none focus:border-accent focus:bg-white/[0.05] transition-all placeholder:text-gray-500"
+                    />
+                  </div>
+                  <div className="text-xs text-gray-400 mt-2">
+                    Find this in your wallet's transaction history or on BSCScan
+                  </div>
+                </div>
+
+                {/* Verify Payment Button */}
+                <button
+                  onClick={() => handleSubmitTxHash(txHash)}
+                  disabled={!txHash || txHash.length < 10 || isProcessing}
+                  className={`w-full py-5 rounded-xl font-extrabold text-base uppercase tracking-wide transition-transform ${
+                    txHash && txHash.length >= 10 && !isProcessing
+                      ? 'bg-accent text-black hover:scale-[1.02]'
+                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  {isProcessing
+                    ? 'Verifying Transaction...'
+                    : 'Verify Payment & Complete Stake →'}
+                </button>
+              </>
+            )}
           </div>
 
           {/* Right: Summary Card */}

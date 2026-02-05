@@ -11,3 +11,8 @@
 // - Allow updating withdrawalWallet only
 // - Validate wallet address format
 // - Return updated user object
+
+// Placeholder route - to be implemented
+export async function GET() {
+  return Response.json({ message: 'Not implemented yet' }, { status: 501 });
+}

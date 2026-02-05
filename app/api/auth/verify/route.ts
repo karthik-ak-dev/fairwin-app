@@ -5,3 +5,8 @@
 // - Return user data if valid
 // - Return 401 if invalid/expired
 // - Used by client to check auth status on page load
+
+// Placeholder route - to be implemented
+export async function GET() {
+  return Response.json({ message: 'Not implemented yet' }, { status: 501 });
+}
