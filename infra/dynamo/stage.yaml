@@ -1,0 +1,92 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  MassiveHike Stage Environment - DynamoDB Tables
+  Deploys Users table for staging/development environment
+  Region: ap-south-1 (Mumbai)
+
+Parameters:
+  Environment:
+    Type: String
+    Default: Stage
+    AllowedValues:
+      - Stage
+    Description: Environment name
+
+Resources:
+  # ===========================================
+  # Users Table
+  # Primary Key: userId (HASH)
+  # GSI1: email-index (email as HASH) - for authentication lookup
+  # GSI2: referralCode-index (referralCode as HASH) - for referral link validation
+  # ===========================================
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'MassiveHike-${Environment}-Users'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: referralCode
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        # Email index for authentication and user lookup by email
+        - IndexName: email-index
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        # Referral code index for validating referral links
+        - IndexName: referralCode-index
+          KeySchema:
+            - AttributeName: referralCode
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: MassiveHike
+        - Key: ManagedBy
+          Value: SAM
+
+Outputs:
+  UsersTableName:
+    Description: Users table name
+    Value: !Ref UsersTable
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-UsersTableName'
+
+  UsersTableArn:
+    Description: Users table ARN
+    Value: !GetAtt UsersTable.Arn
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-UsersTableArn'
+
+  EmailIndexName:
+    Description: Email GSI name
+    Value: email-index
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-EmailIndexName'
+
+  ReferralCodeIndexName:
+    Description: Referral Code GSI name
+    Value: referralCode-index
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-ReferralCodeIndexName'
+
+
+#!/bin/bash
+# aws cloudformation deploy \
+#   --template-file infra/dynamo/stage.yaml \
+#   --stack-name massivehike-stage-dynamo \
+#   --region ap-south-1

@@ -7,10 +7,13 @@ import { useSession, signOut } from 'next-auth/react';
 
 export function Navigation() {
   const { isAuthenticated, login, isLoading } = useAuth();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  // Prevent flash of wrong content during session load
+  const isSessionLoading = status === 'loading';
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -52,13 +55,16 @@ export function Navigation() {
             </Link>
 
             {/* Desktop Login/Signup or Profile */}
-            {!isAuthenticated ? (
+            {isSessionLoading ? (
+              // Show skeleton/placeholder during loading
+              <div className="hidden sm:block w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+            ) : !isAuthenticated ? (
               <button
                 onClick={login}
                 disabled={isLoading}
                 className="hidden sm:flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-accent text-black font-bold text-xs sm:text-sm rounded-md hover:scale-105 transition-transform whitespace-nowrap disabled:opacity-50"
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                Sign In
               </button>
             ) : (
               <div ref={profileMenuRef} className="hidden sm:block relative">
@@ -139,7 +145,10 @@ export function Navigation() {
               Referrals
             </Link>
 
-            {!isAuthenticated ? (
+            {isSessionLoading ? (
+              // Show skeleton/placeholder during loading
+              <div className="w-10 h-10 rounded-full bg-white/10 animate-pulse mx-4" />
+            ) : !isAuthenticated ? (
               <button
                 onClick={() => {
                   login();
@@ -148,7 +157,7 @@ export function Navigation() {
                 disabled={isLoading}
                 className="w-full px-4 py-3 bg-accent text-black font-bold text-sm rounded-lg hover:scale-105 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                Sign In
               </button>
             ) : (
               <div className="border-t border-white/8 pt-3">

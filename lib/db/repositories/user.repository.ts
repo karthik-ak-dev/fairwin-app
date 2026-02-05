@@ -17,7 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export async function createUser(data: CreateUserRequest): Promise<User> {
   const userId = uuidv4();
-  const now = new Date();
+  const now = new Date().toISOString();
 
   const user: User = {
     userId,
@@ -73,7 +73,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
     })
   );
 
-  return result.Items?.[0] as User || null;
+  return (result.Items?.[0] as User) || null;
 }
 
 /**
@@ -92,20 +92,22 @@ export async function getUserByReferralCode(referralCode: string): Promise<User 
     })
   );
 
-  return result.Items?.[0] as User || null;
+  return (result.Items?.[0] as User) || null;
 }
 
 /**
  * Update last login timestamp
  */
 export async function updateLastLogin(userId: string): Promise<void> {
+  const now = new Date().toISOString();
+
   await docClient.send(
     new UpdateCommand({
       TableName: env.DYNAMODB_USERS_TABLE,
       Key: { userId },
       UpdateExpression: 'SET lastLoginAt = :now, updatedAt = :now',
       ExpressionAttributeValues: {
-        ':now': new Date(),
+        ':now': now,
       },
     })
   );

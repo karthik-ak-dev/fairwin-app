@@ -44,7 +44,11 @@ export function useAuth() {
   }, [session]);
 
   const login = async () => {
-    await signIn('google', { callbackUrl: '/dashboard' });
+    await signIn('google', {
+      callbackUrl: '/dashboard',
+      // Force Google account selection screen every time
+      prompt: 'select_account'
+    });
   };
 
   const logout = async () => {

@@ -29,10 +29,10 @@ export interface User {
   // Account Status
   status: UserStatus; // Account status
 
-  // Timestamps
-  createdAt: Date; // Account creation timestamp
-  updatedAt: Date; // Last update timestamp
-  lastLoginAt: Date; // Last login timestamp
+  // Timestamps (ISO 8601 strings)
+  createdAt: string; // Account creation timestamp (ISO 8601)
+  updatedAt: string; // Last update timestamp (ISO 8601)
+  lastLoginAt: string; // Last login timestamp (ISO 8601)
 }
 
 
