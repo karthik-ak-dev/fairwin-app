@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
-import { GoogleAuthProvider } from './providers/GoogleAuthProvider';
+import { SessionProvider } from './providers/SessionProvider';
 import { QueryProvider } from './providers/QueryProvider';
 
 const outfit = Outfit({
@@ -27,11 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
-        <GoogleAuthProvider>
+        <SessionProvider>
           <QueryProvider>
             {children}
           </QueryProvider>
-        </GoogleAuthProvider>
+        </SessionProvider>
       </body>
     </html>
   );

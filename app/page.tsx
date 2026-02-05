@@ -29,8 +29,8 @@ export default function LandingPage() {
             Simple staking with guaranteed returns. Plus earn up to 15% commission from 5-level referrals. No complex DeFi, no impermanent loss, just consistent rewards.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
-            <Link href="/stake" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform text-center">
-              Start Staking →
+            <Link href="/auth/signin" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform text-center">
+              Get Started →
             </Link>
             <Link href="/dashboard" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-transparent text-white font-bold text-sm sm:text-base border-2 border-white/8 rounded-xl uppercase tracking-wide hover:border-white hover:bg-white/5 transition-all text-center">
               View Dashboard
@@ -213,10 +213,10 @@ export default function LandingPage() {
           <div className="bg-gradient-to-br from-accent/15 to-accent/2 border border-accent/30 rounded-2xl sm:rounded-3xl p-8 sm:p-12 lg:p-16 text-center">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3 sm:mb-4">Ready to Start Earning?</h2>
             <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8 px-4">
-              Connect your wallet and make your first stake in under 2 minutes
+              Sign in with Google and make your first stake in under 2 minutes
             </p>
-            <Link href="/stake" className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform">
-              Connect Wallet & Stake →
+            <Link href="/auth/signin" className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform">
+              Get Started Now →
             </Link>
           </div>
         </div>
