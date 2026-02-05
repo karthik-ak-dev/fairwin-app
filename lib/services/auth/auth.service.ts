@@ -4,7 +4,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import { getUserByEmail, findOrCreateUser } from '@/lib/db/repositories/user.repository';
-import { User } from '@/lib/db/models/User';
+import { User } from '@/lib/db/models/user.model';
 import { AuthProfile } from './types';
 
 /**

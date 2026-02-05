@@ -7,15 +7,13 @@ class Constants {
   // Authentication & Session
   public readonly SESSION_MAX_AGE_SECONDS: number = 30 * 24 * 60 * 60; // 30 days
 
-  // Staking Parameters
-  public readonly MIN_STAKE: number = 50; // $50
-  public readonly MAX_STAKE: number = 10000; // $10,000
-  public readonly MONTHLY_RETURN_RATE: number = 0.08; // 8%
-  public readonly STAKE_DURATION_MONTHS: number = 24;
+  // Default Staking Configuration
+  // Points to which StakeConfig to use for new stakes
+  public readonly DEFAULT_STAKE_CONFIG_ID: string = '8_PERCENT_24_MONTHS';
 
-  // Referral System
-  public readonly REFERRAL_COMMISSION_RATES: number[] = [0.08, 0.03, 0.02, 0.01, 0.01]; // 5 levels
-  public readonly MAX_REFERRAL_LEVELS: number = 5;
+  // Default Referral Configuration
+  // Points to which ReferralConfig to use
+  public readonly DEFAULT_REFERRAL_CONFIG_ID: string = '5_LEVEL_STANDARD';
 
   // Withdrawal Settings
   public readonly WITHDRAWAL_DAY_OF_MONTH: number = 1;

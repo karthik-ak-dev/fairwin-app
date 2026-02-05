@@ -59,6 +59,60 @@ Resources:
         - Key: ManagedBy
           Value: SAM
 
+  # ===========================================
+  # StakeConfigs Table
+  # Primary Key: stakeConfigId (HASH)
+  # Contains staking plan configurations (duration, rates, limits)
+  # Read-only in application - managed via console
+  # ===========================================
+  StakeConfigsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'MassiveHike-${Environment}-StakeConfigs'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: stakeConfigId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: stakeConfigId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: MassiveHike
+        - Key: ManagedBy
+          Value: SAM
+
+  # ===========================================
+  # ReferralConfigs Table
+  # Primary Key: referralConfigId (HASH)
+  # Contains referral commission structure (rates per level, max levels)
+  # Read-only in application - managed via console
+  # ===========================================
+  ReferralConfigsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'MassiveHike-${Environment}-ReferralConfigs'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: referralConfigId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: referralConfigId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: MassiveHike
+        - Key: ManagedBy
+          Value: SAM
+
 Outputs:
   UsersTableName:
     Description: Users table name
@@ -83,6 +137,30 @@ Outputs:
     Value: referralCode-index
     Export:
       Name: !Sub '${Environment}-MassiveHike-ReferralCodeIndexName'
+
+  StakeConfigsTableName:
+    Description: StakeConfigs table name
+    Value: !Ref StakeConfigsTable
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-StakeConfigsTableName'
+
+  StakeConfigsTableArn:
+    Description: StakeConfigs table ARN
+    Value: !GetAtt StakeConfigsTable.Arn
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-StakeConfigsTableArn'
+
+  ReferralConfigsTableName:
+    Description: ReferralConfigs table name
+    Value: !Ref ReferralConfigsTable
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-ReferralConfigsTableName'
+
+  ReferralConfigsTableArn:
+    Description: ReferralConfigs table ARN
+    Value: !GetAtt ReferralConfigsTable.Arn
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-ReferralConfigsTableArn'
 
 
 #!/bin/bash

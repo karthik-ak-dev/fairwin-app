@@ -6,11 +6,14 @@ class Environment {
 
   // AWS Configuration
   public readonly AWS_REGION: string;
+  public readonly ENVIRONMENT: string = process.env.ENVIRONMENT || 'dev';
 
   // DynamoDB Tables
   public readonly DYNAMODB_USERS_TABLE: string;
   public readonly DYNAMODB_STAKES_TABLE: string;
+  public readonly DYNAMODB_STAKE_CONFIGS_TABLE: string;
   public readonly DYNAMODB_REFERRALS_TABLE: string;
+  public readonly DYNAMODB_REFERRAL_CONFIGS_TABLE: string;
   public readonly DYNAMODB_WITHDRAWALS_TABLE: string;
 
   // DynamoDB GSI Indexes - Users Table
@@ -28,13 +31,16 @@ class Environment {
 
   private constructor() {
     // AWS
-    this.AWS_REGION = process.env.AWS_REGION || 'us-east-1';
+    this.AWS_REGION = process.env.AWS_REGION || 'ap-south-1';
 
-    // DynamoDB Tables
-    this.DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE || 'massivehike-users';
-    this.DYNAMODB_STAKES_TABLE = process.env.DYNAMODB_STAKES_TABLE || 'massivehike-stakes';
-    this.DYNAMODB_REFERRALS_TABLE = process.env.DYNAMODB_REFERRALS_TABLE || 'massivehike-referrals';
-    this.DYNAMODB_WITHDRAWALS_TABLE = process.env.DYNAMODB_WITHDRAWALS_TABLE || 'massivehike-withdrawals';
+    // DynamoDB Tables - following CloudFormation naming: MassiveHike-${Environment}-TableName
+    const prefix = `MassiveHike-${this.ENVIRONMENT}`;
+    this.DYNAMODB_USERS_TABLE = process.env.DYNAMODB_USERS_TABLE || `${prefix}-Users`;
+    this.DYNAMODB_STAKES_TABLE = process.env.DYNAMODB_STAKES_TABLE || `${prefix}-Stakes`;
+    this.DYNAMODB_STAKE_CONFIGS_TABLE = process.env.DYNAMODB_STAKE_CONFIGS_TABLE || `${prefix}-StakeConfigs`;
+    this.DYNAMODB_REFERRALS_TABLE = process.env.DYNAMODB_REFERRALS_TABLE || `${prefix}-Referrals`;
+    this.DYNAMODB_REFERRAL_CONFIGS_TABLE = process.env.DYNAMODB_REFERRAL_CONFIGS_TABLE || `${prefix}-ReferralConfigs`;
+    this.DYNAMODB_WITHDRAWALS_TABLE = process.env.DYNAMODB_WITHDRAWALS_TABLE || `${prefix}-Withdrawals`;
 
     // NextAuth
     this.NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET || 'development-secret-change-in-production';

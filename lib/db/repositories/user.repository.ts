@@ -7,7 +7,7 @@
 import { PutCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '@/lib/db/dynamodb';
 import { env } from '@/lib/env';
-import { User, UserStatus } from '@/lib/db/models/User';
+import { User, UserStatus } from '@/lib/db/models/user.model';
 import { CreateUserRequest, AuthProfile } from '@/lib/services/auth/types';
 import { generateReferralCode } from '@/lib/services/referral/referral-code.service';
 import { v4 as uuidv4 } from 'uuid';

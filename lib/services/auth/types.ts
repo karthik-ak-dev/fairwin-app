@@ -1,7 +1,7 @@
 // Authentication Service Types
 // Used for Google SSO authentication flow
 
-import { User, UserStatus } from '@/lib/db/models/User';
+import { User, UserStatus } from '@/lib/db/models/user.model';
 
 // OAuth profile data (Google, email/password, etc.)
 export interface AuthProfile {
@@ -27,8 +27,8 @@ export interface AuthUserResponse {
   picture?: string;
   referralCode: string;
   status: UserStatus;
-  createdAt: Date;
-  lastLoginAt: Date;
+  createdAt: string;
+  lastLoginAt: string;
 }
 
 // Response with user stats for dashboard
