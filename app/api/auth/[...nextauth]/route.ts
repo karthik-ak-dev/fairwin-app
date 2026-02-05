@@ -4,7 +4,8 @@
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import { env } from '@/lib/env';
-import { findOrCreateUser } from '@/lib/db/repositories/user.repository';
+import { constants } from '@/lib/constants';
+import { handleUserSignIn } from '@/lib/services/auth/auth.service';
 import { AuthProfile } from '@/lib/services/auth/types';
 
 export const authOptions: NextAuthOptions = {
@@ -19,21 +20,16 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user }) {
-      try {
-        if (!user.email) return false;
+      if (!user.email) return false;
 
-        const authProfile: AuthProfile = {
-          email: user.email,
-          name: user.name || 'Unknown User',
-          picture: user.image || undefined,
-        };
+      const authProfile: AuthProfile = {
+        email: user.email,
+        name: user.name || 'Unknown User',
+        picture: user.image || undefined,
+      };
 
-        await findOrCreateUser(authProfile);
-        return true;
-      } catch (error) {
-        console.error('SignIn error:', error);
-        return false;
-      }
+      const result = await handleUserSignIn(authProfile);
+      return result !== null;
     },
     async jwt({ token, user }) {
       if (user?.email) {
@@ -54,7 +50,7 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: constants.SESSION_MAX_AGE_SECONDS,
   },
   secret: env.NEXTAUTH_SECRET,
 };
