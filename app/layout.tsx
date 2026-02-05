@@ -1,10 +1,20 @@
 import type { Metadata } from 'next';
-import './styles/globals.css';
-import QueryProvider from './providers/QueryProvider';
+import { Outfit, JetBrains_Mono } from 'next/font/google';
+import './globals.css';
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  variable: '--font-outfit',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+});
 
 export const metadata: Metadata = {
-  title: 'FairWin - 100% On-Chain Gaming',
-  description: 'Every bet, every outcome, every payout on the blockchain. Verify it yourself on Polygonscan.',
+  title: 'MassiveHikeCoin - Stake & Earn 8% Monthly',
+  description: 'Simple USDT staking with guaranteed 8% monthly returns for 24 months. Plus earn up to 15% commission from 5-level referrals on Binance Smart Chain.',
 };
 
 export default function RootLayout({
@@ -14,8 +24,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        <QueryProvider>{children}</QueryProvider>
+      <body className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+        {children}
       </body>
     </html>
   );

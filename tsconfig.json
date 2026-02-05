@@ -1,5 +1,9 @@
 {
+  // TypeScript configuration for Next.js 14 App Router
+  // Enables strict type checking and path aliases
+  // Configures module resolution for Next.js
   "compilerOptions": {
+    "target": "ES2017",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -22,5 +26,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "designs"]
+  "exclude": ["node_modules"]
 }

@@ -1,451 +1,330 @@
 'use client';
 
-import './styles/home.css';
-import { useRaffles } from '@/lib/hooks/raffle/raffle-query.hooks';
-import { RaffleStatus } from '@/lib/db/models';
+import Link from 'next/link';
+import { useState } from 'react';
+import { useLanding } from '@/lib/hooks/useLanding';
 
-export default function Home() {
-  const { data: rafflesData } = useRaffles({ status: RaffleStatus.ACTIVE });
+export default function LandingPage() {
+  const { stats, referralRates } = useLanding();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const activeRaffles = rafflesData?.raffles || [];
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US').format(num);
+  };
 
   return (
-    <div className="home">
+    <div className="min-h-screen">
       {/* Navigation */}
-      <nav className="nav">
-        <div className="container">
-          <div className="logo">
-            FAIR<span>WIN</span>
-          </div>
-          <div className="nav-links">
-            <a href="#games">Games</a>
-            <a href="#live">Live</a>
-            <a href="#verify">Verify</a>
-            <button className="btn-nav">Connect</button>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-xl border-b border-white/8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4 sm:py-5">
+            <Link href="/" className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+              MASSIVE<span className="text-accent">HIKE</span>
+            </Link>
+            <div className="flex items-center gap-3 sm:gap-6 lg:gap-9">
+              <Link href="#" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Home
+              </Link>
+              <Link href="#how-it-works" className="hidden md:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                How it Works
+              </Link>
+              <Link href="/referrals" className="hidden md:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Referrals
+              </Link>
+              <button className="hidden sm:block px-4 sm:px-6 py-2 sm:py-3 bg-accent text-black font-bold text-xs sm:text-sm rounded-md uppercase tracking-wide hover:scale-105 transition-transform whitespace-nowrap">
+                Connect Wallet
+              </button>
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="sm:hidden p-2 text-white hover:text-accent transition-colors"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isMobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="sm:hidden border-t border-white/8 bg-bg/98 backdrop-blur-xl">
+            <div className="container mx-auto px-4 py-4 space-y-3">
+              <Link
+                href="#"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                Home
+              </Link>
+              <Link
+                href="#how-it-works"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                How it Works
+              </Link>
+              <Link
+                href="/referrals"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
+              >
+                Referrals
+              </Link>
+              <button className="w-full px-4 py-3 bg-accent text-black font-bold text-sm rounded-lg uppercase tracking-wide hover:scale-105 transition-transform">
+                Connect Wallet
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="hero">
-        <div className="container">
-          <div className="hero-content">
-            <div className="hero-eyebrow">5 Games Live Now</div>
-            <h1>
-              <div className="line1">100% On-Chain.</div>
-              <div className="line2">100% Verifiable.</div>
-            </h1>
-            <p className="hero-sub">
-              Every bet, every outcome, every payout on the blockchain. Verify it yourself on Polygonscan.
+      <section className="pt-24 sm:pt-32 lg:pt-36 pb-12 sm:pb-16 lg:pb-20 text-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-accent/10 border border-accent/30 rounded-full text-xs font-bold text-accent uppercase tracking-wider mb-4 sm:mb-6">
+            <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+            Live on BSC Mainnet
+          </div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tighter leading-tight mb-4 sm:mb-5 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+            Stake Once.<br />
+            Earn <span className="text-accent">8% Monthly</span><br />
+            For 24 Months.
+          </h1>
+          <p className="text-base sm:text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto mb-6 sm:mb-8 lg:mb-10 leading-relaxed px-4">
+            Simple staking with guaranteed returns. Plus earn up to 15% commission from 5-level referrals. No complex DeFi, no impermanent loss, just consistent rewards.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
+            <Link href="/stake" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform text-center">
+              Start Staking →
+            </Link>
+            <Link href="/dashboard" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-transparent text-white font-bold text-sm sm:text-base border-2 border-white/8 rounded-xl uppercase tracking-wide hover:border-white hover:bg-white/5 transition-all text-center">
+              View Dashboard
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8 max-w-4xl mx-auto mb-12 sm:mb-16">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 lg:gap-10">
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-accent mb-2">
+                {formatCurrency(stats.totalStaked)}
+              </div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider">
+                Total Value Locked
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-accent mb-2">
+                {formatNumber(stats.activeStakers)}
+              </div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider">
+                Active Stakers
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl sm:text-4xl font-extrabold text-accent mb-2">
+                {formatCurrency(stats.totalRewardsDistributed)}
+              </div>
+              <div className="text-xs text-gray-400 uppercase tracking-wider">
+                Rewards Paid
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-12 sm:py-16 lg:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-white/5 border border-white/8 rounded-full text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 sm:mb-5">
+              💎 Simple Process
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3 sm:mb-4">How It Works</h2>
+            <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto px-4">
+              Start earning in 3 simple steps
             </p>
-            <div className="hero-cta">
-              <button className="btn-hero">Play Now</button>
-              <a href="#" className="link-hero">
-                How It Works →
-              </a>
-            </div>
           </div>
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <div className="hero-stat-value accent">$1.5M+</div>
-              <div className="hero-stat-label">Total Paid Out</div>
-            </div>
-            <div className="hero-stat">
-              <div className="hero-stat-value">32K</div>
-              <div className="hero-stat-label">Players</div>
-            </div>
-            <div className="hero-stat">
-              <div className="hero-stat-value">100%</div>
-              <div className="hero-stat-label">On-Chain</div>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* Games Section */}
-      <section className="games" id="games">
-        <div className="container">
-          <div className="games-header">
-            <div>
-              <div className="section-label">Games</div>
-              <h2 className="section-title">Choose Your Game</h2>
-            </div>
-          </div>
-          <div className="games-grid">
-            <div className="game-card">
-              <div className="game-icon">🎟️</div>
-              <div className="game-name">Raffle</div>
-              <div className="game-desc">Win 90% of pool</div>
-              <div className="game-stat">$14.8K</div>
-              <div className="game-stat-label">Total Pools</div>
-            </div>
-            <div className="game-card">
-              <div className="game-icon">🪙</div>
-              <div className="game-name">Coinflip</div>
-              <div className="game-desc">Instant 2x</div>
-              <div className="game-stat">$42.3K</div>
-              <div className="game-stat-label">24h Volume</div>
-            </div>
-            <div className="game-card">
-              <div className="game-icon">🎲</div>
-              <div className="game-name">Dice</div>
-              <div className="game-desc">Up to 99x</div>
-              <div className="game-stat">$38.1K</div>
-              <div className="game-stat-label">24h Volume</div>
-            </div>
-            <div className="game-card">
-              <div className="game-icon">🎱</div>
-              <div className="game-name">Lottery</div>
-              <div className="game-desc">Pick 6 numbers</div>
-              <div className="game-stat">$52K</div>
-              <div className="game-stat-label">Jackpot</div>
-            </div>
-            <div className="game-card">
-              <div className="game-icon">📈</div>
-              <div className="game-name">Crash</div>
-              <div className="game-desc">Cash out anytime</div>
-              <div className="game-stat">$67.4K</div>
-              <div className="game-stat-label">24h Volume</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Active Draws Section */}
-      <section className="live-draws" id="live">
-        <div className="container">
-          <div className="draws-header">
-            <div>
-              <div className="section-label">Join Now</div>
-              <h2 className="section-title">Active Draws</h2>
-            </div>
-            <div className="live-indicator">Live</div>
-          </div>
-          <div className="draws-list">
-            <div className="draw-row">
-              <div className="draw-icon">🎟️</div>
-              <div className="draw-info">
-                <div className="draw-name">Daily Raffle</div>
-                <div className="draw-desc">Winner every 24 hours • 847 entries</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+            <div className="bg-white/3 border border-white/8 rounded-2xl p-8 text-center hover:border-accent hover:-translate-y-1 transition-all">
+              <div className="w-14 h-14 bg-accent/10 border-2 border-accent rounded-full flex items-center justify-center text-2xl font-extrabold text-accent mx-auto mb-5">
+                1
               </div>
-              <div className="draw-pool">
-                <div className="draw-pool-value">$2,450</div>
-                <div className="draw-pool-label">Pool</div>
-              </div>
-              <div className="draw-time">
-                <div className="draw-time-value">6h 24m</div>
-                <div className="draw-time-label">Left</div>
-              </div>
-              <button className="draw-btn">Enter</button>
-            </div>
-            <div className="draw-row">
-              <div className="draw-icon">🎟️</div>
-              <div className="draw-info">
-                <div className="draw-name">Weekly Raffle</div>
-                <div className="draw-desc">Winner every Sunday • 2,340 entries</div>
-              </div>
-              <div className="draw-pool">
-                <div className="draw-pool-value">$14,850</div>
-                <div className="draw-pool-label">Pool</div>
-              </div>
-              <div className="draw-time">
-                <div className="draw-time-value">2d 18h</div>
-                <div className="draw-time-label">Left</div>
-              </div>
-              <button className="draw-btn">Enter</button>
-            </div>
-            <div className="draw-row">
-              <div className="draw-icon">🎱</div>
-              <div className="draw-info">
-                <div className="draw-name">Monthly Lottery</div>
-                <div className="draw-desc">Pick 6 numbers • 1,280 tickets sold</div>
-              </div>
-              <div className="draw-pool">
-                <div className="draw-pool-value">$52,000</div>
-                <div className="draw-pool-label">Jackpot</div>
-              </div>
-              <div className="draw-time">
-                <div className="draw-time-value">12d 4h</div>
-                <div className="draw-time-label">Left</div>
-              </div>
-              <button className="draw-btn">Buy</button>
-            </div>
-            <div className="draw-row">
-              <div className="draw-icon">🎟️</div>
-              <div className="draw-info">
-                <div className="draw-name">Mega Raffle</div>
-                <div className="draw-desc">Monthly grand prize • 4,560 entries</div>
-              </div>
-              <div className="draw-pool">
-                <div className="draw-pool-value">$48,200</div>
-                <div className="draw-pool-label">Pool</div>
-              </div>
-              <div className="draw-time">
-                <div className="draw-time-value">18d 2h</div>
-                <div className="draw-time-label">Left</div>
-              </div>
-              <button className="draw-btn">Enter</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Real-Time Payouts Section */}
-      <section className="earnings">
-        <div className="container">
-          <div className="draws-header">
-            <div>
-              <div className="section-label">Verified Wins</div>
-              <h2 className="section-title">Real-Time Payouts</h2>
-            </div>
-            <div className="live-indicator">Live Feed</div>
-          </div>
-          <div className="earnings-grid">
-            <div className="earnings-list">
-              <div className="earning-item">
-                <span className="earning-icon">🎟️</span>
-                <div className="earning-info">
-                  <div className="earning-game">Daily Raffle Winner</div>
-                  <div className="earning-address">0x7a3F...9c2E</div>
-                </div>
-                <span className="earning-amount">+$2,216</span>
-                <a href="#" className="earning-verify">
-                  Verify →
-                </a>
-              </div>
-              <div className="earning-item">
-                <span className="earning-icon">📈</span>
-                <div className="earning-info">
-                  <div className="earning-game">Crash — Cashed at 4.2x</div>
-                  <div className="earning-address">0x2eB1...4f8A</div>
-                </div>
-                <span className="earning-amount">+$840</span>
-                <a href="#" className="earning-verify">
-                  Verify →
-                </a>
-              </div>
-              <div className="earning-item">
-                <span className="earning-icon">🪙</span>
-                <div className="earning-info">
-                  <div className="earning-game">Coinflip — Heads</div>
-                  <div className="earning-address">0x9cD4...7b3F</div>
-                </div>
-                <span className="earning-amount">+$500</span>
-                <a href="#" className="earning-verify">
-                  Verify →
-                </a>
-              </div>
-              <div className="earning-item">
-                <span className="earning-icon">🎲</span>
-                <div className="earning-info">
-                  <div className="earning-game">Dice — Rolled 23</div>
-                  <div className="earning-address">0x4fA1...2e8C</div>
-                </div>
-                <span className="earning-amount">+$1,200</span>
-                <a href="#" className="earning-verify">
-                  Verify →
-                </a>
-              </div>
-              <div className="earning-item">
-                <span className="earning-icon">🎱</span>
-                <div className="earning-info">
-                  <div className="earning-game">Lottery — 4 matches</div>
-                  <div className="earning-address">0x8bE2...1a9D</div>
-                </div>
-                <span className="earning-amount">+$2,500</span>
-                <a href="#" className="earning-verify">
-                  Verify →
-                </a>
-              </div>
-            </div>
-            <div className="earnings-stats">
-              <div className="e-stat">
-                <div className="e-stat-value">$1.5M+</div>
-                <div className="e-stat-label">Total Paid</div>
-              </div>
-              <div className="e-stat">
-                <div className="e-stat-value">4,230</div>
-                <div className="e-stat-label">Games Today</div>
-              </div>
-              <div className="e-stat">
-                <div className="e-stat-value">Instant</div>
-                <div className="e-stat-label">Payouts</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Verify Section */}
-      <section className="verify" id="verify">
-        <div className="container">
-          <div className="draws-header">
-            <div>
-              <div className="section-label">Transparency</div>
-              <h2 className="section-title">Don't Trust. Verify.</h2>
-            </div>
-          </div>
-          <div className="verify-list">
-            <div className="verify-item">
-              <div className="verify-num">01</div>
-              <div className="verify-content">
-                <h4>Find the Transaction</h4>
-                <p>
-                  Every bet creates a transaction on Polygon. Find it on Polygonscan using your wallet or the game's
-                  transaction hash.
-                </p>
-                <a href="#" className="verify-link">
-                  Open Polygonscan →
-                </a>
-              </div>
-            </div>
-            <div className="verify-item">
-              <div className="verify-num">02</div>
-              <div className="verify-content">
-                <h4>Check the VRF Proof</h4>
-                <p>
-                  Each game shows the Chainlink VRF request. Cryptographic proof the randomness wasn't manipulated.
-                </p>
-                <a href="#" className="verify-link">
-                  What is Chainlink VRF? →
-                </a>
-              </div>
-            </div>
-            <div className="verify-item">
-              <div className="verify-num">03</div>
-              <div className="verify-content">
-                <h4>Trace the Outcome</h4>
-                <p>The smart contract logic is public. Trace exactly how the random number determined the winner.</p>
-                <a href="#" className="verify-link">
-                  View Contract Code →
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Difference Section */}
-      <section className="difference">
-        <div className="container">
-          <div className="draws-header">
-            <div>
-              <div className="section-label">The Difference</div>
-              <h2 className="section-title">Why This Matters</h2>
-            </div>
-          </div>
-          <div className="diff-grid">
-            <div className="diff-col them">
-              <h3>🎰 Traditional Casinos</h3>
-              <div className="diff-list">
-                <div className="diff-item">
-                  <span className="icon">✗</span> Bets stored in their database
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✗</span> Verification only on their website
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✗</span> Server RNG — hidden, unverifiable
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✗</span> Custodial — they hold your funds
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✗</span> Manual withdrawal approval
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✗</span> Can ban/limit winners
-                </div>
-              </div>
-            </div>
-            <div className="diff-col us">
-              <h3>⚡ FairWin</h3>
-              <div className="diff-list">
-                <div className="diff-item">
-                  <span className="icon">✓</span> Bets recorded on blockchain
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✓</span> Verify on Polygonscan (independent)
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✓</span> Chainlink VRF — provable randomness
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✓</span> Non-custodial — smart contract holds
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✓</span> Instant automatic payouts
-                </div>
-                <div className="diff-item">
-                  <span className="icon">✓</span> Permissionless — no bans possible
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ Section */}
-      <section className="faq">
-        <div className="container">
-          <div className="draws-header">
-            <div>
-              <div className="section-label">FAQ</div>
-              <h2 className="section-title">Questions</h2>
-            </div>
-          </div>
-          <div className="faq-list">
-            <div className="faq-item">
-              <div className="faq-q">Why only 5 games?</div>
-              <p className="faq-a">
-                We only offer games that work 100% on-chain. Slots require off-chain servers — that defeats the purpose
-                of transparency.
+              <div className="text-5xl mb-5">💰</div>
+              <h3 className="text-xl font-bold mb-3">Stake USDT</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Deposit between $50 to $10,000 USDT on Binance Smart Chain. Lock for 24 months.
               </p>
             </div>
-            <div className="faq-item">
-              <div className="faq-q">What is Chainlink VRF?</div>
-              <p className="faq-a">
-                A cryptographic system that generates random numbers with mathematical proof they weren't manipulated.
-                Used by major DeFi protocols.
+
+            <div className="bg-white/3 border border-white/8 rounded-2xl p-8 text-center hover:border-accent hover:-translate-y-1 transition-all">
+              <div className="w-14 h-14 bg-accent/10 border-2 border-accent rounded-full flex items-center justify-center text-2xl font-extrabold text-accent mx-auto mb-5">
+                2
+              </div>
+              <div className="text-5xl mb-5">📈</div>
+              <h3 className="text-xl font-bold mb-3">Earn Daily</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Watch your rewards accumulate daily at 8% monthly rate. Withdraw every month.
               </p>
             </div>
-            <div className="faq-item">
-              <div className="faq-q">Can you rig the outcomes?</div>
-              <p className="faq-a">
-                No. Randomness comes from Chainlink after you bet. We can't predict or change it. The math proves this.
+
+            <div className="bg-white/3 border border-white/8 rounded-2xl p-8 text-center hover:border-accent hover:-translate-y-1 transition-all">
+              <div className="w-14 h-14 bg-accent/10 border-2 border-accent rounded-full flex items-center justify-center text-2xl font-extrabold text-accent mx-auto mb-5">
+                3
+              </div>
+              <div className="text-5xl mb-5">💸</div>
+              <h3 className="text-xl font-bold mb-3">Withdraw Monthly</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Claim your accumulated rewards on the 1st of every month. Principal returned after 24 months.
               </p>
             </div>
-            <div className="faq-item">
-              <div className="faq-q">What if FairWin disappears?</div>
-              <p className="faq-a">
-                The smart contract keeps running. You can interact directly via Polygonscan to withdraw or play.
-              </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Dual Reward System */}
+      <section id="referrals" className="py-12 sm:py-16 lg:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 px-4 sm:px-5 py-1.5 sm:py-2 bg-white/5 border border-white/8 rounded-full text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 sm:mb-5">
+              💵 Earning Potential
+            </div>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-3 sm:mb-4">Dual Reward System</h2>
+            <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto px-4">
+              Earn from staking + referrals
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+            {/* Staking Rewards */}
+            <Link href="/stake" className="bg-gradient-to-br from-accent/10 to-accent/2 border border-accent/30 rounded-2xl p-6 sm:p-8 lg:p-10 hover:scale-[1.02] hover:border-accent transition-all cursor-pointer">
+              <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">💎</div>
+              <h3 className="text-2xl sm:text-3xl font-extrabold mb-2 sm:mb-3">Staking Rewards</h3>
+              <div className="text-5xl sm:text-6xl lg:text-7xl font-black text-accent leading-none mb-2">8%</div>
+              <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Monthly on your stake</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-accent text-xl">✓</span>
+                  <span>Guaranteed 8% monthly returns</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-accent text-xl">✓</span>
+                  <span>Daily reward accumulation</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-accent text-xl">✓</span>
+                  <span>Withdraw every month</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-accent text-xl">✓</span>
+                  <span>24-month program</span>
+                </div>
+              </div>
+            </Link>
+
+            {/* Referral Rewards */}
+            <Link href="/referrals" className="bg-gradient-to-br from-gold/10 to-gold/2 border border-gold/30 rounded-2xl p-6 sm:p-8 lg:p-10 hover:scale-[1.02] hover:border-gold transition-all cursor-pointer">
+              <div className="text-5xl sm:text-6xl mb-4 sm:mb-5">🤝</div>
+              <h3 className="text-2xl sm:text-3xl font-extrabold mb-2 sm:mb-3">Referral Rewards</h3>
+              <div className="text-5xl sm:text-6xl lg:text-7xl font-black text-gold leading-none mb-2">15%</div>
+              <p className="text-sm sm:text-base text-gray-400 mb-5 sm:mb-6">Up to 15% commission</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gold text-xl">✓</span>
+                  <span>5-level referral system</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gold text-xl">✓</span>
+                  <span>Instant commission on stakes</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gold text-xl">✓</span>
+                  <span>Build passive income</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="text-gold text-xl">✓</span>
+                  <span>Track your downline</span>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Referral Levels */}
+          <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8 lg:p-10 mt-6 sm:mt-8">
+            <h3 className="text-xl sm:text-2xl font-extrabold mb-4 sm:mb-6 text-center">🏆 Referral Commission Breakdown</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+              {referralRates.map((level) => (
+                <div key={level.level} className="text-center p-4 sm:p-5 bg-white/2 border border-white/8 rounded-xl">
+                  <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
+                    Level {level.level}
+                  </div>
+                  <div className="text-2xl sm:text-3xl font-extrabold text-gold">
+                    {level.rate}%
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="cta">
-        <div className="container">
-          <h2>
-            Ready to <span>Play Fair?</span>
-          </h2>
-          <p>Connect your wallet. Pick a game. Verify everything.</p>
-          <button className="btn-hero">Connect Wallet</button>
+      <section className="py-12 sm:py-16 lg:py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-gradient-to-br from-accent/15 to-accent/2 border border-accent/30 rounded-2xl sm:rounded-3xl p-8 sm:p-12 lg:p-16 text-center">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black mb-3 sm:mb-4">Ready to Start Earning?</h2>
+            <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8 px-4">
+              Connect your wallet and make your first stake in under 2 minutes
+            </p>
+            <Link href="/stake" className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform">
+              Connect Wallet & Stake →
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="container">
-          <div className="footer-links">
-            <a href="#">Contract</a>
-            <a href="#">GitHub</a>
-            <a href="#">Docs</a>
-            <a href="#">Twitter</a>
+      <footer className="border-t border-white/8 py-6 sm:py-9 mt-12 sm:mt-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+            <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-8">
+              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Contract
+              </Link>
+              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Docs
+              </Link>
+              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Support
+              </Link>
+              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
+                Twitter
+              </Link>
+            </div>
+            <div className="text-xs text-gray-400">
+              © 2026 MassiveHikeCoin
+            </div>
           </div>
-          <div className="footer-copy">© 2026 FairWin</div>
         </div>
       </footer>
     </div>
