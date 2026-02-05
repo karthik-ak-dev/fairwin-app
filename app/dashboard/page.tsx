@@ -4,32 +4,16 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useDashboard } from '@/lib/hooks/useDashboard';
 import { useAuth } from '@/lib/hooks/useAuth';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
+import { formatCurrency, formatWalletAddress, copyToClipboard } from '@/lib/utils/format';
 
 export default function DashboardPage() {
   const { stats, stakes, referrals, withdrawal, withdrawalHistory, referralLink } = useDashboard();
-  const { user, logout } = useAuth();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { user } = useAuth();
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawWallet, setWithdrawWallet] = useState('');
   const [isProcessingWithdraw, setIsProcessingWithdraw] = useState(false);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    alert('Copied to clipboard!');
-  };
 
   const handleWithdrawClick = () => {
     if (withdrawal.isWithdrawalAvailable) {
@@ -63,83 +47,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen pb-20">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-xl border-b border-white/8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4 sm:py-5">
-            <Link href="/" className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-              MASSIVE<span className="text-accent">HIKE</span>
-            </Link>
-            <div className="flex items-center gap-3 sm:gap-6 lg:gap-9">
-              <Link href="/" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Home
-              </Link>
-              <Link href="/dashboard" className="hidden sm:block text-sm font-medium text-white uppercase tracking-wider transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Referrals
-              </Link>
-              <div className="hidden sm:flex items-center gap-3 px-3 sm:px-5 py-2 sm:py-2.5 bg-accent/10 border border-accent/30 rounded-lg">
-                <img src={user?.picture} alt={user?.name} className="w-6 h-6 rounded-full" />
-                <span className="text-xs sm:text-sm font-semibold text-white">
-                  {user?.name || 'User'}
-                </span>
-              </div>
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="sm:hidden p-2 text-white hover:text-accent transition-colors"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden border-t border-white/8 bg-bg/98 backdrop-blur-xl">
-            <div className="container mx-auto px-4 py-4 space-y-3">
-              <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Home
-              </Link>
-              <Link
-                href="/dashboard"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-white bg-accent/10 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/referrals"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Referrals
-              </Link>
-              <div className="flex items-center gap-3 px-4 py-3 bg-accent/10 border border-accent/30 rounded-lg">
-                <img src={user?.picture} alt={user?.name} className="w-8 h-8 rounded-full" />
-                <div>
-                  <div className="text-sm font-semibold text-white">{user?.name || 'User'}</div>
-                  <div className="text-xs text-gray-400">{user?.email}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navigation />
 
       {/* Page Header */}
       <header className="pt-24 sm:pt-28 pb-6 sm:pb-10">
@@ -578,6 +486,8 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <Footer />
     </div>
   );
 }

@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useStakeDeposit } from '@/lib/hooks/useStakeDeposit';
 import { QRCodeSVG } from 'qrcode.react';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
+import { formatCurrency, formatWalletAddress, copyToClipboard } from '@/lib/utils/format';
 
 export default function StakePage() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [txHash, setTxHash] = useState('');
   const [copiedWallet, setCopiedWallet] = useState(false);
 
@@ -32,91 +34,15 @@ export default function StakePage() {
     handleSubmitTxHash,
   } = useStakeDeposit();
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopyWallet = async (text: string) => {
+    await copyToClipboard(text);
     setCopiedWallet(true);
     setTimeout(() => setCopiedWallet(false), 2000);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  };
-
-  const formatWalletAddress = (address: string) => {
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
-
   return (
     <div className="min-h-screen pb-20">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-bg/95 backdrop-blur-xl border-b border-white/8">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4 sm:py-5">
-            <Link href="/" className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-              MASSIVE<span className="text-accent">HIKE</span>
-            </Link>
-            <div className="flex items-center gap-3 sm:gap-6 lg:gap-9">
-              <Link href="/" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Home
-              </Link>
-              <Link href="/dashboard" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Dashboard
-              </Link>
-              <Link href="/referrals" className="hidden sm:block text-sm font-medium text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Referrals
-              </Link>
-              {/* Mobile Menu Button */}
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="sm:hidden p-2 text-white hover:text-accent transition-colors"
-                aria-label="Toggle menu"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  {isMobileMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                  )}
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="sm:hidden border-t border-white/8 bg-bg/98 backdrop-blur-xl">
-            <div className="container mx-auto px-4 py-4 space-y-3">
-              <Link
-                href="/"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Home
-              </Link>
-              <Link
-                href="/dashboard"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/referrals"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block px-4 py-3 text-sm font-medium text-gray-400 hover:text-white hover:bg-white/5 rounded-lg uppercase tracking-wider transition-colors"
-              >
-                Referrals
-              </Link>
-            </div>
-          </div>
-        )}
-      </nav>
+      <Navigation />
 
       {/* Page Header */}
       <header className="pt-24 sm:pt-28 pb-6 sm:pb-10">
@@ -270,7 +196,7 @@ export default function StakePage() {
                           {centralWallet}
                         </div>
                         <button
-                          onClick={() => copyToClipboard(centralWallet)}
+                          onClick={() => handleCopyWallet(centralWallet)}
                           className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-accent/10 hover:bg-accent/20 text-accent text-xs font-semibold rounded-md transition-all"
                         >
                           {copiedWallet ? '✓ Copied' : 'Copy'}
@@ -379,30 +305,7 @@ export default function StakePage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/8 py-6 sm:py-9 mt-12 sm:mt-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-            <div className="flex flex-wrap justify-center sm:justify-start gap-4 sm:gap-8">
-              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Contract
-              </Link>
-              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Docs
-              </Link>
-              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Support
-              </Link>
-              <Link href="#" className="text-xs text-gray-400 hover:text-white uppercase tracking-wider transition-colors">
-                Twitter
-              </Link>
-            </div>
-            <div className="text-xs text-gray-400">
-              © 2026 MassiveHikeCoin
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
