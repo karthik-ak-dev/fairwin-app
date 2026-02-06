@@ -124,7 +124,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="space-y-5">
-                {stakes.map((stake) => {
+                {stakes.map((stake: any) => {
                   const progress = (stake.monthsElapsed / stake.totalMonths) * 100;
                   return (
                     <div
@@ -201,7 +201,7 @@ export default function DashboardPage() {
 
               {/* Levels Grid */}
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
-                {referrals.levels.map((level) => (
+                {referrals.levels.map((level: any) => (
                   <div key={level.level} className="bg-white/[0.02] border border-white/8 rounded-xl p-4 text-center">
                     <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Level {level.level}</div>
                     <div className="text-2xl font-extrabold text-gold mb-1">{level.count}</div>
@@ -254,7 +254,7 @@ export default function DashboardPage() {
                 {/* Per-Stake Rewards */}
                 <div>
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">Stake Rewards</div>
-                  {withdrawal.breakdown.stakeRewards.map((stake, index) => (
+                  {withdrawal.breakdown.stakeRewards.map((stake: any, index: number) => (
                     <div key={stake.stakeId} className="flex justify-between items-center py-1.5 text-sm pl-2">
                       <span className="text-gray-400">Stake #{index + 1} ({formatCurrency(stake.amount)})</span>
                       <span className="font-bold text-accent">{formatCurrency(stake.reward)}</span>
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                 {/* Per-Stake Breakdown */}
                 <div className="border-t border-white/10 pt-3">
                   <div className="text-xs text-gray-400 uppercase mb-2">Stake Rewards</div>
-                  {withdrawal.breakdown.stakeRewards.map((stake, index) => (
+                  {withdrawal.breakdown.stakeRewards.map((stake: any, index: number) => (
                     <div key={stake.stakeId} className="flex justify-between py-1">
                       <span className="text-gray-400">Stake #{index + 1} ({formatCurrency(stake.amount)})</span>
                       <span className="text-accent font-bold">{formatCurrency(stake.reward)}</span>

@@ -134,7 +134,7 @@ export default function ReferralsPage() {
 
               {/* Level Summary - Layered Tree Structure */}
               <div className="space-y-2.5">
-                {levelSummary.map((levelData, index) => {
+                {levelSummary.map((levelData: { level: number; members: number; totalStaked: number; commissionRate: number; yourEarnings: number }, index: number) => {
                   const levelColorMap: { [key: number]: { bg: string; text: string; border: string; leftBorder: string } } = {
                     1: { bg: 'bg-orange-500/10', text: 'text-orange-400', border: 'border-orange-500/30', leftBorder: 'border-orange-500/30' },
                     2: { bg: 'bg-orange-400/10', text: 'text-orange-300', border: 'border-orange-400/30', leftBorder: 'border-orange-400/30' },
@@ -194,7 +194,7 @@ export default function ReferralsPage() {
               <h3 className="text-base sm:text-lg font-extrabold mb-4 sm:mb-5 text-center">Commission Rates</h3>
 
               <div className="space-y-2">
-                {commissionRates.map((rate) => (
+                {commissionRates.map((rate: { level: number; rate: number; label: string }) => (
                   <div
                     key={rate.level}
                     className="flex justify-between items-center py-1.5"
