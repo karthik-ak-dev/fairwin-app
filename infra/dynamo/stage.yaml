@@ -113,6 +113,68 @@ Resources:
         - Key: ManagedBy
           Value: SAM
 
+  # ===========================================
+  # Stakes Table
+  # Primary Key: stakeId (HASH)
+  # GSI1: userId-index (userId as HASH, createdAt as RANGE) - for user's stakes history
+  # GSI2: status-index (status as HASH, createdAt as RANGE) - for admin to view pending/verifying stakes
+  # GSI3: txHash-index (txHash as HASH) - for blockchain verification lookup
+  # ===========================================
+  StakesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'MassiveHike-${Environment}-Stakes'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: stakeId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: txHash
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: stakeId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        # User stakes index - get all stakes for a user sorted by date
+        - IndexName: userId-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        # Status index - admin view of stakes by status (pending, verifying, etc.)
+        - IndexName: status-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        # TxHash index - lookup stake by blockchain transaction hash
+        - IndexName: txHash-index
+          KeySchema:
+            - AttributeName: txHash
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: MassiveHike
+        - Key: ManagedBy
+          Value: SAM
+
 Outputs:
   UsersTableName:
     Description: Users table name
@@ -161,6 +223,36 @@ Outputs:
     Value: !GetAtt ReferralConfigsTable.Arn
     Export:
       Name: !Sub '${Environment}-MassiveHike-ReferralConfigsTableArn'
+
+  StakesTableName:
+    Description: Stakes table name
+    Value: !Ref StakesTable
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-StakesTableName'
+
+  StakesTableArn:
+    Description: Stakes table ARN
+    Value: !GetAtt StakesTable.Arn
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-StakesTableArn'
+
+  UserIdIndexName:
+    Description: UserId GSI name
+    Value: userId-index
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-UserIdIndexName'
+
+  StatusIndexName:
+    Description: Status GSI name
+    Value: status-index
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-StatusIndexName'
+
+  TxHashIndexName:
+    Description: TxHash GSI name
+    Value: txHash-index
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-TxHashIndexName'
 
 
 #!/bin/bash
