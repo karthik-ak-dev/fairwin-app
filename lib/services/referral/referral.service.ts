@@ -8,8 +8,6 @@
 import {
   createReferralsBatch,
   getReferralsByReferrerId,
-  getReferralsByStakeId,
-  getReferralsByReferrerIdAndLevel,
 } from '@/lib/db/repositories/referral.repository';
 import { getUserById } from '@/lib/db/repositories/user.repository';
 import { getReferralConfigById } from '@/lib/db/repositories/referral-config.repository';
@@ -97,14 +95,6 @@ export async function getUserCommissions(userId: string): Promise<Referral[]> {
 }
 
 /**
- * Get total commissions earned by a user
- */
-export async function getTotalCommissionsEarned(userId: string): Promise<number> {
-  const referrals = await getReferralsByReferrerId(userId);
-  return referrals.reduce((sum, referral) => sum + referral.commissionAmount, 0);
-}
-
-/**
  * Get commissions grouped by level
  * Returns summary for each level (L1-L5)
  */
@@ -143,14 +133,6 @@ export async function getCommissionsByLevel(userId: string): Promise<
   }
 
   return summary;
-}
-
-/**
- * Get commissions from a specific stake
- * Shows how much commission was distributed to all upline levels
- */
-export async function getStakeCommissions(stakeId: string): Promise<Referral[]> {
-  return await getReferralsByStakeId(stakeId);
 }
 
 /**
@@ -205,16 +187,4 @@ export async function getNetworkStructure(userId: string): Promise<
   }
 
   return structure;
-}
-
-/**
- * Get recent commissions for a user
- * Returns latest N commission records
- */
-export async function getRecentCommissions(
-  userId: string,
-  limit: number = 10
-): Promise<Referral[]> {
-  const referrals = await getReferralsByReferrerId(userId);
-  return referrals.slice(0, limit);
 }

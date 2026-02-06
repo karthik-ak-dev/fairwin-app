@@ -77,24 +77,33 @@ export async function POST(request: NextRequest) {
     // 8. Submit txHash and move to VERIFYING
     const result = await submitStakeTxHash(stakeId, txHash);
 
-    if (!result.success || !result.stake) {
+    if (!result.success) {
       return NextResponse.json(
         { error: result.error || 'Failed to submit transaction hash' },
         { status: 400 }
       );
     }
 
-    // 9. Return updated stake
+    // 9. Fetch updated stake to return
+    const updatedStake = await getStakeById(stakeId);
+    if (!updatedStake) {
+      return NextResponse.json(
+        { error: 'Failed to fetch updated stake' },
+        { status: 500 }
+      );
+    }
+
+    // 10. Return updated stake
     return NextResponse.json(
       {
         success: true,
         stake: {
-          id: result.stake.stakeId,
-          amount: result.stake.amount,
-          status: result.stake.status,
-          txHash: result.stake.txHash,
-          userId: result.stake.userId,
-          updatedAt: result.stake.updatedAt,
+          id: updatedStake.stakeId,
+          amount: updatedStake.amount,
+          status: updatedStake.status,
+          txHash: updatedStake.txHash,
+          userId: updatedStake.userId,
+          updatedAt: updatedStake.updatedAt,
         },
       },
       { status: 200 }

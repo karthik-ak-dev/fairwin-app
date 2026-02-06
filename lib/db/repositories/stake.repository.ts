@@ -129,44 +129,6 @@ export async function getStakesByStatus(status: StakeStatus): Promise<Stake[]> {
 }
 
 /**
- * Get user's stakes by status
- * First query by userId, then filter by status
- * Automatically handles pagination to fetch all items
- */
-export async function getUserStakesByStatus(userId: string, status: StakeStatus): Promise<Stake[]> {
-  const stakes: Stake[] = [];
-  let lastEvaluatedKey: Record<string, any> | undefined;
-
-  do {
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: env.DYNAMODB_STAKES_TABLE,
-        IndexName: 'userId-index',
-        KeyConditionExpression: 'userId = :userId',
-        FilterExpression: '#status = :status',
-        ExpressionAttributeNames: {
-          '#status': 'status',
-        },
-        ExpressionAttributeValues: {
-          ':userId': userId,
-          ':status': status,
-        },
-        ScanIndexForward: false,
-        ExclusiveStartKey: lastEvaluatedKey,
-      })
-    );
-
-    if (result.Items) {
-      stakes.push(...(result.Items as Stake[]));
-    }
-
-    lastEvaluatedKey = result.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
-
-  return stakes;
-}
-
-/**
  * Get stake by transaction hash
  * Used for blockchain verification
  */

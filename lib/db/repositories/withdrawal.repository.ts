@@ -126,47 +126,6 @@ export async function getWithdrawalsByStatus(status: WithdrawalStatus): Promise<
 }
 
 /**
- * Get user's withdrawals by status
- * First query by userId, then filter by status
- * Automatically handles pagination to fetch all items
- */
-export async function getUserWithdrawalsByStatus(
-  userId: string,
-  status: WithdrawalStatus
-): Promise<Withdrawal[]> {
-  const withdrawals: Withdrawal[] = [];
-  let lastEvaluatedKey: Record<string, any> | undefined;
-
-  do {
-    const result = await docClient.send(
-      new QueryCommand({
-        TableName: env.DYNAMODB_WITHDRAWALS_TABLE,
-        IndexName: 'userId-index',
-        KeyConditionExpression: 'userId = :userId',
-        FilterExpression: '#status = :status',
-        ExpressionAttributeNames: {
-          '#status': 'status',
-        },
-        ExpressionAttributeValues: {
-          ':userId': userId,
-          ':status': status,
-        },
-        ScanIndexForward: false,
-        ExclusiveStartKey: lastEvaluatedKey,
-      })
-    );
-
-    if (result.Items) {
-      withdrawals.push(...(result.Items as Withdrawal[]));
-    }
-
-    lastEvaluatedKey = result.LastEvaluatedKey;
-  } while (lastEvaluatedKey);
-
-  return withdrawals;
-}
-
-/**
  * Update withdrawal status
  */
 export async function updateWithdrawalStatus(
