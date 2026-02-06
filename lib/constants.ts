@@ -16,7 +16,9 @@ class Constants {
   public readonly DEFAULT_REFERRAL_CONFIG_ID: string = '5_LEVEL_STANDARD';
 
   // Withdrawal Settings
-  public readonly WITHDRAWAL_DAY_OF_MONTH: number = 1;
+  public readonly WITHDRAWAL_DAY_OF_MONTH: number = 1; // Withdrawals only allowed on 1st of each month
+  public readonly MAX_WITHDRAWAL_AMOUNT: number = 1000; // Maximum withdrawal amount in USDT
+  public readonly MIN_WITHDRAWAL_AMOUNT: number = 10; // Minimum withdrawal amount in USDT
 
   private constructor() {
     // All constants are initialized above as readonly properties

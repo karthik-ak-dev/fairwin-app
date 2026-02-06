@@ -175,6 +175,58 @@ Resources:
         - Key: ManagedBy
           Value: SAM
 
+  # ===========================================
+  # Withdrawals Table
+  # Primary Key: withdrawalId (HASH)
+  # GSI1: userId-index (userId as HASH, requestedAt as RANGE) - for user's withdrawal history
+  # GSI2: status-index (status as HASH, requestedAt as RANGE) - for admin to view pending/processing withdrawals
+  # ===========================================
+  WithdrawalsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'MassiveHike-${Environment}-Withdrawals'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: withdrawalId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: requestedAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: withdrawalId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        # User withdrawals index - get all withdrawals for a user sorted by request date
+        - IndexName: userId-index
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: requestedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        # Status index - admin view of withdrawals by status (pending, processing, etc.)
+        - IndexName: status-index
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: requestedAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: MassiveHike
+        - Key: ManagedBy
+          Value: SAM
+
 Outputs:
   UsersTableName:
     Description: Users table name
@@ -253,6 +305,18 @@ Outputs:
     Value: txHash-index
     Export:
       Name: !Sub '${Environment}-MassiveHike-TxHashIndexName'
+
+  WithdrawalsTableName:
+    Description: Withdrawals table name
+    Value: !Ref WithdrawalsTable
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-WithdrawalsTableName'
+
+  WithdrawalsTableArn:
+    Description: Withdrawals table ARN
+    Value: !GetAtt WithdrawalsTable.Arn
+    Export:
+      Name: !Sub '${Environment}-MassiveHike-WithdrawalsTableArn'
 
 
 #!/bin/bash
