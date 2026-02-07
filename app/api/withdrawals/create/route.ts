@@ -48,6 +48,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate BSC wallet address format (0x + 40 hex characters)
+    const bscAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!bscAddressRegex.test(walletAddress)) {
+      return NextResponse.json(
+        { error: 'Invalid BSC wallet address format. Must be 0x followed by 40 hexadecimal characters.' },
+        { status: 400 }
+      );
+    }
+
     // 4. Validate amount range
     if (
       amount < constants.MIN_WITHDRAWAL_AMOUNT ||

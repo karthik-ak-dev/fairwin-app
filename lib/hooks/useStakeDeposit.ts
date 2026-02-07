@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useAuth } from './useAuth';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export const useStakeDeposit = () => {
+  const { user } = useAuth();
   const [amount, setAmount] = useState<string>('2500');
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingStake, setPendingStake] = useState<{
@@ -11,15 +16,23 @@ export const useStakeDeposit = () => {
     status: 'pending' | 'awaiting_payment';
   } | null>(null);
 
-  // Central wallet for deposits (dummy address)
-  const centralWallet = '0x1234567890AbcdEF1234567890aBcdef12345678';
-  const isAuthenticated = true; // User is logged in via Google SSO
+  // Central wallet from environment variable
+  const centralWallet = process.env.NEXT_PUBLIC_DEPOSIT_WALLET_ADDRESS || '';
+  const isAuthenticated = !!user;
 
-  // Dummy existing stakes
-  const existingStakes = [
-    { id: '1', amount: 5000, startDate: '2025-12-01', monthsElapsed: 2 },
-    { id: '2', amount: 1500, startDate: '2026-01-15', monthsElapsed: 0 },
-  ];
+  // Fetch existing stakes from dashboard API
+  const { data: dashboardData } = useSWR(
+    isAuthenticated ? '/api/dashboard' : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+    }
+  );
+
+  const existingStakes = dashboardData?.stakes || [];
+  const totalStaked = dashboardData?.stats?.totalStaked || 0;
+  const totalActiveStakes = existingStakes.length;
 
   // Constants
   const MONTHLY_RATE = 0.08;
@@ -39,10 +52,6 @@ export const useStakeDeposit = () => {
     totalEarnings,
     principal: numericAmount,
   };
-
-  // Total stats across all stakes
-  const totalStaked = existingStakes.reduce((sum, stake) => sum + stake.amount, 0);
-  const totalActiveStakes = existingStakes.length;
 
   // Preset amounts
   const presetAmounts = [500, 2500, 5000, 10000];
@@ -69,46 +78,82 @@ export const useStakeDeposit = () => {
 
     setIsProcessing(true);
 
-    // Simulate API call to create pending stake
-    // In real implementation:
-    // 1. POST /api/stakes/create with amount
-    // 2. Backend validates amount (min/max)
-    // 3. Backend creates stake record with status="awaiting_payment"
-    // 4. Backend returns stakeId and central wallet address
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Call API to create pending stake
+      const response = await fetch('/api/stakes/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: numericAmount,
+        }),
+      });
 
-    const newStake = {
-      id: `stake_${Date.now()}`,
-      amount: numericAmount,
-      status: 'awaiting_payment' as const,
-    };
+      const result = await response.json();
 
-    setPendingStake(newStake);
-    setIsProcessing(false);
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create stake');
+      }
+
+      const newStake = {
+        id: result.stake.id,
+        amount: numericAmount,
+        status: 'awaiting_payment' as const,
+      };
+
+      setPendingStake(newStake);
+    } catch (error: any) {
+      alert(`Error creating stake: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   // Step 2: Submit transaction hash to verify payment
   const handleSubmitTxHash = async (txHash: string) => {
     if (!pendingStake || !txHash) return;
 
+    // Validate txHash format (0x + 64 hex characters)
+    const txHashRegex = /^0x[a-fA-F0-9]{64}$/;
+    if (!txHashRegex.test(txHash)) {
+      alert('Invalid transaction hash format. Must be 0x followed by 64 hexadecimal characters.');
+      return;
+    }
+
     setIsProcessing(true);
 
-    // Simulate transaction verification
-    // In real implementation:
-    // 1. POST /api/stakes/verify-payment with stakeId and txHash
-    // 2. Backend verifies transaction hash on BSC
-    // 3. Check amount matches pendingStake.amount
-    // 4. Check destination is centralWallet
-    // 5. Update stake status to "active"
-    // 6. Send confirmation email
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    try {
+      // Call API to submit transaction hash
+      const response = await fetch('/api/stakes/submit-txhash', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          stakeId: pendingStake.id,
+          txHash: txHash,
+        }),
+      });
 
-    alert(`Transaction ${txHash.slice(0, 10)}... verified!\nSuccessfully staked ${pendingStake.amount} USDT!`);
+      const result = await response.json();
 
-    // Reset state
-    setIsProcessing(false);
-    setPendingStake(null);
-    setAmount('');
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to submit transaction hash');
+      }
+
+      alert(
+        `Transaction ${txHash.slice(0, 10)}... submitted successfully!\n\nYour stake of ${pendingStake.amount} USDT is now being verified.\nYou will be notified once it becomes active.`
+      );
+
+      // Reset state
+      setPendingStake(null);
+      setAmount('');
+    } catch (error: any) {
+      alert(`Error submitting transaction: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return {

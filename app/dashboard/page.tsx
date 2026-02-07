@@ -24,27 +24,46 @@ export default function DashboardPage() {
   };
 
   const handleWithdrawSubmit = async () => {
-    if (!withdrawWallet || withdrawWallet.length < 10) {
-      alert('Please enter a valid withdrawal wallet address');
+    // Validate BSC wallet address format
+    const bscAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!withdrawWallet || !bscAddressRegex.test(withdrawWallet)) {
+      alert('Please enter a valid BSC wallet address (0x + 40 hex characters)');
       return;
     }
 
     setIsProcessingWithdraw(true);
 
-    // Simulate withdrawal processing
-    // In real implementation:
-    // 1. POST /api/withdrawals/create with wallet address
-    // 2. Backend validates withdrawal date (1st of month only)
-    // 3. Backend creates withdrawal transaction on BSC
-    // 4. Backend updates user balance
-    // 5. Backend sends confirmation email
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    try {
+      // Call withdrawal API
+      const response = await fetch('/api/withdrawals/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: withdrawal.availableAmount,
+          walletAddress: withdrawWallet,
+        }),
+      });
 
-    alert(`Withdrawal successful!\n${formatCurrency(withdrawal.availableAmount)} has been sent to ${withdrawWallet.slice(0, 10)}...`);
+      const result = await response.json();
 
-    setIsProcessingWithdraw(false);
-    setShowWithdrawModal(false);
-    setWithdrawWallet('');
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create withdrawal');
+      }
+
+      alert(`Withdrawal request submitted successfully!\n${formatCurrency(withdrawal.availableAmount)} will be sent to ${withdrawWallet.slice(0, 10)}...\n\nThe withdrawal will be processed on the 1st of next month.`);
+
+      setShowWithdrawModal(false);
+      setWithdrawWallet('');
+
+      // Refresh dashboard data
+      window.location.reload();
+    } catch (error: any) {
+      alert(`Withdrawal failed: ${error.message}`);
+    } finally {
+      setIsProcessingWithdraw(false);
+    }
   };
 
   return (
