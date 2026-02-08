@@ -1,29 +1,21 @@
 // POST /api/cron/complete-stakes - Mark matured stakes as COMPLETED
-// This is a CRON job endpoint protected by API key
-// Responsibilities:
-// - Validate API key
-// - Get all ACTIVE stakes
-// - Filter stakes that have reached endDate
-// - Mark matured stakes as COMPLETED
-// - Return processing results
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getActiveStakes, completeStake } from '@/lib/services/stake/stake-entry.service';
+import { getStakesByStatusHelper, completeStake } from '@/lib/utils/stakes';
+import { StakeStatus } from '@/lib/db/models/stake.model';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes for cron job
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. API Key Authentication
     const apiKey = request.headers.get('x-api-key');
     if (!validateApiKey(apiKey)) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
     }
 
-    // 2. Get all ACTIVE stakes
-    const activeStakes = await getActiveStakes();
+    const activeStakes = await getStakesByStatusHelper(StakeStatus.ACTIVE);
 
     if (activeStakes.length === 0) {
       return NextResponse.json(
@@ -37,7 +29,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Filter stakes that have reached endDate
     const now = new Date();
     const maturedStakes = activeStakes.filter((stake) => {
       if (!stake.endDate) return false;
@@ -57,7 +48,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Complete each matured stake
     const results = [];
     for (const stake of maturedStakes) {
       try {
@@ -85,7 +75,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 5. Return processing results
     const successCount = results.filter((r) => r.status === 'completed').length;
     const failedCount = results.length - successCount;
 
@@ -102,7 +91,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Error in complete-stakes cron:', error);
-
     return NextResponse.json(
       { error: 'Failed to process stake completions' },
       { status: 500 }

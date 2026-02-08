@@ -1,11 +1,7 @@
-// Withdrawal Entry Service
-// Responsibilities:
-// - Handle withdrawal creation and lifecycle management
-// - Validate withdrawal eligibility (date, amount limits)
-// - One simple withdrawal per user per month
-// - Update withdrawal status (PENDING → PROCESSING → COMPLETED/FAILED)
-// - Process blockchain transaction updates
+// Withdrawal Utilities
+// Withdrawal creation, validation, and balance calculations
 
+import { differenceInMonths } from 'date-fns';
 import {
   createWithdrawal,
   getWithdrawalById,
@@ -14,9 +10,60 @@ import {
   updateWithdrawalTxHash,
   getWithdrawalsByUserId,
 } from '@/lib/db/repositories/withdrawal.repository';
+import { getStakesByUserId } from '@/lib/db/repositories/stake.repository';
+import { getReferralsByReferrerId } from '@/lib/db/repositories/referral.repository';
+import { getStakeConfigById } from '@/lib/db/repositories/stake-config.repository';
 import { getUserById } from '@/lib/db/repositories/user.repository';
 import { Withdrawal, WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
+import { StakeStatus } from '@/lib/db/models/stake.model';
 import { constants } from '@/lib/constants';
+
+/**
+ * Calculate available balance for withdrawal
+ */
+export async function calculateAvailableBalance(userId: string): Promise<number> {
+  try {
+    const stakes = await getStakesByUserId(userId);
+    const commissions = await getReferralsByReferrerId(userId);
+    const withdrawals = await getWithdrawalsByUserId(userId);
+
+    const stakeConfig = await getStakeConfigById(constants.DEFAULT_STAKE_CONFIG_ID);
+    if (!stakeConfig) {
+      throw new Error('Stake configuration not found');
+    }
+
+    let totalStakeRewards = 0;
+    for (const stake of stakes) {
+      if (stake.status === StakeStatus.ACTIVE || stake.status === StakeStatus.COMPLETED) {
+        const startDate = new Date(stake.startDate);
+        const now = new Date();
+        const endDate = stake.endDate ? new Date(stake.endDate) : now;
+
+        const actualEndDate = endDate < now ? endDate : now;
+        const monthsElapsed = differenceInMonths(actualEndDate, startDate);
+
+        const monthlyReward = stake.amount * stakeConfig.monthlyReturnRate;
+        totalStakeRewards += monthlyReward * monthsElapsed;
+      }
+    }
+
+    const totalCommissions = commissions.reduce(
+      (sum, commission) => sum + commission.commissionAmount,
+      0
+    );
+
+    const totalWithdrawn = withdrawals
+      .filter((w) => w.status === WithdrawalStatus.COMPLETED)
+      .reduce((sum, w) => sum + w.amount, 0);
+
+    const availableBalance = totalStakeRewards + totalCommissions - totalWithdrawn;
+
+    return Math.max(0, availableBalance);
+  } catch (error) {
+    console.error('Error calculating available balance:', error);
+    throw error;
+  }
+}
 
 /**
  * Check if today is a valid withdrawal day (1st of the month)
@@ -36,7 +83,6 @@ export async function hasWithdrawnThisMonth(userId: string): Promise<boolean> {
   const currentMonth = today.getMonth();
   const currentYear = today.getFullYear();
 
-  // Check if any completed or processing withdrawal exists for this month
   return withdrawals.some((withdrawal) => {
     if (
       withdrawal.status !== WithdrawalStatus.COMPLETED &&
@@ -51,8 +97,7 @@ export async function hasWithdrawnThisMonth(userId: string): Promise<boolean> {
 }
 
 /**
- * Create a withdrawal
- * Simple: one withdrawal per user per month
+ * Create a withdrawal with validation
  */
 export async function createUserWithdrawal(
   userId: string,
@@ -60,7 +105,6 @@ export async function createUserWithdrawal(
   amount: number
 ): Promise<{ success: boolean; withdrawal?: Withdrawal; error?: string }> {
   try {
-    // Validate withdrawal day
     if (!isWithdrawalDayAllowed()) {
       return {
         success: false,
@@ -68,7 +112,6 @@ export async function createUserWithdrawal(
       };
     }
 
-    // Check if user has already withdrawn this month
     const alreadyWithdrawn = await hasWithdrawnThisMonth(userId);
     if (alreadyWithdrawn) {
       return {
@@ -77,18 +120,15 @@ export async function createUserWithdrawal(
       };
     }
 
-    // Validate wallet address
     if (!walletAddress || walletAddress.trim() === '') {
       return { success: false, error: 'Wallet address is required' };
     }
 
-    // Get user to verify they exist
     const user = await getUserById(userId);
     if (!user) {
       return { success: false, error: 'User not found' };
     }
 
-    // Validate amount
     if (amount < constants.MIN_WITHDRAWAL_AMOUNT) {
       return {
         success: false,
@@ -107,7 +147,6 @@ export async function createUserWithdrawal(
       return { success: false, error: 'Withdrawal amount must be greater than zero' };
     }
 
-    // Create withdrawal
     const withdrawal = await createWithdrawal({
       userId,
       amount,
@@ -123,20 +162,17 @@ export async function createUserWithdrawal(
 
 /**
  * Initiate blockchain transaction for a withdrawal
- * Updates withdrawal with txHash and moves to PROCESSING status
  */
 export async function initiateWithdrawalTransaction(
   withdrawalId: string,
   txHash: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Get withdrawal
     const withdrawal = await getWithdrawalById(withdrawalId);
     if (!withdrawal) {
       return { success: false, error: 'Withdrawal not found' };
     }
 
-    // Validate status
     if (withdrawal.status !== WithdrawalStatus.PENDING) {
       return {
         success: false,
@@ -144,7 +180,6 @@ export async function initiateWithdrawalTransaction(
       };
     }
 
-    // Update with txHash and move to PROCESSING
     await updateWithdrawalTxHash(withdrawalId, txHash);
 
     return { success: true };
@@ -155,20 +190,17 @@ export async function initiateWithdrawalTransaction(
 }
 
 /**
- * Complete a withdrawal after blockchain confirmation
- * Moves withdrawal from PROCESSING to COMPLETED status
+ * Complete a withdrawal
  */
 export async function completeWithdrawal(
   withdrawalId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Get withdrawal
     const withdrawal = await getWithdrawalById(withdrawalId);
     if (!withdrawal) {
       return { success: false, error: 'Withdrawal not found' };
     }
 
-    // Validate status
     if (withdrawal.status !== WithdrawalStatus.PROCESSING) {
       return {
         success: false,
@@ -176,7 +208,6 @@ export async function completeWithdrawal(
       };
     }
 
-    // Update to COMPLETED
     const now = new Date().toISOString();
     await updateWithdrawalStatus(withdrawalId, WithdrawalStatus.COMPLETED, undefined, now);
 
@@ -188,21 +219,18 @@ export async function completeWithdrawal(
 }
 
 /**
- * Mark withdrawal as failed with reason
- * Can fail from PENDING or PROCESSING status
+ * Mark withdrawal as failed
  */
 export async function failWithdrawal(
   withdrawalId: string,
   failureReason: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Get withdrawal
     const withdrawal = await getWithdrawalById(withdrawalId);
     if (!withdrawal) {
       return { success: false, error: 'Withdrawal not found' };
     }
 
-    // Can only fail from PENDING or PROCESSING
     if (
       withdrawal.status !== WithdrawalStatus.PENDING &&
       withdrawal.status !== WithdrawalStatus.PROCESSING
@@ -213,7 +241,6 @@ export async function failWithdrawal(
       };
     }
 
-    // Mark as failed
     await updateWithdrawalStatus(withdrawalId, WithdrawalStatus.FAILED, undefined, undefined, failureReason);
 
     return { success: true };
@@ -224,14 +251,13 @@ export async function failWithdrawal(
 }
 
 /**
- * Get all withdrawals in PENDING status
- * Used by cron job to process withdrawals
+ * Get withdrawals by status
  */
-export async function getPendingWithdrawals(): Promise<Withdrawal[]> {
+export async function getWithdrawalsByStatusHelper(status: WithdrawalStatus): Promise<Withdrawal[]> {
   try {
-    return await getWithdrawalsByStatus(WithdrawalStatus.PENDING);
+    return await getWithdrawalsByStatus(status);
   } catch (error) {
-    console.error('Error fetching pending withdrawals:', error);
+    console.error(`Error fetching withdrawals with status ${status}:`, error);
     return [];
   }
 }

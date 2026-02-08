@@ -1,5 +1,5 @@
-// Auth Service Layer
-// Business logic for authentication operations
+// Auth Utilities
+// Authentication helpers
 
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';

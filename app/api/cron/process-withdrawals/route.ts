@@ -1,44 +1,29 @@
 // POST /api/cron/process-withdrawals - Execute pending withdrawal transactions
-// This is a CRON job endpoint protected by API key
-// Responsibilities:
-// - Validate API key
-// - Get all PENDING withdrawals
-// - For each withdrawal:
-//   - Verify user has sufficient balance
-//   - Execute BSC blockchain transfer
-//   - Update withdrawal with txHash and move to PROCESSING
-//   - Wait for blockchain confirmation
-//   - Mark as COMPLETED or FAILED based on confirmation
-// - Return processing results
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
 import {
-  getPendingWithdrawals,
+  getWithdrawalsByStatusHelper,
   initiateWithdrawalTransaction,
   completeWithdrawal,
   failWithdrawal,
-} from '@/lib/services/withdrawal/withdrawal-entry.service';
-import { calculateAvailableBalance } from '@/lib/services/withdrawal.service';
-import {
-  executeBscTransfer,
-  waitForBscConfirmation,
-} from '@/lib/services/blockchain/bsc.service';
+  calculateAvailableBalance,
+} from '@/lib/utils/withdrawals';
+import { executeBscTransfer, waitForBscConfirmation } from '@/lib/utils/blockchain';
+import { WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
 import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes for cron job
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. API Key Authentication
     const apiKey = request.headers.get('x-api-key');
     if (!validateApiKey(apiKey)) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
     }
 
-    // 2. Get all PENDING withdrawals
-    const pendingWithdrawals = await getPendingWithdrawals();
+    const pendingWithdrawals = await getWithdrawalsByStatusHelper(WithdrawalStatus.PENDING);
 
     if (pendingWithdrawals.length === 0) {
       return NextResponse.json(
@@ -51,17 +36,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Process each withdrawal
     const results = [];
     for (const withdrawal of pendingWithdrawals) {
       try {
-        // 4. Verify user has sufficient balance
-        const availableBalance = await calculateAvailableBalance(
-          withdrawal.userId
-        );
+        const availableBalance = await calculateAvailableBalance(withdrawal.userId);
 
         if (withdrawal.amount > availableBalance) {
-          // Insufficient balance - mark as FAILED
           await failWithdrawal(withdrawal.withdrawalId, 'Insufficient balance');
           results.push({
             withdrawalId: withdrawal.withdrawalId,
@@ -71,15 +51,10 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 5. Execute blockchain transaction
         let txHash: string;
         try {
-          txHash = await executeBscTransfer(
-            withdrawal.walletAddress,
-            withdrawal.amount
-          );
+          txHash = await executeBscTransfer(withdrawal.walletAddress, withdrawal.amount);
         } catch (error: any) {
-          // Blockchain transaction failed
           await failWithdrawal(
             withdrawal.withdrawalId,
             `Blockchain transaction failed: ${error.message}`
@@ -92,7 +67,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 6. Update withdrawal with txHash and move to PROCESSING
         const initiateResult = await initiateWithdrawalTransaction(
           withdrawal.withdrawalId,
           txHash
@@ -107,7 +81,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 7. Wait for blockchain confirmation
         const confirmed = await waitForBscConfirmation(
           txHash,
           constants.MIN_BLOCKCHAIN_CONFIRMATIONS,
@@ -115,7 +88,6 @@ export async function POST(request: NextRequest) {
         );
 
         if (confirmed) {
-          // 8. Mark as COMPLETED
           await completeWithdrawal(withdrawal.withdrawalId);
           results.push({
             withdrawalId: withdrawal.withdrawalId,
@@ -123,7 +95,6 @@ export async function POST(request: NextRequest) {
             txHash,
           });
         } else {
-          // Blockchain confirmation timeout/failed
           await failWithdrawal(
             withdrawal.withdrawalId,
             'Blockchain confirmation timeout or failed'
@@ -132,18 +103,16 @@ export async function POST(request: NextRequest) {
             withdrawalId: withdrawal.withdrawalId,
             status: 'failed',
             reason: 'Blockchain confirmation timeout',
-            txHash, // Include txHash for manual investigation
+            txHash,
           });
         }
       } catch (error: any) {
-        // Unexpected error during processing
         try {
           await failWithdrawal(
             withdrawal.withdrawalId,
             `Processing error: ${error.message}`
           );
         } catch {
-          // If failWithdrawal also fails, just log it
           console.error(
             `Failed to mark withdrawal ${withdrawal.withdrawalId} as failed`
           );
@@ -157,7 +126,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 9. Return processing results
     const completedCount = results.filter((r) => r.status === 'completed').length;
     const failedCount = results.filter((r) => r.status === 'failed').length;
     const errorCount = results.filter((r) => r.status === 'error').length;
@@ -175,7 +143,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Error in process-withdrawals cron:', error);
-
     return NextResponse.json(
       { error: 'Failed to process withdrawals' },
       { status: 500 }

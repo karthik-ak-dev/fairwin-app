@@ -10,13 +10,13 @@
 // - Return withdrawal record
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/services/auth/auth.service';
+import { getCurrentUser } from '@/lib/utils/auth';
 import {
   createUserWithdrawal,
   isWithdrawalDayAllowed,
   hasWithdrawnThisMonth,
-} from '@/lib/services/withdrawal/withdrawal-entry.service';
-import { calculateAvailableBalance } from '@/lib/services/withdrawal.service';
+  calculateAvailableBalance,
+} from '@/lib/utils/withdrawals';
 import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';

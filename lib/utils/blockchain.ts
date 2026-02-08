@@ -1,8 +1,5 @@
-// Binance Smart Chain (BSC) Blockchain Service
-// Responsibilities:
-// - Verify BSC transactions (user deposits)
-// - Execute BSC transfers (withdrawals)
-// - Wait for blockchain confirmations
+// Blockchain Utilities
+// BSC (Binance Smart Chain) transaction verification and execution
 
 import { ethers } from 'ethers';
 import { constants } from '@/lib/constants';
@@ -51,9 +48,6 @@ function getUsdtContract(signer?: ethers.Wallet): ethers.Contract {
 /**
  * Verify BSC transaction
  * Checks if transaction exists, is confirmed, and matches expected amount
- * @param txHash - Transaction hash to verify
- * @param expectedAmount - Expected amount in USDT (not wei)
- * @returns true if transaction is valid, false otherwise
  */
 export async function verifyBscTransaction(
   txHash: string,
@@ -90,7 +84,6 @@ export async function verifyBscTransaction(
     }
 
     // Parse transaction data to get transfer amount
-    // USDT uses 18 decimals on BSC
     const iface = new ethers.Interface(USDT_ABI);
     const decodedData = iface.parseTransaction({ data: tx.data, value: tx.value });
 
@@ -128,9 +121,6 @@ export async function verifyBscTransaction(
 /**
  * Execute BSC transfer (withdrawal)
  * Sends USDT from admin wallet to user's wallet address
- * @param toAddress - Recipient wallet address
- * @param amount - Amount in USDT (not wei)
- * @returns Transaction hash if successful
  */
 export async function executeBscTransfer(
   toAddress: string,
@@ -158,10 +148,6 @@ export async function executeBscTransfer(
 
 /**
  * Wait for BSC transaction confirmation
- * @param txHash - Transaction hash to monitor
- * @param requiredConfirmations - Number of confirmations to wait for
- * @param timeout - Timeout in milliseconds
- * @returns true if confirmed, false if timeout or failed
  */
 export async function waitForBscConfirmation(
   txHash: string,
@@ -173,22 +159,18 @@ export async function waitForBscConfirmation(
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeout) {
-      // Get transaction receipt
       const receipt = await provider.getTransactionReceipt(txHash);
 
       if (!receipt) {
-        // Transaction not yet mined, wait and retry
         await new Promise((resolve) => setTimeout(resolve, constants.BSC_POLLING_INTERVAL_MS));
         continue;
       }
 
-      // Check if transaction failed
       if (receipt.status !== 1) {
         console.log(`Transaction failed: ${txHash}`);
         return false;
       }
 
-      // Check confirmations
       const currentBlock = await provider.getBlockNumber();
       const confirmations = currentBlock - (receipt.blockNumber || 0);
 
@@ -196,7 +178,6 @@ export async function waitForBscConfirmation(
         return true;
       }
 
-      // Wait before next check
       await new Promise((resolve) => setTimeout(resolve, constants.BSC_POLLING_INTERVAL_MS));
     }
 

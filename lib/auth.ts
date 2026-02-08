@@ -7,7 +7,7 @@ import { cookies } from 'next/headers';
 import { env } from '@/lib/env';
 import { constants } from '@/lib/constants';
 import { findOrCreateUser } from '@/lib/db/repositories/user.repository';
-import { AuthProfile } from '@/lib/services/auth/types';
+import { AuthProfile } from '@/lib/types/auth';
 
 export const authOptions: NextAuthOptions = {
   providers: [

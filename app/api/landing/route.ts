@@ -3,7 +3,7 @@
 // Returns platform statistics and referral rates
 
 import { NextResponse } from 'next/server';
-import { getLandingPageData } from '@/lib/services/landing/landing-page.service';
+import { getLandingPageData } from '@/lib/utils/pages';
 
 export const dynamic = 'force-dynamic';
 

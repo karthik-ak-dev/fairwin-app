@@ -1,33 +1,25 @@
 // POST /api/cron/verify-stakes - Verify blockchain transactions and activate stakes
 // This is a CRON job endpoint protected by API key
-// Responsibilities:
-// - Validate API key
-// - Get all VERIFYING stakes
-// - Verify each transaction on BSC blockchain
-// - Activate valid stakes (sets startDate, endDate, status=ACTIVE)
-// - Create referral commissions (L1-L5) for activated stakes
-// - Return processing results
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getVerifyingStakes, activateStake } from '@/lib/services/stake/stake-entry.service';
-import { createReferralCommissions } from '@/lib/services/referral/referral.service';
-import { verifyBscTransaction } from '@/lib/services/blockchain/bsc.service';
+import { getStakesByStatusHelper, activateStake } from '@/lib/utils/stakes';
+import { createReferralCommissions } from '@/lib/utils/referrals';
+import { verifyBscTransaction } from '@/lib/utils/blockchain';
+import { StakeStatus } from '@/lib/db/models/stake.model';
 import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 minutes for cron job
+export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
-    // 1. API Key Authentication
     const apiKey = request.headers.get('x-api-key');
     if (!validateApiKey(apiKey)) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
     }
 
-    // 2. Get all VERIFYING stakes
-    const verifyingStakes = await getVerifyingStakes();
+    const verifyingStakes = await getStakesByStatusHelper(StakeStatus.VERIFYING);
 
     if (verifyingStakes.length === 0) {
       return NextResponse.json(
@@ -40,11 +32,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Process each stake
     const results = [];
     for (const stake of verifyingStakes) {
       try {
-        // 4. Verify blockchain transaction
         if (!stake.txHash) {
           results.push({
             stakeId: stake.stakeId,
@@ -65,7 +55,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 5. Activate stake (sets startDate, endDate, status=ACTIVE)
         const activateResult = await activateStake(stake.stakeId);
 
         if (!activateResult.success) {
@@ -77,7 +66,6 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 6. Create referral commissions (L1-L5)
         const commissionResult = await createReferralCommissions(
           stake.userId,
           stake.stakeId,
@@ -100,7 +88,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 7. Return processing results
     const successCount = results.filter((r) => r.status === 'activated').length;
     const failedCount = results.length - successCount;
 
@@ -116,7 +103,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error('Error in verify-stakes cron:', error);
-
     return NextResponse.json(
       { error: 'Failed to process stakes verification' },
       { status: 500 }

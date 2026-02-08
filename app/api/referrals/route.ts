@@ -3,8 +3,8 @@
 // Returns all referral network data for authenticated user
 
 import { NextResponse } from 'next/server';
-import { getReferralsPageData } from '@/lib/services/referrals/referrals-page.service';
-import { getCurrentUser } from '@/lib/services/auth/auth.service';
+import { getReferralsPageData } from '@/lib/utils/pages';
+import { getCurrentUser } from '@/lib/utils/auth';
 
 export const dynamic = 'force-dynamic';
 

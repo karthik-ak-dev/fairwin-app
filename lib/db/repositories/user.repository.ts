@@ -8,8 +8,8 @@ import { PutCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/li
 import { docClient } from '@/lib/db/dynamodb';
 import { env } from '@/lib/env';
 import { User, UserStatus } from '@/lib/db/models/user.model';
-import { CreateUserRequest, AuthProfile } from '@/lib/services/auth/types';
-import { generateReferralCode } from '@/lib/services/referral/referral-code.service';
+import { CreateUserRequest, AuthProfile } from '@/lib/types/auth';
+import { generateReferralCode } from '@/lib/utils/referrals';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

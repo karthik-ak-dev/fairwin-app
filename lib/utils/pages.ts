@@ -1,126 +1,105 @@
-// Referrals Page Service
-// Responsibilities:
-// - Aggregate all referral network data for authenticated user
-// - Calculate stats, level summary, recent earnings, all referrals list
-// - Single API call pattern - fetch everything at once (MVP approach)
-// - User-specific data (requires authentication)
+// Page Data Utilities
+// Landing page and referrals page data aggregation
 
-import { getUserById } from '@/lib/db/repositories/user.repository';
-import { getStakesByUserId } from '@/lib/db/repositories/stake.repository';
+import { getStakesByUserId, getStakesByStatus } from '@/lib/db/repositories/stake.repository';
+import { getWithdrawalsByStatus } from '@/lib/db/repositories/withdrawal.repository';
 import { getReferralConfigById } from '@/lib/db/repositories/referral-config.repository';
-import {
-  getUserCommissions,
-  getNetworkStructure,
-} from '@/lib/services/referral/referral.service';
+import { getStakeConfigById } from '@/lib/db/repositories/stake-config.repository';
+import { getUserById } from '@/lib/db/repositories/user.repository';
+import { getUserCommissions, getNetworkStructure, getTotalCommissionRate } from '@/lib/utils/referrals';
 import { StakeStatus } from '@/lib/db/models/stake.model';
+import { WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
 import { env } from '@/lib/env';
 
-/**
- * Format date for display (e.g., "Jan 15, 2025")
- */
 function formatDateShort(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-/**
- * Get all referrals page data for authenticated user
- */
-export async function getReferralsPageData(userId: string): Promise<{
-  stats: {
-    totalEarnings: number;
-    directReferrals: number;
-    totalNetwork: number;
-    networkTVL: number;
-    avgCommission: number;
-  };
-  rootUser: {
-    name: string;
-    staked: number;
-    network: number;
-  };
-  levelSummary: Array<{
-    level: number;
-    members: number;
-    totalStaked: number;
-    commissionRate: number;
-    yourEarnings: number;
-  }>;
-  recentEarnings: Array<{
-    referralName: string;
-    level: number;
-    amount: number;
-    date: string;
-  }>;
-  commissionRates: Array<{
-    level: number;
-    rate: number;
-    label: string;
-  }>;
-  referralLink: string;
-  allReferrals: Array<{
-    name: string;
-    level: number;
-    joinedDate: string;
-    staked: number;
-    yourEarnings: number;
-  }>;
-}> {
+export async function getLandingPageData() {
   try {
-    // Phase 1: Fetch base data in parallel
+    const [activeStakes, completedWithdrawals, referralConfig, stakeConfig] = await Promise.all([
+      getStakesByStatus(StakeStatus.ACTIVE),
+      getWithdrawalsByStatus(WithdrawalStatus.COMPLETED),
+      getReferralConfigById('default'),
+      getStakeConfigById('default'),
+    ]);
+
+    const totalStaked = activeStakes.reduce((sum, stake) => sum + stake.amount, 0);
+    const uniqueStakers = new Set(activeStakes.map((stake) => stake.userId));
+    const activeStakers = uniqueStakers.size;
+    const totalRewardsDistributed = completedWithdrawals.reduce((sum, withdrawal) => sum + withdrawal.amount, 0);
+
+    const referralRates = referralConfig
+      ? referralConfig.commissionRates.map((rate, index) => ({
+          level: index + 1,
+          rate: rate * 100,
+          label: index === 0 ? 'Direct Referrals' : `Level ${index + 1}`,
+        }))
+      : [
+          { level: 1, rate: 8, label: 'Direct Referrals' },
+          { level: 2, rate: 3, label: 'Level 2' },
+          { level: 3, rate: 2, label: 'Level 3' },
+          { level: 4, rate: 1, label: 'Level 4' },
+          { level: 5, rate: 1, label: 'Level 5' },
+        ];
+
+    const stakingRate = stakeConfig ? stakeConfig.monthlyReturnRate * 100 : 8;
+    const maxReferralRate = referralConfig ? getTotalCommissionRate(referralConfig) * 100 : 15;
+
+    return {
+      stats: { totalStaked, activeStakers, totalRewardsDistributed },
+      referralRates,
+      rewardRates: { stakingRate, maxReferralRate },
+    };
+  } catch (error) {
+    console.error('Error fetching landing page data:', error);
+    return {
+      stats: { totalStaked: 0, activeStakers: 0, totalRewardsDistributed: 0 },
+      referralRates: [
+        { level: 1, rate: 8, label: 'Direct Referrals' },
+        { level: 2, rate: 3, label: 'Level 2' },
+        { level: 3, rate: 2, label: 'Level 3' },
+        { level: 4, rate: 1, label: 'Level 4' },
+        { level: 5, rate: 1, label: 'Level 5' },
+      ],
+      rewardRates: { stakingRate: 8, maxReferralRate: 15 },
+    };
+  }
+}
+
+export async function getReferralsPageData(userId: string) {
+  try {
     const [user, userStakes, allCommissions, referralConfig, networkStructure] = await Promise.all([
       getUserById(userId),
       getStakesByUserId(userId),
-      getUserCommissions(userId), // All commissions earned by this user
+      getUserCommissions(userId),
       getReferralConfigById('default'),
-      getNetworkStructure(userId), // Already aggregates by level
+      getNetworkStructure(userId),
     ]);
 
-    if (!user) {
-      throw new Error('User not found');
-    }
+    if (!user) throw new Error('User not found');
 
-    // Phase 2: Extract unique referred users from commissions
     const uniqueReferredUserIds = [...new Set(allCommissions.map((c) => c.referredUserId))];
-
-    // Phase 3: Fetch all referred users' data in parallel (MVP - no pagination)
     const [referredUsersData, referredUsersStakes] = await Promise.all([
       Promise.all(uniqueReferredUserIds.map((id) => getUserById(id))),
       Promise.all(uniqueReferredUserIds.map((id) => getStakesByUserId(id))),
     ]);
 
-    // Create maps for quick lookup
     const userMap = new Map(referredUsersData.map((u) => (u ? [u.userId, u] : null)).filter(Boolean) as Array<[string, any]>);
     const stakesMap = new Map(uniqueReferredUserIds.map((id, index) => [id, referredUsersStakes[index]]));
 
-    // --- STATS OVERVIEW ---
-
-    // Total earnings from all commissions
     const totalEarnings = allCommissions.reduce((sum, c) => sum + c.commissionAmount, 0);
-
-    // Direct referrals (Level 1)
     const directReferrals = networkStructure.find((level) => level.level === 1)?.uniqueUsers || 0;
-
-    // Total network size (sum of all levels)
     const totalNetwork = networkStructure.reduce((sum, level) => sum + level.uniqueUsers, 0);
-
-    // Network TVL (total staked by entire network)
     const networkTVL = networkStructure.reduce((sum, level) => sum + level.totalStaked, 0);
-
-    // Average commission rate (weighted by commission amounts)
     const avgCommission = totalNetwork > 0 ? (totalEarnings / networkTVL) * 100 : 0;
 
-    // --- ROOT USER INFO ---
-
-    // User's total staked amount
     const activeUserStakes = userStakes.filter((stake) => stake.status === StakeStatus.ACTIVE);
     const rootUserStaked = activeUserStakes.reduce((sum, stake) => sum + stake.amount, 0);
 
-    // --- LEVEL SUMMARY ---
-
     const commissionRates = referralConfig?.commissionRates || [0.08, 0.03, 0.02, 0.01, 0.01];
 
-    // Build level summary (ensure all 5 levels are present)
     const levelSummary = [];
     for (let i = 1; i <= 5; i++) {
       const levelData = networkStructure.find((level) => level.level === i);
@@ -133,13 +112,10 @@ export async function getReferralsPageData(userId: string): Promise<{
       });
     }
 
-    // --- RECENT EARNINGS ---
-
-    // Sort commissions by date descending and take top 10
     const sortedCommissions = [...allCommissions].sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
-      return dateB - dateA; // Most recent first
+      return dateB - dateA;
     });
 
     const recentEarnings = sortedCommissions.slice(0, 10).map((commission) => {
@@ -152,36 +128,26 @@ export async function getReferralsPageData(userId: string): Promise<{
       };
     });
 
-    // --- COMMISSION RATES (for sidebar) ---
-
     const commissionRatesDisplay = commissionRates.map((rate, index) => ({
       level: index + 1,
       rate: rate * 100,
       label: index === 0 ? 'Level 1 (Direct)' : `Level ${index + 1}`,
     }));
 
-    // --- REFERRAL LINK ---
-
     const referralLink = `${env.NEXT_PUBLIC_BASE_URL}/ref/${user.referralCode}`;
 
-    // --- ALL REFERRALS ---
-
-    // Build complete referrals list with user details
     const allReferrals = uniqueReferredUserIds
       .map((referredUserId) => {
         const referredUser = userMap.get(referredUserId);
         if (!referredUser) return null;
 
-        // Find user's level (from first commission record)
         const userCommission = allCommissions.find((c) => c.referredUserId === referredUserId);
         const level = userCommission?.level || 1;
 
-        // Calculate total earnings from this user
         const earningsFromUser = allCommissions
           .filter((c) => c.referredUserId === referredUserId)
           .reduce((sum, c) => sum + c.commissionAmount, 0);
 
-        // Calculate user's total staked amount
         const userStakesData = stakesMap.get(referredUserId) || [];
         const activeStakes = userStakesData.filter((stake) => stake.status === StakeStatus.ACTIVE);
         const totalStaked = activeStakes.reduce((sum, stake) => sum + stake.amount, 0);
@@ -194,15 +160,8 @@ export async function getReferralsPageData(userId: string): Promise<{
           yourEarnings: Math.round(earningsFromUser * 100) / 100,
         };
       })
-      .filter(Boolean) as Array<{
-        name: string;
-        level: number;
-        joinedDate: string;
-        staked: number;
-        yourEarnings: number;
-      }>;
+      .filter(Boolean) as Array<any>;
 
-    // Sort by joined date descending (newest first)
     allReferrals.sort((a, b) => {
       const dateA = new Date(a.joinedDate).getTime();
       const dateB = new Date(b.joinedDate).getTime();

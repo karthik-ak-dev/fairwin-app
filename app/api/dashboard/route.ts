@@ -3,8 +3,8 @@
 // Returns all dashboard data for authenticated user
 
 import { NextResponse } from 'next/server';
-import { getDashboardData } from '@/lib/services/dashboard/dashboard.service';
-import { getCurrentUser } from '@/lib/services/auth/auth.service';
+import { getDashboardData } from '@/lib/utils/dashboard';
+import { getCurrentUser } from '@/lib/utils/auth';
 
 export const dynamic = 'force-dynamic';
 

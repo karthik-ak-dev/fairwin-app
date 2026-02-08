@@ -7,8 +7,8 @@
 // - Return created stake object
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from '@/lib/services/auth/auth.service';
-import { createUserStake } from '@/lib/services/stake/stake-entry.service';
+import { getCurrentUser } from '@/lib/utils/auth';
+import { createUserStake } from '@/lib/utils/stakes';
 
 export const dynamic = 'force-dynamic';
 

@@ -1,9 +1,5 @@
-// Referral Service
-// Responsibilities:
-// - Create commission records when stakes become active
-// - Calculate upline chain (traverse up to 5 levels)
-// - Query and aggregate referral data for UI
-// - Calculate total commissions earned
+// Referral Utilities
+// Referral commission calculations and upline chain management
 
 import {
   createReferralsBatch,
@@ -12,11 +8,33 @@ import {
 import { getUserById } from '@/lib/db/repositories/user.repository';
 import { getReferralConfigById } from '@/lib/db/repositories/referral-config.repository';
 import { Referral } from '@/lib/db/models/referral.model';
-import { calculateLevelCommission } from '@/lib/services/config/referral-config.service';
+import { ReferralConfig } from '@/lib/db/models/referral-config.model';
 
 /**
- * Build upline chain for a user (up to 5 levels)
- * Returns array of user IDs from direct referrer to 5th level upline
+ * Calculate commission amount for a specific level
+ */
+export function calculateLevelCommission(
+  config: ReferralConfig,
+  level: number,
+  stakeAmount: number
+): number {
+  if (level < 0 || level >= config.maxLevels || level >= config.commissionRates.length) {
+    return 0;
+  }
+  const rate = config.commissionRates[level];
+  return stakeAmount * rate;
+}
+
+/**
+ * Calculate total commission rate across all levels
+ */
+export function getTotalCommissionRate(config: ReferralConfig): number {
+  return config.commissionRates.reduce((sum, rate) => sum + rate, 0);
+}
+
+/**
+ * Build upline chain for a user (up to maxLevels)
+ * Returns array of user IDs from direct referrer to nth level upline
  */
 export async function buildUplineChain(userId: string, maxLevels: number = 5): Promise<string[]> {
   const upline: string[] = [];
@@ -25,9 +43,8 @@ export async function buildUplineChain(userId: string, maxLevels: number = 5): P
   for (let i = 0; i < maxLevels; i++) {
     const user = await getUserById(currentUserId);
     if (!user || !user.referredBy) {
-      break; // No more upline
+      break;
     }
-
     upline.push(user.referredBy);
     currentUserId = user.referredBy;
   }
@@ -37,32 +54,27 @@ export async function buildUplineChain(userId: string, maxLevels: number = 5): P
 
 /**
  * Create referral commission records when a stake becomes ACTIVE
- * Traverses upline chain and creates commission record for each level
  */
 export async function createReferralCommissions(
-  referredUserId: string, // User who made the stake
+  referredUserId: string,
   stakeId: string,
   stakeAmount: number,
   referralConfigId: string = 'default'
 ): Promise<{ success: boolean; referrals?: Referral[]; error?: string }> {
   try {
-    // Get referral config
     const config = await getReferralConfigById(referralConfigId);
     if (!config) {
       return { success: false, error: 'Referral config not found' };
     }
 
-    // Build upline chain (up to maxLevels from config)
     const upline = await buildUplineChain(referredUserId, config.maxLevels);
 
     if (upline.length === 0) {
-      // No upline = no commissions to create
       return { success: true, referrals: [] };
     }
 
-    // Prepare commission records for batch creation
     const commissionsToCreate = upline.map((referrerId, index) => {
-      const level = index + 1; // Level 1 = direct referrer (index 0)
+      const level = index + 1;
       const commissionRate = config.commissionRates[index] || 0;
       const commissionAmount = calculateLevelCommission(config, level - 1, stakeAmount);
 
@@ -77,9 +89,7 @@ export async function createReferralCommissions(
       };
     });
 
-    // Create all commission records in batch
     const referrals = await createReferralsBatch(commissionsToCreate);
-
     return { success: true, referrals };
   } catch (error) {
     console.error('Error creating referral commissions:', error);
@@ -96,7 +106,6 @@ export async function getUserCommissions(userId: string): Promise<Referral[]> {
 
 /**
  * Get commissions grouped by level
- * Returns summary for each level (L1-L5)
  */
 export async function getCommissionsByLevel(userId: string): Promise<
   Array<{
@@ -108,7 +117,6 @@ export async function getCommissionsByLevel(userId: string): Promise<
 > {
   const referrals = await getReferralsByReferrerId(userId);
 
-  // Group by level
   const levelMap = new Map<number, Referral[]>();
   for (const referral of referrals) {
     const levelReferrals = levelMap.get(referral.level) || [];
@@ -116,7 +124,6 @@ export async function getCommissionsByLevel(userId: string): Promise<
     levelMap.set(referral.level, levelReferrals);
   }
 
-  // Calculate summary for each level
   const summary = [];
   for (let level = 1; level <= 5; level++) {
     const levelReferrals = levelMap.get(level) || [];
@@ -124,20 +131,14 @@ export async function getCommissionsByLevel(userId: string): Promise<
     const count = levelReferrals.length;
     const avgCommission = count > 0 ? totalEarnings / count : 0;
 
-    summary.push({
-      level,
-      totalEarnings,
-      count,
-      avgCommission,
-    });
+    summary.push({ level, totalEarnings, count, avgCommission });
   }
 
   return summary;
 }
 
 /**
- * Get unique referred users at each level
- * Returns count of unique users who have staked at each level
+ * Get network structure with unique users at each level
  */
 export async function getNetworkStructure(userId: string): Promise<
   Array<{
@@ -149,7 +150,6 @@ export async function getNetworkStructure(userId: string): Promise<
 > {
   const referrals = await getReferralsByReferrerId(userId);
 
-  // Group by level
   const levelData = new Map<
     number,
     { users: Set<string>; totalStaked: number; totalEarnings: number }
@@ -169,7 +169,6 @@ export async function getNetworkStructure(userId: string): Promise<
     levelData.set(referral.level, data);
   }
 
-  // Build result array
   const structure = [];
   for (let level = 1; level <= 5; level++) {
     const data = levelData.get(level) || {
@@ -187,4 +186,16 @@ export async function getNetworkStructure(userId: string): Promise<
   }
 
   return structure;
+}
+
+/**
+ * Generate a unique referral code
+ */
+export function generateReferralCode(): string {
+  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return code;
 }
