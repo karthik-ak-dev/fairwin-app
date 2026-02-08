@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 import { useLanding } from '@/lib/hooks/useLanding';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
@@ -12,7 +13,11 @@ interface ReferralRate {
 }
 
 export default function LandingPage() {
+  const { data: session } = useSession();
   const { stats, referralRates } = useLanding();
+
+  // If user is authenticated, "Get Started" should go to dashboard
+  const getStartedUrl = session ? '/dashboard' : '/auth/signin';
 
   return (
     <div className="min-h-screen">
@@ -34,7 +39,7 @@ export default function LandingPage() {
             Simple staking with guaranteed returns. Plus earn up to 15% commission from 5-level referrals. No complex DeFi, no impermanent loss, just consistent rewards.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center px-4">
-            <Link href="/auth/signin" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform text-center">
+            <Link href={getStartedUrl} className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform text-center">
               Get Started →
             </Link>
             <Link href="/dashboard" className="w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-5 bg-transparent text-white font-bold text-sm sm:text-base border-2 border-white/8 rounded-xl uppercase tracking-wide hover:border-white hover:bg-white/5 transition-all text-center">
@@ -220,7 +225,7 @@ export default function LandingPage() {
             <p className="text-base sm:text-lg text-gray-400 mb-6 sm:mb-8 px-4">
               Sign in with Google and make your first stake in under 2 minutes
             </p>
-            <Link href="/auth/signin" className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform">
+            <Link href={getStartedUrl} className="inline-block px-8 sm:px-10 py-4 sm:py-5 bg-accent text-black font-bold text-sm sm:text-base rounded-xl uppercase tracking-wide hover:scale-105 transition-transform">
               Get Started Now →
             </Link>
           </div>
