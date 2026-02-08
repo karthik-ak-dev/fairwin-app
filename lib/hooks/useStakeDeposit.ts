@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
+import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { toast } from 'sonner';
 
@@ -9,6 +10,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export const useStakeDeposit = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const [amount, setAmount] = useState<string>('2500');
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingStake, setPendingStake] = useState<{
@@ -144,12 +146,17 @@ export const useStakeDeposit = () => {
       }
 
       toast.success(
-        `Transaction ${txHash.slice(0, 10)}... submitted successfully! Your stake of ${pendingStake.amount} USDT is now being verified.`
+        `Transaction submitted successfully! Your stake of $${pendingStake.amount} USDT is now being verified. Redirecting to dashboard...`
       );
 
       // Reset state
       setPendingStake(null);
       setAmount('');
+
+      // Redirect to dashboard after short delay
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
     } catch (error: any) {
       toast.error(`Error submitting transaction: ${error.message}`);
     } finally {

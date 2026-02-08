@@ -66,7 +66,10 @@ export async function getDashboardData(userId: string) {
         getReferralConfigById('default'),
       ]);
 
-    const activeStakes = allStakes.filter((stake) => stake.status === StakeStatus.ACTIVE);
+    // Include both ACTIVE and VERIFYING stakes for display
+    const activeStakes = allStakes.filter(
+      (stake) => stake.status === StakeStatus.ACTIVE || stake.status === StakeStatus.VERIFYING
+    );
 
     if (!user) {
       throw new Error('User not found');
@@ -99,24 +102,26 @@ export async function getDashboardData(userId: string) {
     const totalReferrals = networkStructure.reduce((sum, level) => sum + level.uniqueUsers, 0);
 
     const stakes = activeStakes.map((stake) => {
-      const monthsElapsed = getMonthsElapsed(stake.startDate);
+      const isVerifying = stake.status === StakeStatus.VERIFYING;
+      const monthsElapsed = isVerifying ? 0 : getMonthsElapsed(stake.startDate);
       const totalMonths = stakeConfig?.durationMonths || 24;
       const monthlyEarning = stake.amount * monthlyRate;
       const dailyEarning = monthlyEarning / 30;
-      const totalEarned = monthlyEarning * monthsElapsed;
+      const totalEarned = isVerifying ? 0 : monthlyEarning * monthsElapsed;
       const nextReward = getNextFirstOfMonth();
 
       return {
         id: stake.stakeId,
         amount: stake.amount,
-        startDate: formatDateShort(stake.startDate),
+        startDate: stake.startDate ? formatDateShort(stake.startDate) : 'Pending',
         monthsElapsed,
         totalMonths,
         dailyEarning: Math.round(dailyEarning * 100) / 100,
         monthlyEarning: Math.round(monthlyEarning * 100) / 100,
         totalEarned: Math.round(totalEarned * 100) / 100,
-        nextRewardDate: nextReward.date,
-        status: 'Active',
+        nextRewardDate: isVerifying ? 'Verifying...' : nextReward.date,
+        status: isVerifying ? 'Verifying' : 'Active',
+        txHash: stake.txHash,
       };
     });
 

@@ -149,66 +149,114 @@ export default function DashboardPage() {
                 <h2 className="text-xl font-extrabold flex items-center gap-2">
                   💎 Your Stakes
                 </h2>
-                <span className="text-sm text-gray-400">{stakes.length} Active</span>
+                <span className="text-sm text-gray-400">
+                  {stakes.filter((s: any) => s.status === 'Active').length} Active
+                  {stakes.filter((s: any) => s.status === 'Verifying').length > 0 &&
+                    `, ${stakes.filter((s: any) => s.status === 'Verifying').length} Verifying`
+                  }
+                </span>
               </div>
 
               <div className="space-y-5">
                 {stakes.map((stake: any) => {
                   const progress = (stake.monthsElapsed / stake.totalMonths) * 100;
+                  const isVerifying = stake.status === 'Verifying';
+
                   return (
                     <div
                       key={stake.id}
-                      className="bg-white/[0.02] border border-white/8 rounded-2xl p-4 sm:p-6 hover:border-accent hover:bg-white/[0.04] transition-all"
+                      className={`bg-white/[0.02] border rounded-2xl p-4 sm:p-6 transition-all ${
+                        isVerifying
+                          ? 'border-yellow-500/30 hover:border-yellow-500/50'
+                          : 'border-white/8 hover:border-accent hover:bg-white/[0.04]'
+                      }`}
                     >
                       {/* Header */}
                       <div className="flex justify-between items-center mb-4 sm:mb-5">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                          <span className="text-sm sm:text-base font-bold text-gray-400">Stake #{stake.id}</span>
+                          <span className="text-sm sm:text-base font-bold text-gray-400">
+                            Stake #{stake.id.slice(-8)}
+                          </span>
                           <span className="text-2xl sm:text-3xl font-black text-accent">{formatCurrency(stake.amount)}</span>
                         </div>
-                        <span className="px-3 py-1.5 bg-accent/10 border border-accent/30 rounded-md text-xs font-bold text-accent uppercase tracking-wide">
+                        <span className={`px-3 py-1.5 rounded-md text-xs font-bold uppercase tracking-wide ${
+                          isVerifying
+                            ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 animate-pulse'
+                            : 'bg-accent/10 border border-accent/30 text-accent'
+                        }`}>
+                          {isVerifying && '⏳ '}
                           {stake.status}
                         </span>
                       </div>
 
-                      {/* Metrics Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-4">
-                        <div className="text-center">
-                          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Daily</div>
-                          <div className="text-sm sm:text-base font-bold">{formatCurrency(stake.dailyEarning)}</div>
+                      {/* Verifying Notice or Metrics Grid */}
+                      {isVerifying ? (
+                        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 mb-4">
+                          <div className="flex items-start gap-3">
+                            <span className="text-2xl">⏳</span>
+                            <div>
+                              <div className="text-sm font-bold text-yellow-400 mb-1">
+                                Transaction Verification in Progress
+                              </div>
+                              <div className="text-xs text-gray-400 mb-2">
+                                We're verifying your blockchain transaction. This usually takes 5-10 minutes.
+                              </div>
+                              {stake.txHash && (
+                                <div className="text-xs text-gray-500 font-mono">
+                                  TX: {stake.txHash.slice(0, 20)}...{stake.txHash.slice(-10)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Monthly</div>
-                          <div className="text-sm sm:text-base font-bold text-accent">{formatCurrency(stake.monthlyEarning)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Earned</div>
-                          <div className="text-sm sm:text-base font-bold text-accent">{formatCurrency(stake.totalEarned)}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Progress</div>
-                          <div className="text-sm sm:text-base font-bold">{stake.monthsElapsed}/{stake.totalMonths}m</div>
-                        </div>
-                      </div>
+                      ) : (
+                        <>
+                          {/* Metrics Grid */}
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-4">
+                            <div className="text-center">
+                              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Daily</div>
+                              <div className="text-sm sm:text-base font-bold">{formatCurrency(stake.dailyEarning)}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Monthly</div>
+                              <div className="text-sm sm:text-base font-bold text-accent">{formatCurrency(stake.monthlyEarning)}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Earned</div>
+                              <div className="text-sm sm:text-base font-bold text-accent">{formatCurrency(stake.totalEarned)}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-xs text-gray-400 uppercase tracking-wider mb-1">Progress</div>
+                              <div className="text-sm sm:text-base font-bold">{stake.monthsElapsed}/{stake.totalMonths}m</div>
+                            </div>
+                          </div>
+                        </>
+                      )}
 
-                      {/* Progress Bar */}
-                      <div className="mb-3 sm:mb-4">
-                        <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-                          <span>{progress.toFixed(0)}% Complete</span>
-                          <span>{stake.totalMonths - stake.monthsElapsed} months remaining</span>
+                      {/* Progress Bar - Only for active stakes */}
+                      {!isVerifying && (
+                        <div className="mb-3 sm:mb-4">
+                          <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
+                            <span>{progress.toFixed(0)}% Complete</span>
+                            <span>{stake.totalMonths - stake.monthsElapsed} months remaining</span>
+                          </div>
+                          <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-accent to-green-400 rounded-full"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
                         </div>
-                        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-accent to-green-400 rounded-full"
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
+                      )}
 
                       {/* Footer */}
                       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 pt-3 sm:pt-4 border-t border-white/8">
-                        <span className="text-xs text-gray-400">Started {stake.startDate}</span>
-                        <span className="text-xs sm:text-sm font-bold text-accent">Next reward: {stake.nextRewardDate}</span>
+                        <span className="text-xs text-gray-400">
+                          {isVerifying ? 'Submitted recently' : `Started ${stake.startDate}`}
+                        </span>
+                        {!isVerifying && (
+                          <span className="text-xs sm:text-sm font-bold text-accent">Next reward: {stake.nextRewardDate}</span>
+                        )}
                       </div>
                     </div>
                   );

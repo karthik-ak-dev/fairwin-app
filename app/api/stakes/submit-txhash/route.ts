@@ -9,8 +9,8 @@
 // - Return updated stake object
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentUser } from "@/lib/utils/auth"';
-import { submitStakeTxHashWithValidation } from "@/lib/utils/stakes"';
+import { getCurrentUser } from '@/lib/utils/auth';
+import { submitStakeTxHashWithValidation } from '@/lib/utils/stakes';
 
 export const dynamic = 'force-dynamic';
 
