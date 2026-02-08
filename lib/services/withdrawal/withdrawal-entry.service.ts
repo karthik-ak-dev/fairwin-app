@@ -9,6 +9,7 @@
 import {
   createWithdrawal,
   getWithdrawalById,
+  getWithdrawalsByStatus,
   updateWithdrawalStatus,
   updateWithdrawalTxHash,
   getWithdrawalsByUserId,
@@ -23,25 +24,6 @@ import { constants } from '@/lib/constants';
 export function isWithdrawalDayAllowed(): boolean {
   const today = new Date();
   return today.getDate() === constants.WITHDRAWAL_DAY_OF_MONTH;
-}
-
-/**
- * Get the next allowed withdrawal date
- */
-export function getNextWithdrawalDate(): Date {
-  const today = new Date();
-  const nextDate = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    constants.WITHDRAWAL_DAY_OF_MONTH
-  );
-
-  // If we're past the withdrawal day this month, return next month's date
-  if (today.getDate() > constants.WITHDRAWAL_DAY_OF_MONTH) {
-    nextDate.setMonth(nextDate.getMonth() + 1);
-  }
-
-  return nextDate;
 }
 
 /**
@@ -80,10 +62,9 @@ export async function createUserWithdrawal(
   try {
     // Validate withdrawal day
     if (!isWithdrawalDayAllowed()) {
-      const nextDate = getNextWithdrawalDate();
       return {
         success: false,
-        error: `Withdrawals are only allowed on the 1st of each month. Next withdrawal date: ${nextDate.toISOString().split('T')[0]}`,
+        error: 'Withdrawals are only allowed on the 1st of each month.',
       };
     }
 
@@ -239,5 +220,18 @@ export async function failWithdrawal(
   } catch (error) {
     console.error('Error marking withdrawal as failed:', error);
     return { success: false, error: 'Failed to mark withdrawal as failed' };
+  }
+}
+
+/**
+ * Get all withdrawals in PENDING status
+ * Used by cron job to process withdrawals
+ */
+export async function getPendingWithdrawals(): Promise<Withdrawal[]> {
+  try {
+    return await getWithdrawalsByStatus(WithdrawalStatus.PENDING);
+  } catch (error) {
+    console.error('Error fetching pending withdrawals:', error);
+    return [];
   }
 }

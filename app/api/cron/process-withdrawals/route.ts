@@ -13,8 +13,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getWithdrawalsByStatus } from '@/lib/db/repositories/withdrawal.repository';
 import {
+  getPendingWithdrawals,
   initiateWithdrawalTransaction,
   completeWithdrawal,
   failWithdrawal,
@@ -24,7 +24,6 @@ import {
   executeBscTransfer,
   waitForBscConfirmation,
 } from '@/lib/services/blockchain/bsc.service';
-import { WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
 import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
@@ -39,9 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Get all PENDING withdrawals
-    const pendingWithdrawals = await getWithdrawalsByStatus(
-      WithdrawalStatus.PENDING
-    );
+    const pendingWithdrawals = await getPendingWithdrawals();
 
     if (pendingWithdrawals.length === 0) {
       return NextResponse.json(

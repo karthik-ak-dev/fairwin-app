@@ -9,9 +9,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getStakesByStatus } from '@/lib/db/repositories/stake.repository';
-import { completeStake } from '@/lib/services/stake/stake-entry.service';
-import { StakeStatus } from '@/lib/db/models/stake.model';
+import { getActiveStakes, completeStake } from '@/lib/services/stake/stake-entry.service';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for cron job
@@ -25,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Get all ACTIVE stakes
-    const activeStakes = await getStakesByStatus(StakeStatus.ACTIVE);
+    const activeStakes = await getActiveStakes();
 
     if (activeStakes.length === 0) {
       return NextResponse.json(

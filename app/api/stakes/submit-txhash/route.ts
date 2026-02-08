@@ -10,9 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/services/auth/auth.service';
-import { submitStakeTxHash } from '@/lib/services/stake/stake-entry.service';
-import { getStakeById, getStakeByTxHash } from '@/lib/db/repositories/stake.repository';
-import { StakeStatus } from '@/lib/db/models/stake.model';
+import { submitStakeTxHashWithValidation } from '@/lib/services/stake/stake-entry.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,67 +41,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Verify stake exists
-    const stake = await getStakeById(stakeId);
-    if (!stake) {
-      return NextResponse.json({ error: 'Stake not found' }, { status: 404 });
-    }
-
-    // 5. Verify stake ownership
-    if (stake.userId !== user.userId) {
-      return NextResponse.json(
-        { error: 'Not authorized to update this stake' },
-        { status: 403 }
-      );
-    }
-
-    // 6. Verify stake is in PENDING status
-    if (stake.status !== StakeStatus.PENDING) {
-      return NextResponse.json(
-        { error: 'Can only submit txHash for PENDING stakes' },
-        { status: 400 }
-      );
-    }
-
-    // 7. Check for duplicate txHash
-    const existingStake = await getStakeByTxHash(txHash);
-    if (existingStake) {
-      return NextResponse.json(
-        { error: 'Transaction hash already used' },
-        { status: 400 }
-      );
-    }
-
-    // 8. Submit txHash and move to VERIFYING
-    const result = await submitStakeTxHash(stakeId, txHash);
+    // 4. Submit txHash with full validation (ownership, status, duplicate check)
+    const result = await submitStakeTxHashWithValidation(stakeId, txHash, user.userId);
 
     if (!result.success) {
+      // Determine appropriate status code based on error
+      const status = result.error?.includes('Not authorized') ? 403 :
+                     result.error?.includes('not found') ? 404 : 400;
+
       return NextResponse.json(
         { error: result.error || 'Failed to submit transaction hash' },
-        { status: 400 }
+        { status }
       );
     }
 
-    // 9. Fetch updated stake to return
-    const updatedStake = await getStakeById(stakeId);
-    if (!updatedStake) {
-      return NextResponse.json(
-        { error: 'Failed to fetch updated stake' },
-        { status: 500 }
-      );
-    }
-
-    // 10. Return updated stake
+    // 5. Return updated stake
     return NextResponse.json(
       {
         success: true,
         stake: {
-          id: updatedStake.stakeId,
-          amount: updatedStake.amount,
-          status: updatedStake.status,
-          txHash: updatedStake.txHash,
-          userId: updatedStake.userId,
-          updatedAt: updatedStake.updatedAt,
+          id: result.stake!.stakeId,
+          amount: result.stake!.amount,
+          status: result.stake!.status,
+          txHash: result.stake!.txHash,
+          userId: result.stake!.userId,
+          updatedAt: result.stake!.updatedAt,
         },
       },
       { status: 200 }

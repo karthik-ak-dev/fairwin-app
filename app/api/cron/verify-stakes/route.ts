@@ -10,11 +10,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getStakesByStatus } from '@/lib/db/repositories/stake.repository';
-import { activateStake } from '@/lib/services/stake/stake-entry.service';
+import { getVerifyingStakes, activateStake } from '@/lib/services/stake/stake-entry.service';
 import { createReferralCommissions } from '@/lib/services/referral/referral.service';
 import { verifyBscTransaction } from '@/lib/services/blockchain/bsc.service';
-import { StakeStatus } from '@/lib/db/models/stake.model';
 import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
@@ -29,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Get all VERIFYING stakes
-    const verifyingStakes = await getStakesByStatus(StakeStatus.VERIFYING);
+    const verifyingStakes = await getVerifyingStakes();
 
     if (verifyingStakes.length === 0) {
       return NextResponse.json(

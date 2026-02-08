@@ -8,6 +8,8 @@
 import {
   createStake,
   getStakeById,
+  getStakeByTxHash,
+  getStakesByStatus,
   updateStakeStatus,
   updateStakeTxHash,
 } from '@/lib/db/repositories/stake.repository';
@@ -189,5 +191,92 @@ export async function completeStake(
   } catch (error) {
     console.error('Error completing stake:', error);
     return { success: false, error: 'Failed to complete stake' };
+  }
+}
+
+/**
+ * Get all stakes in VERIFYING status
+ * Used by cron job to verify blockchain transactions
+ */
+export async function getVerifyingStakes(): Promise<Stake[]> {
+  try {
+    return await getStakesByStatus(StakeStatus.VERIFYING);
+  } catch (error) {
+    console.error('Error fetching verifying stakes:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all stakes in ACTIVE status
+ * Used by cron job to check for matured stakes
+ */
+export async function getActiveStakes(): Promise<Stake[]> {
+  try {
+    return await getStakesByStatus(StakeStatus.ACTIVE);
+  } catch (error) {
+    console.error('Error fetching active stakes:', error);
+    return [];
+  }
+}
+
+/**
+ * Submit transaction hash with full validation
+ * Includes ownership verification and duplicate txHash checking
+ */
+export async function submitStakeTxHashWithValidation(
+  stakeId: string,
+  txHash: string,
+  userId: string
+): Promise<{ success: boolean; stake?: Stake; error?: string }> {
+  try {
+    // Get stake
+    const stake = await getStakeById(stakeId);
+    if (!stake) {
+      return { success: false, error: 'Stake not found' };
+    }
+
+    // Verify ownership
+    if (stake.userId !== userId) {
+      return {
+        success: false,
+        error: 'Not authorized to update this stake',
+      };
+    }
+
+    // Validate status
+    if (stake.status !== StakeStatus.PENDING) {
+      return {
+        success: false,
+        error: 'Can only submit txHash for PENDING stakes',
+      };
+    }
+
+    // Check for duplicate txHash
+    const existingStake = await getStakeByTxHash(txHash);
+    if (existingStake) {
+      return {
+        success: false,
+        error: 'Transaction hash already used',
+      };
+    }
+
+    // Update stake with txHash and move to VERIFYING
+    await updateStakeTxHash(stakeId, txHash);
+    await updateStakeStatus(stakeId, StakeStatus.VERIFYING);
+
+    // Fetch and return updated stake
+    const updatedStake = await getStakeById(stakeId);
+    if (!updatedStake) {
+      return {
+        success: false,
+        error: 'Failed to fetch updated stake',
+      };
+    }
+
+    return { success: true, stake: updatedStake };
+  } catch (error) {
+    console.error('Error submitting stake txHash:', error);
+    return { success: false, error: 'Failed to submit transaction hash' };
   }
 }
