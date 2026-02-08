@@ -5,6 +5,7 @@
 // - Single API call pattern - fetch everything in parallel
 // - User-specific data (requires authentication)
 
+import { differenceInMonths } from 'date-fns';
 import { getUserById } from '@/lib/db/repositories/user.repository';
 import { getStakesByUserId } from '@/lib/db/repositories/stake.repository';
 import { getWithdrawalsByUserId } from '@/lib/db/repositories/withdrawal.repository';
@@ -18,18 +19,15 @@ import {
 import { StakeStatus } from '@/lib/db/models/stake.model';
 import { WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
 import { constants } from '@/lib/constants';
+import { env } from '@/lib/env';
 
 /**
- * Calculate months elapsed between two dates
+ * Calculate months elapsed between two dates using date-fns for accurate calculation
  */
 function getMonthsElapsed(startDate: string, endDate?: string): number {
   const start = new Date(startDate);
   const end = endDate ? new Date(endDate) : new Date();
-
-  const yearDiff = end.getFullYear() - start.getFullYear();
-  const monthDiff = end.getMonth() - start.getMonth();
-
-  return yearDiff * 12 + monthDiff;
+  return differenceInMonths(end, start);
 }
 
 /**
@@ -290,8 +288,7 @@ export async function getDashboardData(userId: string): Promise<{
 
     // --- REFERRAL LINK ---
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://massivehike.com';
-    const referralLink = `${baseUrl}/ref/${user.referralCode}`;
+    const referralLink = `${env.NEXT_PUBLIC_BASE_URL}/ref/${user.referralCode}`;
 
     return {
       stats: {

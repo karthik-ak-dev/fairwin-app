@@ -13,6 +13,7 @@ import {
   getNetworkStructure,
 } from '@/lib/services/referral/referral.service';
 import { StakeStatus } from '@/lib/db/models/stake.model';
+import { env } from '@/lib/env';
 
 /**
  * Format date for display (e.g., "Jan 15, 2025")
@@ -161,8 +162,7 @@ export async function getReferralsPageData(userId: string): Promise<{
 
     // --- REFERRAL LINK ---
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://massivehike.com';
-    const referralLink = `${baseUrl}/ref/${user.referralCode}`;
+    const referralLink = `${env.NEXT_PUBLIC_BASE_URL}/ref/${user.referralCode}`;
 
     // --- ALL REFERRALS ---
 

@@ -8,6 +8,11 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { formatCurrency, formatWalletAddress, copyToClipboard } from '@/lib/utils/format';
 
+interface ExistingStake {
+  id: string;
+  amount: number;
+}
+
 export default function StakePage() {
   const [txHash, setTxHash] = useState('');
   const [copiedWallet, setCopiedWallet] = useState(false);
@@ -285,7 +290,7 @@ export default function StakePage() {
             {existingStakes.length > 0 && (
               <div className="bg-white/2 border border-white/8 rounded-xl p-5">
                 <div className="text-sm font-bold mb-4">Your Existing Stakes</div>
-                {existingStakes.map((stake) => (
+                {existingStakes.map((stake: ExistingStake) => (
                   <div key={stake.id} className="flex justify-between items-center py-2 text-sm border-b border-white/8 last:border-b-0 last:pb-0">
                     <span className="text-gray-400">Stake #{stake.id}</span>
                     <span className="font-bold">{formatCurrency(stake.amount)}</span>

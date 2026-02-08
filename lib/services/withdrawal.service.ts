@@ -2,6 +2,7 @@
 // Responsibilities:
 // - Calculate available balance for withdrawals (stake rewards + referral commissions)
 
+import { differenceInMonths } from 'date-fns';
 import { getStakesByUserId } from '@/lib/db/repositories/stake.repository';
 import { getReferralsByReferrerId } from '@/lib/db/repositories/referral.repository';
 import { getWithdrawalsByUserId } from '@/lib/db/repositories/withdrawal.repository';
@@ -35,15 +36,13 @@ export async function calculateAvailableBalance(userId: string): Promise<number>
     let totalStakeRewards = 0;
     for (const stake of stakes) {
       if (stake.status === StakeStatus.ACTIVE || stake.status === StakeStatus.COMPLETED) {
-        // Calculate months elapsed
+        // Calculate months elapsed using date-fns for accurate month calculation
         const startDate = new Date(stake.startDate);
         const now = new Date();
         const endDate = stake.endDate ? new Date(stake.endDate) : now;
 
         const actualEndDate = endDate < now ? endDate : now;
-        const monthsElapsed = Math.floor(
-          (actualEndDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)
-        );
+        const monthsElapsed = differenceInMonths(actualEndDate, startDate);
 
         // Monthly reward = stake amount * monthly rate
         const monthlyReward = stake.amount * stakeConfig.monthlyReturnRate;

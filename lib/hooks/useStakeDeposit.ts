@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from './useAuth';
 import useSWR from 'swr';
+import { toast } from 'sonner';
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -104,7 +105,7 @@ export const useStakeDeposit = () => {
 
       setPendingStake(newStake);
     } catch (error: any) {
-      alert(`Error creating stake: ${error.message}`);
+      toast.error(`Error creating stake: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }
@@ -117,7 +118,7 @@ export const useStakeDeposit = () => {
     // Validate txHash format (0x + 64 hex characters)
     const txHashRegex = /^0x[a-fA-F0-9]{64}$/;
     if (!txHashRegex.test(txHash)) {
-      alert('Invalid transaction hash format. Must be 0x followed by 64 hexadecimal characters.');
+      toast.error('Invalid transaction hash format. Must be 0x followed by 64 hexadecimal characters.');
       return;
     }
 
@@ -142,15 +143,15 @@ export const useStakeDeposit = () => {
         throw new Error(result.error || 'Failed to submit transaction hash');
       }
 
-      alert(
-        `Transaction ${txHash.slice(0, 10)}... submitted successfully!\n\nYour stake of ${pendingStake.amount} USDT is now being verified.\nYou will be notified once it becomes active.`
+      toast.success(
+        `Transaction ${txHash.slice(0, 10)}... submitted successfully! Your stake of ${pendingStake.amount} USDT is now being verified.`
       );
 
       // Reset state
       setPendingStake(null);
       setAmount('');
     } catch (error: any) {
-      alert(`Error submitting transaction: ${error.message}`);
+      toast.error(`Error submitting transaction: ${error.message}`);
     } finally {
       setIsProcessing(false);
     }

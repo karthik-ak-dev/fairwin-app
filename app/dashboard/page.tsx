@@ -1,14 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDashboard } from '@/lib/hooks/useDashboard';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { DataTable } from '@/components/DataTable';
 import { ShareReferralLink } from '@/components/ShareReferralLink';
-import { formatCurrency, formatWalletAddress } from '@/lib/utils/format';
+import { formatCurrency } from '@/lib/utils/format';
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const { stats, stakes, referrals, withdrawal, withdrawalHistory, referralLink } = useDashboard();
@@ -16,6 +17,15 @@ export default function DashboardPage() {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawWallet, setWithdrawWallet] = useState('');
   const [isProcessingWithdraw, setIsProcessingWithdraw] = useState(false);
+
+  // Clean up referral cookie after successful login
+  useEffect(() => {
+    if (typeof window !== 'undefined' && user) {
+      // Remove referral code from localStorage and cookie
+      localStorage.removeItem('pendingReferralCode');
+      document.cookie = 'pendingReferralCode=; path=/; max-age=0';
+    }
+  }, [user]);
 
   const handleWithdrawClick = () => {
     if (withdrawal.isWithdrawalAvailable) {
@@ -27,7 +37,7 @@ export default function DashboardPage() {
     // Validate BSC wallet address format
     const bscAddressRegex = /^0x[a-fA-F0-9]{40}$/;
     if (!withdrawWallet || !bscAddressRegex.test(withdrawWallet)) {
-      alert('Please enter a valid BSC wallet address (0x + 40 hex characters)');
+      toast.error('Please enter a valid BSC wallet address (0x + 40 hex characters)');
       return;
     }
 
@@ -52,7 +62,7 @@ export default function DashboardPage() {
         throw new Error(result.error || 'Failed to create withdrawal');
       }
 
-      alert(`Withdrawal request submitted successfully!\n${formatCurrency(withdrawal.availableAmount)} will be sent to ${withdrawWallet.slice(0, 10)}...\n\nThe withdrawal will be processed on the 1st of next month.`);
+      toast.success(`Withdrawal request submitted successfully! ${formatCurrency(withdrawal.availableAmount)} will be sent to ${withdrawWallet.slice(0, 10)}... on the 1st of next month.`);
 
       setShowWithdrawModal(false);
       setWithdrawWallet('');
@@ -60,7 +70,7 @@ export default function DashboardPage() {
       // Refresh dashboard data
       window.location.reload();
     } catch (error: any) {
-      alert(`Withdrawal failed: ${error.message}`);
+      toast.error(`Withdrawal failed: ${error.message}`);
     } finally {
       setIsProcessingWithdraw(false);
     }

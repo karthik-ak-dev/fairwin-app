@@ -20,6 +20,22 @@ class Constants {
   public readonly MAX_WITHDRAWAL_AMOUNT: number = 1000; // Maximum withdrawal amount in USDT
   public readonly MIN_WITHDRAWAL_AMOUNT: number = 10; // Minimum withdrawal amount in USDT
 
+  // Referral Code Settings
+  public readonly REFERRAL_CODE_PREFIX: string = 'MH'; // Prefix for all referral codes
+  public readonly REFERRAL_CODE_LENGTH: number = 6; // Total length including prefix (MH + 4 chars)
+
+  // Blockchain Settings
+  public readonly MIN_BLOCKCHAIN_CONFIRMATIONS: number = 3; // Minimum confirmations for transaction verification
+  public readonly BLOCKCHAIN_CONFIRMATION_TIMEOUT_MS: number = 5 * 60 * 1000; // 5 minutes
+  public readonly BSC_POLLING_INTERVAL_MS: number = 3000; // 3 seconds between transaction status checks
+  public readonly AMOUNT_VERIFICATION_TOLERANCE: number = 0.01; // Tolerance for amount matching (USDT)
+
+  // Time Calculations
+  public readonly MILLISECONDS_PER_MONTH: number = 1000 * 60 * 60 * 24 * 30; // Approximate (will be replaced with date-fns)
+
+  // Support Contact
+  public readonly SUPPORT_EMAIL: string = 'support@massivehike.com';
+
   private constructor() {
     // All constants are initialized above as readonly properties
   }

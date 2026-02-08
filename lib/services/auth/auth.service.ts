@@ -2,7 +2,7 @@
 // Business logic for authentication operations
 
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { getUserByEmail, findOrCreateUser } from '@/lib/db/repositories/user.repository';
 import { User } from '@/lib/db/models/user.model';
 import { AuthProfile } from './types';
@@ -34,9 +34,12 @@ export async function isAuthenticated(): Promise<boolean> {
  * Handle user sign-in by finding or creating user
  * Returns the user if successful, null if failed
  */
-export async function handleUserSignIn(authProfile: AuthProfile): Promise<User | null> {
+export async function handleUserSignIn(
+  authProfile: AuthProfile,
+  referralCode?: string
+): Promise<User | null> {
   try {
-    const user = await findOrCreateUser(authProfile);
+    const user = await findOrCreateUser(authProfile, referralCode);
     return user;
   } catch (error) {
     console.error('Error handling user sign-in:', error);

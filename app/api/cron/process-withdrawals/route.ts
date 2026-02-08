@@ -25,6 +25,7 @@ import {
   waitForBscConfirmation,
 } from '@/lib/services/blockchain/bsc.service';
 import { WithdrawalStatus } from '@/lib/db/models/withdrawal.model';
+import { constants } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300; // 5 minutes for cron job
@@ -109,8 +110,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        // 7. Wait for blockchain confirmation (3 confirmations, 5 min timeout)
-        const confirmed = await waitForBscConfirmation(txHash, 3, 5 * 60 * 1000);
+        // 7. Wait for blockchain confirmation
+        const confirmed = await waitForBscConfirmation(
+          txHash,
+          constants.MIN_BLOCKCHAIN_CONFIRMATIONS,
+          constants.BLOCKCHAIN_CONFIRMATION_TIMEOUT_MS
+        );
 
         if (confirmed) {
           // 8. Mark as COMPLETED

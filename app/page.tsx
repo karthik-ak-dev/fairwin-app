@@ -6,6 +6,11 @@ import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { formatCurrency, formatNumber } from '@/lib/utils/format';
 
+interface ReferralRate {
+  level: number;
+  rate: number;
+}
+
 export default function LandingPage() {
   const { stats, referralRates } = useLanding();
 
@@ -192,7 +197,7 @@ export default function LandingPage() {
           <div className="bg-white/3 border border-white/8 rounded-2xl p-6 sm:p-8 lg:p-10 mt-6 sm:mt-8">
             <h3 className="text-xl sm:text-2xl font-extrabold mb-4 sm:mb-6 text-center">🏆 Referral Commission Breakdown</h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              {referralRates.map((level: any) => (
+              {referralRates.map((level: ReferralRate) => (
                 <div key={level.level} className="text-center p-4 sm:p-5 bg-white/2 border border-white/8 rounded-xl">
                   <div className="text-xs text-gray-400 uppercase tracking-wider mb-2">
                     Level {level.level}

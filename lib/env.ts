@@ -28,6 +28,7 @@ class Environment {
 
   // Application
   public readonly NODE_ENV: string;
+  public readonly NEXT_PUBLIC_BASE_URL: string;
 
   private constructor() {
     // AWS
@@ -50,6 +51,7 @@ class Environment {
 
     // Application
     this.NODE_ENV = process.env.NODE_ENV || 'development';
+    this.NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://massivehike.com';
   }
 
   public static getInstance(): Environment {

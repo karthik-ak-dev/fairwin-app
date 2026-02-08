@@ -3,6 +3,7 @@ import { Outfit, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { SessionProvider } from './providers/SessionProvider';
 import { QueryProvider } from './providers/QueryProvider';
+import { Toaster } from 'sonner';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -30,6 +31,7 @@ export default function RootLayout({
         <SessionProvider>
           <QueryProvider>
             {children}
+            <Toaster position="top-right" theme="dark" richColors />
           </QueryProvider>
         </SessionProvider>
       </body>

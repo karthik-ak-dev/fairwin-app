@@ -5,6 +5,7 @@
 // - Wait for blockchain confirmations
 
 import { ethers } from 'ethers';
+import { constants } from '@/lib/constants';
 
 // USDT Contract ABI (only functions we need)
 const USDT_ABI = [
@@ -101,19 +102,18 @@ export async function verifyBscTransaction(
     const transferAmount = decodedData.args[1];
     const amountInUsdt = Number(ethers.formatUnits(transferAmount, 18));
 
-    // Verify amount matches (with 0.01 tolerance for rounding)
-    const tolerance = 0.01;
-    if (Math.abs(amountInUsdt - expectedAmount) > tolerance) {
+    // Verify amount matches (with tolerance for rounding)
+    if (Math.abs(amountInUsdt - expectedAmount) > constants.AMOUNT_VERIFICATION_TOLERANCE) {
       console.log(
         `Amount mismatch: expected ${expectedAmount}, got ${amountInUsdt}`
       );
       return false;
     }
 
-    // Check minimum confirmations (at least 3 blocks)
+    // Check minimum confirmations
     const currentBlock = await provider.getBlockNumber();
     const confirmations = currentBlock - (receipt.blockNumber || 0);
-    if (confirmations < 3) {
+    if (confirmations < constants.MIN_BLOCKCHAIN_CONFIRMATIONS) {
       console.log(`Insufficient confirmations: ${confirmations}`);
       return false;
     }
@@ -159,14 +159,14 @@ export async function executeBscTransfer(
 /**
  * Wait for BSC transaction confirmation
  * @param txHash - Transaction hash to monitor
- * @param requiredConfirmations - Number of confirmations to wait for (default 3)
- * @param timeout - Timeout in milliseconds (default 5 minutes)
+ * @param requiredConfirmations - Number of confirmations to wait for
+ * @param timeout - Timeout in milliseconds
  * @returns true if confirmed, false if timeout or failed
  */
 export async function waitForBscConfirmation(
   txHash: string,
-  requiredConfirmations: number = 3,
-  timeout: number = 5 * 60 * 1000 // 5 minutes
+  requiredConfirmations: number = constants.MIN_BLOCKCHAIN_CONFIRMATIONS,
+  timeout: number = constants.BLOCKCHAIN_CONFIRMATION_TIMEOUT_MS
 ): Promise<boolean> {
   try {
     const provider = getBscProvider();
@@ -178,7 +178,7 @@ export async function waitForBscConfirmation(
 
       if (!receipt) {
         // Transaction not yet mined, wait and retry
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 seconds
+        await new Promise((resolve) => setTimeout(resolve, constants.BSC_POLLING_INTERVAL_MS));
         continue;
       }
 
@@ -197,7 +197,7 @@ export async function waitForBscConfirmation(
       }
 
       // Wait before next check
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, constants.BSC_POLLING_INTERVAL_MS));
     }
 
     console.log(`Confirmation timeout for transaction: ${txHash}`);

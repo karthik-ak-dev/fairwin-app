@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { constants } from '@/lib/constants';
 
 const errorMessages: Record<string, { title: string; description: string }> = {
   AccessDenied: {
@@ -80,8 +81,8 @@ function ErrorContent() {
         <div className="text-center mt-6">
           <p className="text-gray-500 text-xs">
             Need help? Contact support at{' '}
-            <a href="mailto:support@massivehike.com" className="text-accent hover:underline">
-              support@massivehike.com
+            <a href={`mailto:${constants.SUPPORT_EMAIL}`} className="text-accent hover:underline">
+              {constants.SUPPORT_EMAIL}
             </a>
           </p>
         </div>

@@ -14,34 +14,20 @@ export function useAuth() {
   const { data: session, status } = useSession();
   const isLoading = status === 'loading';
 
-  // Check for referral code in URL on mount
+  // Check for referral code in URL on mount and store it
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const refCode = urlParams.get('ref');
 
       if (refCode) {
-        // Store referral code in localStorage for use after login
+        // Store referral code in both localStorage and cookie
+        // Cookie will be accessible on the server during OAuth callback
         localStorage.setItem('pendingReferralCode', refCode);
-        console.log('Referral code stored:', refCode);
+        document.cookie = `pendingReferralCode=${refCode}; path=/; max-age=3600; SameSite=Lax`;
       }
     }
   }, []);
-
-  // Check for pending referral code after successful login
-  useEffect(() => {
-    if (session?.user && typeof window !== 'undefined') {
-      const pendingRef = localStorage.getItem('pendingReferralCode');
-      if (pendingRef) {
-        // TODO: POST /api/users/referral with referralCode
-        // Backend associates referral with user account
-        console.log('Processing referral code:', pendingRef);
-
-        // Clear the stored referral code
-        localStorage.removeItem('pendingReferralCode');
-      }
-    }
-  }, [session]);
 
   const login = async () => {
     await signIn('google', {

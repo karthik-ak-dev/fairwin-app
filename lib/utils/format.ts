@@ -1,6 +1,8 @@
 // Utility functions for formatting values
 // Used across multiple pages: dashboard, referrals, stake, landing
 
+import { toast } from 'sonner';
+
 export const formatCurrency = (amount: number, decimals: number = 2): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -19,6 +21,10 @@ export const formatWalletAddress = (address: string): string => {
 };
 
 export const copyToClipboard = async (text: string): Promise<void> => {
-  await navigator.clipboard.writeText(text);
-  alert('Copied to clipboard!');
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success('Copied to clipboard!');
+  } catch (error) {
+    toast.error('Failed to copy to clipboard');
+  }
 };
