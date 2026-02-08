@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { validateApiKey } from '@/lib/middleware/apiKeyAuth';
-import { getStakesByStatusHelper, activateStake } from '@/lib/utils/stakes';
+import { getStakesByStatusHelper, activateStake, deleteAbandonedPendingStakes } from '@/lib/utils/stakes';
 import { createReferralCommissions } from '@/lib/utils/referrals';
 import { verifyBscTransaction } from '@/lib/utils/blockchain';
 import { StakeStatus } from '@/lib/db/models/stake.model';
@@ -19,6 +19,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
     }
 
+    // Step 1: Clean up abandoned PENDING stakes (older than configured timeout)
+    const cleanupResult = await deleteAbandonedPendingStakes(constants.ABANDONED_STAKE_TIMEOUT_HOURS);
+    console.log(`Deleted ${cleanupResult.deletedCount} abandoned PENDING stakes`);
+
+    // Step 2: Process VERIFYING stakes
     const verifyingStakes = await getStakesByStatusHelper(StakeStatus.VERIFYING);
 
     if (verifyingStakes.length === 0) {
@@ -26,6 +31,7 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           processed: 0,
+          abandoned_deleted: cleanupResult.deletedCount,
           message: 'No stakes to verify',
         },
         { status: 200 }
@@ -97,6 +103,7 @@ export async function POST(request: NextRequest) {
         processed: verifyingStakes.length,
         activated: successCount,
         failed: failedCount,
+        abandoned_deleted: cleanupResult.deletedCount,
         results,
       },
       { status: 200 }

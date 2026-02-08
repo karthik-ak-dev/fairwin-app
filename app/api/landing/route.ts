@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const data = await getLandingPageData();
+    console.log('Landing page data:', data);
 
     return NextResponse.json(data, {
       status: 200,

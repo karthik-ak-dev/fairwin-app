@@ -33,6 +33,9 @@ class Constants {
   // Time Calculations
   public readonly MILLISECONDS_PER_MONTH: number = 1000 * 60 * 60 * 24 * 30; // Approximate (will be replaced with date-fns)
 
+  // Stake Cleanup Settings
+  public readonly ABANDONED_STAKE_TIMEOUT_HOURS: number = 24; // Delete PENDING stakes older than 24 hours
+
   // Support Contact
   public readonly SUPPORT_EMAIL: string = 'support@massivehike.com';
 

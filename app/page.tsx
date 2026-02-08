@@ -16,8 +16,8 @@ export default function LandingPage() {
   const { data: session } = useSession();
   const { stats, referralRates } = useLanding();
 
-  // If user is authenticated, "Get Started" should go to dashboard
-  const getStartedUrl = session ? '/dashboard' : '/auth/signin';
+  // If user is authenticated, "Get Started" should go to stake page
+  const getStartedUrl = session ? '/stake' : '/auth/signin';
 
   return (
     <div className="min-h-screen">

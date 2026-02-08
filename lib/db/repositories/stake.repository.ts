@@ -4,7 +4,7 @@
 // - Query stakes by userId, status, and txHash
 // - Update stake status and transaction hash
 
-import { PutCommand, GetCommand, QueryCommand, UpdateCommand } from '@aws-sdk/lib-dynamodb';
+import { PutCommand, GetCommand, QueryCommand, UpdateCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient } from '@/lib/db/dynamodb';
 import { env } from '@/lib/env';
 import { Stake, StakeStatus } from '@/lib/db/models/stake.model';
@@ -205,6 +205,18 @@ export async function updateStakeTxHash(stakeId: string, txHash: string): Promis
         ':txHash': txHash,
         ':now': now,
       },
+    })
+  );
+}
+
+/**
+ * Delete a stake by stakeId (used for cleanup of abandoned PENDING stakes)
+ */
+export async function deleteStake(stakeId: string): Promise<void> {
+  await docClient.send(
+    new DeleteCommand({
+      TableName: env.DYNAMODB_STAKES_TABLE,
+      Key: { stakeId },
     })
   );
 }

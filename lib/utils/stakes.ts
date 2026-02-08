@@ -8,6 +8,7 @@ import {
   getStakesByStatus,
   updateStakeStatus,
   updateStakeTxHash,
+  deleteStake,
 } from '@/lib/db/repositories/stake.repository';
 import { getStakeConfigById } from '@/lib/db/repositories/stake-config.repository';
 import { Stake, StakeStatus } from '@/lib/db/models/stake.model';
@@ -202,5 +203,48 @@ export async function getStakesByStatusHelper(status: StakeStatus): Promise<Stak
   } catch (error) {
     console.error(`Error fetching stakes with status ${status}:`, error);
     return [];
+  }
+}
+
+/**
+ * Delete abandoned PENDING stakes older than specified hours
+ * Returns the number of stakes deleted
+ */
+export async function deleteAbandonedPendingStakes(hoursOld: number = 48): Promise<{
+  success: boolean;
+  deletedCount: number;
+  errors: string[];
+}> {
+  try {
+    const pendingStakes = await getStakesByStatus(StakeStatus.PENDING);
+
+    if (pendingStakes.length === 0) {
+      return { success: true, deletedCount: 0, errors: [] };
+    }
+
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - hoursOld);
+
+    const stakesToDelete = pendingStakes.filter(stake => {
+      const createdAt = new Date(stake.createdAt);
+      return createdAt < cutoffTime;
+    });
+
+    const errors: string[] = [];
+    let deletedCount = 0;
+
+    for (const stake of stakesToDelete) {
+      try {
+        await deleteStake(stake.stakeId);
+        deletedCount++;
+      } catch (error: any) {
+        errors.push(`Failed to delete stake ${stake.stakeId}: ${error.message}`);
+      }
+    }
+
+    return { success: true, deletedCount, errors };
+  } catch (error: any) {
+    console.error('Error deleting abandoned PENDING stakes:', error);
+    return { success: false, deletedCount: 0, errors: [error.message] };
   }
 }
