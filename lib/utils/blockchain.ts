@@ -53,6 +53,12 @@ export async function verifyBscTransaction(
   txHash: string,
   expectedAmount: number
 ): Promise<boolean> {
+  // Skip validation if SKIP_BLOCKCHAIN_VALIDATION is enabled
+  if (process.env.SKIP_BLOCKCHAIN_VALIDATION === 'true') {
+    console.log(`⚠️ Blockchain validation skipped for txHash: ${txHash} (amount: ${expectedAmount})`);
+    return true;
+  }
+
   try {
     const provider = getBscProvider();
 
@@ -126,6 +132,13 @@ export async function executeBscTransfer(
   toAddress: string,
   amount: number
 ): Promise<string> {
+  // Skip actual transfer if SKIP_BLOCKCHAIN_VALIDATION is enabled
+  if (process.env.SKIP_BLOCKCHAIN_VALIDATION === 'true') {
+    const mockTxHash = `0xmock${Date.now()}${Math.random().toString(36).substring(2, 15)}`;
+    console.log(`⚠️ Blockchain transfer skipped - Mock txHash: ${mockTxHash} (to: ${toAddress}, amount: ${amount})`);
+    return mockTxHash;
+  }
+
   try {
     const wallet = getAdminWallet();
     const usdtContract = getUsdtContract(wallet);
@@ -154,6 +167,12 @@ export async function waitForBscConfirmation(
   requiredConfirmations: number = constants.MIN_BLOCKCHAIN_CONFIRMATIONS,
   timeout: number = constants.BLOCKCHAIN_CONFIRMATION_TIMEOUT_MS
 ): Promise<boolean> {
+  // Skip confirmation wait if SKIP_BLOCKCHAIN_VALIDATION is enabled
+  if (process.env.SKIP_BLOCKCHAIN_VALIDATION === 'true') {
+    console.log(`⚠️ Blockchain confirmation wait skipped for txHash: ${txHash}`);
+    return true;
+  }
+
   try {
     const provider = getBscProvider();
     const startTime = Date.now();

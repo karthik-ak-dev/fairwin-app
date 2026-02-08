@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Process VERIFYING stakes
     const verifyingStakes = await getStakesByStatusHelper(StakeStatus.VERIFYING);
-
     if (verifyingStakes.length === 0) {
       return NextResponse.json(
         {
@@ -51,7 +50,6 @@ export async function POST(request: NextRequest) {
         }
 
         const isValid = await verifyBscTransaction(stake.txHash, stake.amount);
-
         if (!isValid) {
           results.push({
             stakeId: stake.stakeId,
@@ -62,7 +60,6 @@ export async function POST(request: NextRequest) {
         }
 
         const activateResult = await activateStake(stake.stakeId);
-
         if (!activateResult.success) {
           results.push({
             stakeId: stake.stakeId,

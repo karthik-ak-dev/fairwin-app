@@ -210,7 +210,7 @@ export async function getStakesByStatusHelper(status: StakeStatus): Promise<Stak
  * Delete abandoned PENDING stakes older than specified hours
  * Returns the number of stakes deleted
  */
-export async function deleteAbandonedPendingStakes(hoursOld: number = 48): Promise<{
+export async function deleteAbandonedPendingStakes(hoursOld: number = 24): Promise<{
   success: boolean;
   deletedCount: number;
   errors: string[];
